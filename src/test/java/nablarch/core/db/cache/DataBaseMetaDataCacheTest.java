@@ -63,12 +63,10 @@ public class DataBaseMetaDataCacheTest {
         ColumnDescriptor colDescriptor = tableDescriptor.getColumnDescriptor("VARCHAR_COL");
         assertThat("列名の検証", colDescriptor.getColumnName(), is("VARCHAR_COL"));
         assertThat("SQL型の検証", colDescriptor.getColumnType(), is(Types.VARCHAR));
-        assertThat("クラス名の検証", colDescriptor.getColumnClass().getName(), is(String.class.getName()));
 
         colDescriptor = tableDescriptor.getColumnDescriptor("INT_COL");
         assertThat("列名の検証", colDescriptor.getColumnName(), is("INT_COL"));
         assertThat("SQL型の検証", colDescriptor.getColumnType(), is(Types.NUMERIC));
-        assertThat("クラス名の検証", colDescriptor.getColumnClass().getName(), is(BigDecimal.class.getName()));
 
         ColumnDescriptor checkColumnFromSsd = tableDescriptor.getColumnDescriptor("CHECK_COL");
 
@@ -78,20 +76,17 @@ public class DataBaseMetaDataCacheTest {
         colDescriptor = tableDescriptor.getColumnDescriptor("VARCHAR_COL");
         assertThat("列名の検証", colDescriptor.getColumnName(), is("VARCHAR_COL"));
         assertThat("SQL型の検証", colDescriptor.getColumnType(), is(Types.VARCHAR));
-        assertThat("クラス名の検証", colDescriptor.getColumnClass().getName(), is(String.class.getName()));
 
         // 指定したスキーマを参照できるか
         // ssdスキーマ
         assertThat("列名の検証", checkColumnFromSsd.getColumnName(), is("CHECK_COL"));
         assertThat("SQL型の検証", checkColumnFromSsd.getColumnType(), is(Types.VARCHAR));
-        assertThat("クラス名の検証", checkColumnFromSsd.getColumnClass().getName(), is(String.class.getName()));
         // nablarchスキーマ
         tableDescriptor = sut.getTableDescriptor("nablarch","RS_TEST", nativeConnection);
         assertThat("テーブル名の検証", tableDescriptor.getTableName(), is("RS_TEST"));
         colDescriptor = tableDescriptor.getColumnDescriptor("CHECK_COL");
         assertThat("列名の検証", colDescriptor.getColumnName(), is("CHECK_COL"));
         assertThat("SQL型の検証", colDescriptor.getColumnType(), is(Types.NUMERIC));
-        assertThat("クラス名の検証", colDescriptor.getColumnClass().getName(), is(BigDecimal.class.getName()));
     }
 
     @Test
@@ -100,13 +95,11 @@ public class DataBaseMetaDataCacheTest {
         ColumnDescriptor columnDescriptor = sut.getColumnDescriptor("ssd", "RS_TEST", "CHECK_COL", nativeConnection);
         assertThat("列名の検証", columnDescriptor.getColumnName(), is("CHECK_COL"));
         assertThat("SQL型の検証", columnDescriptor.getColumnType(), is(Types.VARCHAR));
-        assertThat("クラス名の検証", columnDescriptor.getColumnClass().getName(), is(String.class.getName()));
 
         // スキーマ名がnullの場合
         columnDescriptor = sut.getColumnDescriptor(null, "RS_TEST", "CHECK_COL", nativeConnection);
         assertThat("列名の検証", columnDescriptor.getColumnName(), is("CHECK_COL"));
         assertThat("SQL型の検証", columnDescriptor.getColumnType(), is(Types.VARCHAR));
-        assertThat("クラス名の検証", columnDescriptor.getColumnClass().getName(), is(String.class.getName()));
 
         // 存在しない列名を指定
         columnDescriptor = sut.getColumnDescriptor("ssd", "RS_TEST", "DUMMY_COL", nativeConnection);
@@ -116,8 +109,6 @@ public class DataBaseMetaDataCacheTest {
         columnDescriptor = sut.getColumnDescriptor("nablarch", "RS_TEST", "CHECK_COL", nativeConnection);
         assertThat("列名の検証", columnDescriptor.getColumnName(), is("CHECK_COL"));
         assertThat("SQL型の検証", columnDescriptor.getColumnType(), is(Types.NUMERIC));
-        assertThat("クラス名の検証", columnDescriptor.getColumnClass().getName(), is(BigDecimal.class.getName()));
-
     }
 
     // 異常系

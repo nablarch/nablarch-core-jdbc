@@ -73,19 +73,14 @@ public class DataBaseMetaDataCache {
 
     private Map<String, ColumnDescriptor> createColumnDescriptors(String tableName, ResultSetMetaData meta) {
         Map<String, ColumnDescriptor> ret = new HashMap<String, ColumnDescriptor>();
-        String className = null;
         try {
             for (int i = 1; i <= meta.getColumnCount(); i++) {
                 String columnName = meta.getColumnName(i);
                 int columnType = meta.getColumnType(i);
-                className = meta.getColumnClassName(i);
-                ret.put(columnName, new ColumnDescriptor(columnName, columnType, Class.forName(className)));
+                ret.put(columnName, new ColumnDescriptor(columnName, columnType));
             }
         } catch (SQLException e) {
             throw new DbAccessException("Can not access to metadata. tablename = " + tableName, e);
-        } catch (ClassNotFoundException e) {
-            // データベースのメタ情報から取得したクラス名を指定しているので、ここには到達しない
-            throw new IllegalStateException("Can not create Class object. class = " + className, e);
         }
         return ret;
     }

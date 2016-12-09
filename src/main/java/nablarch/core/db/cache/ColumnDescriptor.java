@@ -10,12 +10,9 @@ public class ColumnDescriptor {
 
     private int columnType;
 
-    private Class columnClass;
-
-    public ColumnDescriptor(String columnName, int columnType, Class columnClass) {
+    public ColumnDescriptor(String columnName, int columnType) {
         this.columnName = columnName;
         this.columnType = columnType;
-        this.columnClass = columnClass;
     }
 
     /**
@@ -34,11 +31,4 @@ public class ColumnDescriptor {
         return columnType;
     }
 
-    /**
-     * 対応するJavaのクラスを返す。
-     * @return {@link Class}
-     */
-    public Class getColumnClass() {
-        return columnClass;
-    }
 }
