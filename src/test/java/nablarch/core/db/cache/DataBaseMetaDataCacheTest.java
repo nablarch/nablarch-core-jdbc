@@ -15,7 +15,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.sql.*;
 import java.util.Date;
 
@@ -101,10 +100,6 @@ public class DataBaseMetaDataCacheTest {
         assertThat("列名の検証", columnDescriptor.getColumnName(), is("CHECK_COL"));
         assertThat("SQL型の検証", columnDescriptor.getColumnType(), is(Types.VARCHAR));
 
-        // 存在しない列名を指定
-        columnDescriptor = sut.getColumnDescriptor("ssd", "RS_TEST", "DUMMY_COL", nativeConnection);
-        assertThat(columnDescriptor, is(nullValue()));
-
         // 指定したスキーマからデータを取得する
         columnDescriptor = sut.getColumnDescriptor("nablarch", "RS_TEST", "CHECK_COL", nativeConnection);
         assertThat("列名の検証", columnDescriptor.getColumnName(), is("CHECK_COL"));
@@ -149,6 +144,13 @@ public class DataBaseMetaDataCacheTest {
     public void testAbnormalTableForColumnDesc() {
         expectedException.expect(DbAccessException.class);
         sut.getColumnDescriptor("SSD", "DUMMY_TABLE", "VARCHAR_COL", nativeConnection);
+    }
+
+    @Test
+    public void testAbnormalColumnForColumnDesc() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("column not found. column: DUMMY_COL");
+        sut.getColumnDescriptor("SSD", "RS_TEST", "DUMMY_COL", nativeConnection);
     }
 
     @Test
