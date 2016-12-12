@@ -10,21 +10,29 @@ public class TableDescriptor {
 
     private String tableName;
 
+    private boolean isCaseSensitive;
+
     private Map<String, ColumnDescriptor> columnDescMap;
 
-    public TableDescriptor(String tableName, Map<String, ColumnDescriptor> columnDescMap) {
+    public TableDescriptor(String tableName, boolean isCaseSensitive, Map<String, ColumnDescriptor> columnDescMap) {
         this.tableName = tableName;
+        this.isCaseSensitive = isCaseSensitive;
         this.columnDescMap = columnDescMap;
     }
 
     /**
      * 指定したカラムの{@link ColumnDescriptor}を取得する。
-     * 指定したカラムが存在しない場合、nullを返す。
+     * 指定したカラムが存在しない場合、{@link IllegalArgumentException}を返す。
      * @param columnName カラム名
      * @return {@link ColumnDescriptor}
      */
     public ColumnDescriptor getColumnDescriptor(String columnName) {
-        return columnDescMap.get(columnName);
+        String key = isCaseSensitive ? columnName : columnName.toUpperCase();
+        ColumnDescriptor columnDescriptor = columnDescMap.get(key);
+        if (columnDescriptor == null) {
+            throw new IllegalArgumentException("column not found. column: " + columnName);
+        }
+        return columnDescriptor;
     }
 
     /**
@@ -35,4 +43,3 @@ public class TableDescriptor {
         return tableName;
     }
 }
-

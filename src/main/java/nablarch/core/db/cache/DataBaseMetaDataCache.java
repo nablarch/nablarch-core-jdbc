@@ -45,7 +45,7 @@ public class DataBaseMetaDataCache {
         if (tableDescriptor == null) {
             synchronized (this) {
                 ResultSetMetaData metaData = getMetaData(schema, tableName, connection);
-                tableDescriptor = new TableDescriptor(tableName, createColumnDescriptors(tableName, metaData));
+                tableDescriptor = createTableDescriptor(tableName, metaData);
                 tableDescriptorMap.put(key, tableDescriptor);
             }
         }
@@ -71,16 +71,22 @@ public class DataBaseMetaDataCache {
         return tableDescriptor.getColumnDescriptor(columnName);
     }
 
-    private Map<String, ColumnDescriptor> createColumnDescriptors(String tableName, ResultSetMetaData meta) {
-        Map<String, ColumnDescriptor> ret = new HashMap<String, ColumnDescriptor>();
+    private TableDescriptor createTableDescriptor(String tableName, ResultSetMetaData meta) {
         try {
-            for (int i = 1; i <= meta.getColumnCount(); i++) {
-                String columnName = meta.getColumnName(i);
-                int columnType = meta.getColumnType(i);
-                ret.put(columnName, new ColumnDescriptor(columnName, columnType));
-            }
+            boolean caseSensitive = meta.isCaseSensitive(1);
+            Map<String, ColumnDescriptor> columnDescriptors = createColumnDescriptors(meta);
+            return new TableDescriptor(tableName, caseSensitive, columnDescriptors);
         } catch (SQLException e) {
             throw new DbAccessException("Can not access to metadata. tablename = " + tableName, e);
+        }
+    }
+
+    private Map<String, ColumnDescriptor> createColumnDescriptors(ResultSetMetaData meta) throws SQLException {
+        Map<String, ColumnDescriptor> ret = new HashMap<String, ColumnDescriptor>();
+        for (int i = 1; i <= meta.getColumnCount(); i++) {
+            String columnName = meta.getColumnName(i);
+            int columnType = meta.getColumnType(i);
+            ret.put(columnName, new ColumnDescriptor(columnName, columnType));
         }
         return ret;
     }
