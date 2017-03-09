@@ -18,8 +18,8 @@ import org.junit.runner.RunWith;
 @RunWith(Enclosed.class)
 public class TimestampAttributeConverterTest {
 
-    private static final Timestamp INPUT = Timestamp.valueOf("2016-01-02 11:22:33.123");
-
+    private static final Timestamp INPUT = Timestamp.valueOf("2016-01-02 11:22:33.123000001");
+    
     public static class ConvertToDatabaseTest {
 
         @Rule
@@ -30,7 +30,8 @@ public class TimestampAttributeConverterTest {
 
         @Test
         public void convertToTimestamp() throws Exception {
-            assertThat(sut.convertToDatabase(INPUT, Timestamp.class), is(INPUT));
+            final Timestamp actual = sut.convertToDatabase(INPUT, Timestamp.class);
+            assertThat(actual, is(INPUT));
         }
 
         @Test
@@ -40,7 +41,7 @@ public class TimestampAttributeConverterTest {
 
         @Test
         public void convertToString() throws Exception {
-            assertThat(sut.convertToDatabase(INPUT, String.class), is("2016-01-02 11:22:33.123"));
+            assertThat(sut.convertToDatabase(INPUT, String.class), is("2016-01-02 11:22:33.123000001"));
         }
 
         @Test
