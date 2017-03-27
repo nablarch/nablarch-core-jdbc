@@ -447,6 +447,26 @@ public abstract class SqlRowTestLogic {
         sut.getBigDecimal("varcharCol");              // 非数値の値
     }
 
+    @Test
+    public void getBigDecimal_notAllowScale() throws Exception {
+        VariousDbTestHelper.setUpTable(
+                SqlRowEntity.createFromStringCol(1L, "1", "1e-10000")
+        );
+
+        final SqlPStatement statement = connection.prepareStatement("select * from sqlrow_test where sqlrow_id = 1");
+        final SqlResultSet rs = statement.retrieve();
+        final SqlRow sut = rs.get(0);
+        try {
+            sut.getBigDecimal("varcharCol");
+            fail();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            final Throwable cause = e.getCause();
+            assertThat(cause, instanceOf(IllegalArgumentException.class));
+            assertThat(cause.getMessage(), is("Illegal scale(10000): needs to be between(-9999, 9999)"));
+        }
+    }
+
     /**
      * {@link SqlRow#getBigDecimal(String)}のテストで、
      * 対象のカラムが存在しない場合はエラーとなること。

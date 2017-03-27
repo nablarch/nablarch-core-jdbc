@@ -1,8 +1,8 @@
 package nablarch.core.db.statement;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.math.BigDecimal;
 import java.sql.Blob;
@@ -673,6 +673,25 @@ public class BasicSqlCStatementTest {
         assertThat("index:1", sut.getBigDecimal(1), is(new BigDecimal("123.45")));
         assertThat("index:2", sut.getBigDecimal(2), is(new BigDecimal("12345.12345")));
         assertThat("index:3", sut.getBigDecimal(3), is(nullValue()));
+    }
+    
+    /**
+     * {@link BasicSqlCStatement#getBigDecimal(int)}で許容されないscaleを持つ値のテスト。
+     * <p/>
+     * @throws Exception
+     */
+    @Test
+    public void getBigDecimal_notAllowScale() throws Exception {
+        sut = testConnection.prepareCall("BEGIN ?:='1e-10000'; END;");
+        sut.registerOutParameter(1, Types.VARCHAR);
+        sut.execute();
+
+        try {
+            sut.getBigDecimal(1);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), is("Illegal scale(10000): needs to be between(-9999, 9999)"));
+        }
     }
 
     /**
