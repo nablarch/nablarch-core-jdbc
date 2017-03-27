@@ -2,6 +2,8 @@ package nablarch.core.db.dialect.converter;
 
 import java.math.BigDecimal;
 
+import nablarch.core.util.NumberUtil;
+
 /**
  * {@link BigDecimal}をデータベースとの間で入出力するために変換するクラス。
  *
@@ -64,7 +66,9 @@ public class BigDecimalAttributeConverter implements AttributeConverter<BigDecim
         } else if (databaseAttribute instanceof Number) {
             return new BigDecimal(databaseAttribute.toString());
         } else if (databaseAttribute instanceof String) {
-            return new BigDecimal((String) databaseAttribute);
+            final BigDecimal result = new BigDecimal((String) databaseAttribute);
+            NumberUtil.verifyBigDecimalScale(result);
+            return result;
         }
         throw new IllegalArgumentException(
                 "unsupported data type:" + databaseAttribute.getClass()
