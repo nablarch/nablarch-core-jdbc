@@ -17,18 +17,54 @@
     <property name="sqlStatementExceptionFactory" ref="dbExceptionFactory" />
     <property name="sqlLoader" ref="sqlLoader" />
 
-    <property name="expirationSetting">
-      <component class="nablarch.core.cache.expirable.BasicExpirationSetting">
-        <property name="expirationList">
-          <list />
-        </property>
-      </component>
-    </property>
+    <property name="expirationSetting" ref="expirationSetting"/>
 
     <property name="resultSetCache">
       <component class="nablarch.core.db.cache.InMemoryResultSetCache">
         <property name="cacheSize" value="10" />
       </component>
+    </property>
+  </component>
+
+  <component name="expirationSetting"
+             class="nablarch.core.cache.expirable.BasicExpirationSetting">
+    <property name="systemTimeProvider" ref="systemTimeProvider"/>
+    <property name="expiration">
+      <map>
+        <entry key="nablarch/core/db/statement/CacheableSqlPStatementCompatibilityTest#TEST_IN_CONDITION_WITH_LIST" value="1h"/>
+        <entry key="nablarch/core/db/statement/CacheableSqlPStatementCompatibilityTest#TEST_IN_CONDITION_WITH_MAP" value="1h"/>
+        <entry key="nablarch/core/db/statement/CacheableSqlPStatementCompatibilityTest#TEST_IN_CONDITION_WITH_ARRAY" value="1h"/>
+        <entry key="nablarch/core/db/statement/CacheableSqlPStatementCompatibilityTest#TEST_IN_CONDITION_WRITE_ARRAY_INDEX" value="1h"/>
+        <entry key="nablarch/core/db/statement/CacheableSqlPStatementCompatibilityTest#TEST_IN_CONDITION_DO_SORT" value="1h"/>
+      </map>
+    </property>
+  </component>
+
+  <component name="systemTimeProvider" class="nablarch.util.FixedSystemTimeProvider">
+    <property name="fixedDate" value="20140101000000"/>
+  </component>
+
+  <!-- ユーザID設定ハンドラ -->
+  <component name="userIdAnnotationHandler"
+             class="nablarch.core.db.statement.autoproperty.UserIdAnnotationHandler">
+  </component>
+
+  <!-- リクエストID設定ハンドラ -->
+  <component name="requestIdAnnotationHandler"
+             class="nablarch.core.db.statement.autoproperty.RequestIdAnnotationHandler">
+  </component>
+
+  <!-- フィールドアノテーションハンドラの設定 -->
+  <list name="fieldAnnotationHandler">
+    <component-ref name="userIdAnnotationHandler" />
+    <component-ref name="requestIdAnnotationHandler" />
+  </list>
+
+  <!-- 初期化機能の設定 -->
+  <component name="initializer" class="nablarch.core.repository.initialization.BasicApplicationInitializer">
+    <property name="initializeList">
+      <list>
+      </list>
     </property>
   </component>
 </component-configuration>

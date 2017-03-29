@@ -2646,6 +2646,7 @@ public abstract class BasicSqlPStatementTestLogic {
                 .getString("entityId"), is("10001"));
         assertThat(actual.get(1)
                 .getString("entityId"), is("10002"));
+        OnMemoryLogWriter.assertLogContains("writer.memory", "id% = [1%]");
     }
 
     /**
@@ -2667,7 +2668,7 @@ public abstract class BasicSqlPStatementTestLogic {
                 .getString("entityId"), is("10002"));
         assertThat(actual.get(2)
                 .getString("entityId"), is("10003"));
-
+        OnMemoryLogWriter.assertLogContains("writer.memory", "%id% = [%000%]");
     }
 
     /**
@@ -2685,6 +2686,7 @@ public abstract class BasicSqlPStatementTestLogic {
 
         assertThat(actual.get(0)
                 .getString("entityId"), is("10002"));
+        OnMemoryLogWriter.assertLogContains("writer.memory", "%id = [%0002]");
     }
 
     /**
@@ -3735,6 +3737,8 @@ public abstract class BasicSqlPStatementTestLogic {
                 .getString("varcharcol"), is("a"));
         assertThat(actual.get(1)
                 .getString("varcharcol"), is("b"));
+        OnMemoryLogWriter.assertLogContains("writer.memory", "varchars[0] = [a]");
+        OnMemoryLogWriter.assertLogContains("writer.memory", "varchars[1] = [b]");
 
         sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE VARCHAR_COL IN (:varchars[1]) ORDER BY ENTITY_ID",
@@ -3743,6 +3747,7 @@ public abstract class BasicSqlPStatementTestLogic {
         assertThat(actual.size(), is(1));
         assertThat(actual.get(0)
                 .getString("varcharCol"), is("b"));
+        OnMemoryLogWriter.assertLogContains("writer.memory", "varchars[1] = [b]");
 
         if(!isFieldAccess){
             final TestEntity entity = (TestEntity) condition;
@@ -3756,6 +3761,22 @@ public abstract class BasicSqlPStatementTestLogic {
                 condition);
         actual = sut.retrieve(condition);
         assertThat(actual.size(), is(0));
+        OnMemoryLogWriter.assertLogContains("writer.memory", "varchars[] = [null]");
+
+        if(!isFieldAccess){
+            final TestEntity entity = (TestEntity) condition;
+            entity.varchars = null;
+        } else {
+            final TestFieldEntity entity = (TestFieldEntity) condition;
+            entity.varchars = null;
+        }
+
+        sut = dbCon.prepareParameterizedSqlStatement(
+                "SELECT * FROM STATEMENT_TEST_TABLE WHERE VARCHAR_COL IN (:varchars[]) ORDER BY ENTITY_ID",
+                condition);
+        actual = sut.retrieve(condition);
+        assertThat(actual.size(), is(0));
+        OnMemoryLogWriter.assertLogContains("writer.memory", "varchars[] = [null]");
     }
 
     /**

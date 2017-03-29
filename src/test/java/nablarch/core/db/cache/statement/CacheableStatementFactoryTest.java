@@ -268,7 +268,7 @@ public class CacheableStatementFactoryTest {
         assertThat(rs.get(0).getString("colName1"), is("10002"));
 
         // キャッシュにのる。
-        ResultSetCacheKey key = new ResultSetCacheKeyBuilder(sqlId).addParam("colName1", "%002")
+        ResultSetCacheKey key = new ResultSetCacheKeyBuilder(sqlId).addParam("%colName1", "%002")
                                                                    .build();
         SqlResultSet cached = cache.getIfNotExpired(key);
         assertThat(rs, is(cached));
@@ -289,7 +289,7 @@ public class CacheableStatementFactoryTest {
         assertThat(rs.get(0).getString("colName1"), is("10002"));
 
         // キャッシュにのる。
-        ResultSetCacheKey key = new ResultSetCacheKeyBuilder(sqlId).addParam("colName1", "%002")
+        ResultSetCacheKey key = new ResultSetCacheKeyBuilder(sqlId).addParam("%colName1", "%002")
                                                                    .build();
         SqlResultSet cached = cache.getIfNotExpired(key);
         assertThat(rs, is(cached));

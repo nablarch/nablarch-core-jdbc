@@ -447,6 +447,26 @@ public abstract class SqlRowTestLogic {
         sut.getBigDecimal("varcharCol");              // 非数値の値
     }
 
+    @Test
+    public void getBigDecimal_notAllowScale() throws Exception {
+        VariousDbTestHelper.setUpTable(
+                SqlRowEntity.createFromStringCol(1L, "1", "1e-10000")
+        );
+
+        final SqlPStatement statement = connection.prepareStatement("select * from sqlrow_test where sqlrow_id = 1");
+        final SqlResultSet rs = statement.retrieve();
+        final SqlRow sut = rs.get(0);
+        try {
+            sut.getBigDecimal("varcharCol");
+            fail();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            final Throwable cause = e.getCause();
+            assertThat(cause, instanceOf(IllegalArgumentException.class));
+            assertThat(cause.getMessage(), is("Illegal scale(10000): needs to be between(-9999, 9999)"));
+        }
+    }
+
     /**
      * {@link SqlRow#getBigDecimal(String)}のテストで、
      * 対象のカラムが存在しない場合はエラーとなること。
@@ -990,14 +1010,21 @@ public abstract class SqlRowTestLogic {
 
     /**
      * Mapインタフェースを実装したメソッド全般のテスト
+     * <p/>
+     * Mapを引数に取るコンストラクタを使用してSqlRowを生成し、
+     * どちらも同じ結果になることも合わせて確認する。
      *
      * @throws Exception
      */
     @Test
-    public void mapMethod() throws Exception {
-        SqlRow sut = new SqlRow(new HashMap<String, Object>(), new HashMap<String, Integer>(),
-                new HashMap<String, String>());
+    public void testMapMethod() throws Exception {
+        assertMapSqlRow(new SqlRow(new HashMap<String, Object>(), new HashMap<String, Integer>(),
+                new HashMap<String, String>()));
 
+        assertMapSqlRow(new SqlRow(new HashMap<String, Object>(), new HashMap<String, Integer>()));
+    }
+
+    private void assertMapSqlRow(final SqlRow sut) throws Exception {
         assertThat("初期化後のサイズは0", sut.size(), is(0));
         assertThat("初期化直後は空", sut.isEmpty(), is(true));
         assertThat("値を追加した場合、古い値が存在しないのでnullが返却される。", sut.put("key1", "value1"), is(nullValue()));

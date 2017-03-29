@@ -58,7 +58,7 @@ public class ResultSetIteratorTest {
 
     private final TransactionManagerConnection connection =
             repositoryResource.getComponentByType(ConnectionFactory.class)
-                    .getConnection(TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY);
+                              .getConnection(TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY);
 
     /**
      * db connection for test
@@ -67,7 +67,7 @@ public class ResultSetIteratorTest {
     public static void setupDatabase() {
         VariousDbTestHelper.createTable(TestEntity.class);
     }
-    
+
     /** テストでDATE型に格納する値 */
     private Date testDate;
 
@@ -132,13 +132,13 @@ public class ResultSetIteratorTest {
 
         assertThat(sut.next(), is(true));
         assertThat("1レコード目", sut.getRow()
-                .getString("char_col"), is("00001"));
+                                .getString("char_col"), is("00001"));
         assertThat(sut.next(), is(true));
         assertThat("2レコード目", sut.getRow()
-                .getString("char_col"), is("00002"));
+                                .getString("char_col"), is("00002"));
         assertThat(sut.next(), is(true));
         assertThat("3レコード目", sut.getRow()
-                .getString("char_col"), is("00003"));
+                                .getString("char_col"), is("00003"));
     }
 
     /**
@@ -151,7 +151,8 @@ public class ResultSetIteratorTest {
 
             @Override
             public Object convert(ResultSet rs, ResultSetMetaData rsmd, int columnIndex) throws SQLException {
-                return rs.getString(columnIndex).substring(4);
+                return rs.getString(columnIndex)
+                         .substring(4);
             }
 
             @Override
@@ -160,8 +161,9 @@ public class ResultSetIteratorTest {
             }
         }
 
-        final PreparedStatement statement = connection.getConnection().prepareStatement(
-                "SELECT * FROM RS_TEST ORDER BY CHAR_COL");
+        final PreparedStatement statement = connection.getConnection()
+                                                      .prepareStatement(
+                                                              "SELECT * FROM RS_TEST ORDER BY CHAR_COL");
         final ResultSet rs = statement.executeQuery();
         final ResultSetIterator sut = new ResultSetIterator(rs, new Convertor(),
                 new DbExecutionContext(connection, new DefaultDialect(), "default"));
@@ -185,13 +187,13 @@ public class ResultSetIteratorTest {
 
         assertThat(iterator.hasNext(), is(true));
         assertThat("1レコード目", iterator.next()
-                .getString("charCol"), is("00001"));
+                                     .getString("charCol"), is("00001"));
         assertThat(iterator.hasNext(), is(true));
         assertThat("2レコード目", iterator.next()
-                .getString("charCol"), is("00002"));
+                                     .getString("charCol"), is("00002"));
         assertThat(iterator.hasNext(), is(true));
         assertThat("3レコード目", iterator.next()
-                .getString("charCol"), is("00003"));
+                                     .getString("charCol"), is("00003"));
         assertThat("4レコード目は存在しない", iterator.hasNext(), is(false));
     }
 
@@ -280,7 +282,8 @@ public class ResultSetIteratorTest {
      */
     @Test
     public void getMetaData() throws Exception {
-        final SqlPStatement statement = connection.prepareStatement("SELECT CHAR_COL, '1' hoge, '2' fuga FROM RS_TEST ORDER BY CHAR_COL");
+        final SqlPStatement statement = connection.prepareStatement(
+                "SELECT CHAR_COL, '1' hoge, '2' fuga FROM RS_TEST ORDER BY CHAR_COL");
         final ResultSetIterator sut = statement.executeQuery();
         final ResultSetMetaData data = sut.getMetaData();
         assertThat("取得できること", data, is(notNullValue()));
@@ -289,7 +292,7 @@ public class ResultSetIteratorTest {
 
     /**
      * {@link ResultSetIterator#ResultSetIterator(ResultSet, ResultSetConvertor, DbExecutionContext)}でSQLExceptionが発生するケース。
-     *
+     * <p>
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
@@ -303,7 +306,7 @@ public class ResultSetIteratorTest {
 
     /**
      * {@link ResultSetIterator#close()}のテスト。
-     *
+     * <p>
      * モックオブジェクトを使用して、内部の{@link ResultSet#close()}が確実に呼び出されていることを検証する。
      */
     @Test
@@ -342,11 +345,11 @@ public class ResultSetIteratorTest {
         assertThat("レコードが取得出来ていること", sut.next(), is(true));
 
         assertThat("文字列が取得できること", sut.getObject(1)
-                .toString(), is("あいうえお"));
+                                     .toString(), is("あいうえお"));
         assertThat("数値が取得できること", sut.getObject(2)
-                .toString(), is("12345"));
+                                    .toString(), is("12345"));
         assertThat("数値(long)が取得できること", sut.getObject(3)
-                .toString(), is("1234554321"));
+                                          .toString(), is("1234554321"));
     }
 
     /**
@@ -608,6 +611,25 @@ public class ResultSetIteratorTest {
         }
     }
 
+    @Test
+    public void getBigDecimal_notAllowScale() throws Exception {
+        VariousDbTestHelper.delete(TestEntity.class);
+        VariousDbTestHelper.setUpTable(
+                new TestEntity("00002", "1e10000", (short) 12, 12345, 1234554321L, new BigDecimal("12.3"), testDate,
+                        testTimestamp, new byte[] {0x30, 0x40, 0x31, 0x41})
+        );
+        
+        final ResultSetIterator sut = createResultSetIterator("00002");
+        assertThat("レコードが取得出来ていること", sut.next(), is(true));
+
+        try {
+            sut.getBigDecimal(1);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), is("Illegal scale(-10000): needs to be between(-9999, 9999)"));
+        }
+    }
+
     /**
      * {@link ResultSetIterator#getDate(int)}のテスト。
      */
@@ -625,7 +647,8 @@ public class ResultSetIteratorTest {
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        assertThat("timestampがたもDATEで取れる", sut.getDate(8).toString(), is("2015-03-17"));
+        assertThat("timestampがたもDATEで取れる", sut.getDate(8)
+                                              .toString(), is("2015-03-17"));
     }
 
     /**

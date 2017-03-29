@@ -11,6 +11,7 @@ import java.text.MessageFormat;
 import java.util.Date;
 
 import nablarch.core.db.DbAccessException;
+import nablarch.core.util.NumberUtil;
 
 /**
  * {@link CallableStatement}のラッパークラス。
@@ -119,7 +120,13 @@ public class BasicSqlCStatement extends BasicSqlPStatement implements SqlCStatem
     @Override
     public BigDecimal getBigDecimal(int parameterIndex) {
         try {
-            return statement.getBigDecimal(parameterIndex);
+            final BigDecimal result = statement.getBigDecimal(parameterIndex);
+            if (result == null) {
+                return result;
+            } else {
+                NumberUtil.verifyBigDecimalScale(result);
+                return result;
+            }
         } catch (SQLException e) {
             throw new DbAccessException(MessageFormat.format("failed to getBigDecimal({0})", parameterIndex), e);
         }

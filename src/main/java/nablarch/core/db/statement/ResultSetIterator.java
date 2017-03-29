@@ -14,6 +14,7 @@ import java.util.Map;
 
 import nablarch.core.db.DbAccessException;
 import nablarch.core.db.DbExecutionContext;
+import nablarch.core.util.NumberUtil;
 import nablarch.core.util.annotation.Published;
 
 /**
@@ -269,7 +270,13 @@ public class ResultSetIterator implements Iterable<SqlRow> {
     @Published
     public BigDecimal getBigDecimal(int columnIndex) {
         try {
-            return rs.getBigDecimal(columnIndex);
+            final BigDecimal result = rs.getBigDecimal(columnIndex);
+            if (result == null) {
+                return result;
+            } else {
+                NumberUtil.verifyBigDecimalScale(result);
+                return result;
+            }
         } catch (SQLException e) {
             throw new DbAccessException("failed to getBigDecimal. column index = [" + columnIndex + ']', e);
         }

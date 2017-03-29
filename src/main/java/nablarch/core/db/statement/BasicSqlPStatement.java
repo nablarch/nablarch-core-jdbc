@@ -1111,7 +1111,7 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
 
             final Object dbValue = convertToDatabase(value);
             statement.setObject(i + 1, dbValue);
-            paramHolder.add(namedParameterHolder.getParameterName(), dbValue);
+            paramHolder.add(namedParameterHolder.getOriginalParameterName(), dbValue);
         }
     }
 
@@ -1448,6 +1448,9 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
         /** パラメータ名 */
         private final String parameterName;
 
+        /** 未修正のパラメータ名 */
+        private final String originalParameterName;
+
         /** 前方一致か否か */
         private final boolean forwardMatch;
 
@@ -1466,6 +1469,9 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
          * @param parameterName パラメータ名
          */
         public NamedParameterHolder(final String parameterName) {
+
+            originalParameterName = parameterName;
+
             forwardMatch = isForwardMatchCondition(parameterName);
             backWardMatch = isBackWardMatchCondition(parameterName);
 
@@ -1481,7 +1487,7 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
             // 配列パラメータの処理
             final Matcher matcher = array_pattern.matcher(tmpParameterName);
             if (matcher.matches()) {
-                // 配列を表すパラメータの場/**/合
+                // 配列を表すパラメータの場合
                 array = true;
                 tmpParameterName = matcher.group(1);
                 arrayPosition = toIntPosition(tmpParameterName, matcher.group(2));
@@ -1568,6 +1574,15 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
          */
         public String getParameterName() {
             return parameterName;
+        }
+
+        /**
+         * 修正前のパラメータ名を取得する。
+         *
+         * @return 修正前のパラメータ名
+         */
+        public String getOriginalParameterName() {
+            return originalParameterName;
         }
 
         /**
