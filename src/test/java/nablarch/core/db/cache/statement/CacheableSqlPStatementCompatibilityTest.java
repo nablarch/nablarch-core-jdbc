@@ -1,23 +1,9 @@
 package nablarch.core.db.cache.statement;
 
 
-import nablarch.core.db.connection.BasicDbConnectionFactoryForDataSource;
-import nablarch.core.db.connection.ConnectionFactory;
-import nablarch.core.db.statement.BasicSqlPStatementTestLogic;
-import nablarch.core.db.statement.ParameterizedSqlPStatement;
-import nablarch.core.db.statement.SqlPStatement;
-import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.support.db.helper.DatabaseTestRunner;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Arrays;
@@ -25,8 +11,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import nablarch.core.db.connection.BasicDbConnectionFactoryForDataSource;
+import nablarch.core.db.connection.ConnectionFactory;
+import nablarch.core.db.statement.BasicSqlPStatementTestLogic;
+import nablarch.core.db.statement.ParameterizedSqlPStatement;
+import nablarch.core.db.statement.SqlPStatement;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
+
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * {@link CacheableSqlPStatement}が{@link SqlPStatement}と
@@ -47,6 +51,11 @@ public class CacheableSqlPStatementCompatibilityTest extends BasicSqlPStatementT
     public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
             "nablarch/core/db/statement/CacheableSqlPStatementCompatibilityTestConfiguration.xml");
 
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        VariousDbTestHelper.createTable(CacheTestEntity.class);
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -58,28 +67,29 @@ public class CacheableSqlPStatementCompatibilityTest extends BasicSqlPStatementT
      * テスト用のエンティティ。
      */
     @Entity
-    @Table(name = "statement_test_table")
+    @Table(name = "CACHE_STATEMENT_TEST_TABLE")
     public static class CacheTestEntity {
+        @Id
         @Column(name = "COL_NAME_1")
-        String colName1;
+        public String colName1;
         @Column(name = "COL_NAME_2")
-        String colName2;
+        public String colName2;
         @Column(name = "COL_NAME_3")
-        Integer colName3;
+        public Integer colName3;
         @Column(name = "COL_NAME_4")
-        Date colName4;
+        public Date colName4;
         @Column(name = "COL_NAME_5")
-        Timestamp colName5;
+        public Timestamp colName5;
         @Column(name = "COL_NAME_6")
-        Long colName6;
+        public Long colName6;
         @Transient
-        Object[] array;
+        public Object[] array;
         @Transient
-        List<String> list;
+        public List<String> list;
         @Transient
-        Map<String, String[]> map;
+        public Map<String, String[]> map;
         @Transient
-        String sortId;
+        public String sortId;
 
         public String getColName1() {
             return colName1;
@@ -120,6 +130,12 @@ public class CacheableSqlPStatementCompatibilityTest extends BasicSqlPStatementT
         public Map<String, String[]> getMap() {
             return map;
         }
+
+        public static CacheTestEntity ofColName1(String colName1) {
+            final CacheTestEntity entity = new CacheTestEntity();
+            entity.colName1 = colName1;
+            return entity;
+        }
     }
 
     /**
@@ -127,6 +143,13 @@ public class CacheableSqlPStatementCompatibilityTest extends BasicSqlPStatementT
      */
     @Test
     public void testInConditionWithMap() throws Exception {
+        
+        VariousDbTestHelper.setUpTable(
+                CacheTestEntity.ofColName1("10001"),
+                CacheTestEntity.ofColName1("10002"),
+                CacheTestEntity.ofColName1("10003"),
+                CacheTestEntity.ofColName1("10004")
+        );
         String sqlId = PREFIX + "TEST_IN_CONDITION_WITH_MAP";
         Map<String, Object[]> params = new HashMap<String, Object[]>();
         params.put("map", new Object[]{"10002", "10003"});
