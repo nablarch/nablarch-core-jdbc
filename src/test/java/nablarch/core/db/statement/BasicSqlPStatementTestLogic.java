@@ -2,9 +2,7 @@ package nablarch.core.db.statement;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
@@ -20,6 +18,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -3777,6 +3776,108 @@ public abstract class BasicSqlPStatementTestLogic {
         actual = sut.retrieve(condition);
         assertThat(actual.size(), is(0));
         OnMemoryLogWriter.assertLogContains("writer.memory", "varchars[] = [null]");
+    }
+    
+    public static class ListCondition {
+        private List<String> inCondition;
+
+        public ListCondition(final List<String> inCondition) {
+            this.inCondition = inCondition;
+        }
+
+        public List<String> getInCondition() {
+            return inCondition;
+        }
+    }
+    
+    /**
+     * {@link BasicSqlPStatement#retrieve(Object)}でIN条件を持つSQL文にListを条件で指定するテスト。
+     */
+    @Test
+    public void retrieve_withListCondition() throws Exception {
+        final ListCondition condition = new ListCondition(Arrays.asList("a", "b"));
+        final ParameterizedSqlPStatement statement = dbCon.prepareParameterizedSqlStatement(
+                "select * from statement_test_table where varchar_col in (:inCondition[]) order by entity_id",
+                condition);
+        final SqlResultSet actual = statement.retrieve(condition);
+
+        assertThat(actual, hasSize(2));
+        assertThat(actual.get(0).getString("varcharCol"), is("a"));
+        assertThat(actual.get(1).getString("varcharCol"), is("b"));
+
+        OnMemoryLogWriter.assertLogContains("writer.memory", "inCondition[0] = [a]");
+        OnMemoryLogWriter.assertLogContains("writer.memory", "inCondition[1] = [b]");
+    }
+
+    /**
+     * {@link BasicSqlPStatement#retrieve(Object)}でIN条件を持つSQL文のにListを条件で指定するテスト(Fieldアクセステスト用)
+     */
+    @Test
+    public void retrieve_withListConditionViaFieldAccess() throws Exception {
+        setFieldAccessMode();
+        final ListCondition condition = new ListCondition(Arrays.asList("c_\\(like検索用)", "b"));
+        final ParameterizedSqlPStatement statement = dbCon.prepareParameterizedSqlStatement(
+                "select * from statement_test_table where varchar_col in (:inCondition[]) order by entity_id",
+                condition);
+        final SqlResultSet actual = statement.retrieve(condition);
+
+        assertThat(actual, hasSize(2));
+        assertThat(actual.get(0).getString("varcharCol"), is("b"));
+        assertThat(actual.get(1).getString("varcharCol"), is("c_\\(like検索用)"));
+
+        OnMemoryLogWriter.assertLogContains("writer.memory", "inCondition[0] = [c_\\(like検索用)]");
+        OnMemoryLogWriter.assertLogContains("writer.memory", "inCondition[1] = [b]");
+    }
+    
+    public static class ArrayCondition {
+        private int[] cond;
+
+        public ArrayCondition(final int[] cond) {
+            this.cond = cond;
+        }
+
+        public int[] getCond() {
+            return cond;
+        }
+    }
+    
+    /**
+     * {@link BasicSqlPStatement#retrieve(Object)}でIN条件を持つSQL文に配列を条件で指定するテスト。
+     */
+    @Test
+    public void retrieve_withArrayCondition() throws Exception {
+        final ArrayCondition condition = new ArrayCondition(new int[] {30000, 10000});
+        final ParameterizedSqlPStatement statement = dbCon.prepareParameterizedSqlStatement(
+                "select * from statement_test_table where long_col in (:cond[]) order by entity_id",
+                condition);
+        final SqlResultSet actual = statement.retrieve(condition);
+
+        assertThat(actual, hasSize(2));
+        assertThat(actual.get(0).getLong("longCol"), is(10000L));
+        assertThat(actual.get(1).getLong("longCol"), is(30000L));
+
+        OnMemoryLogWriter.assertLogContains("writer.memory", "cond[0] = [30000]");
+        OnMemoryLogWriter.assertLogContains("writer.memory", "cond[1] = [10000]");
+    }
+    
+    /**
+     * {@link BasicSqlPStatement#retrieve(Object)}でIN条件を持つSQL文に配列を条件で指定するテスト。(Fieldアクセステスト用)
+     */
+    @Test
+    public void retrieve_withArrayConditionViaFieldAccess() throws Exception {
+        setFieldAccessMode();
+        final ArrayCondition condition = new ArrayCondition(new int[] {30000, 10000});
+        final ParameterizedSqlPStatement statement = dbCon.prepareParameterizedSqlStatement(
+                "select * from statement_test_table where long_col in (:cond[]) order by entity_id",
+                condition);
+        final SqlResultSet actual = statement.retrieve(condition);
+
+        assertThat(actual, hasSize(2));
+        assertThat(actual.get(0).getLong("longCol"), is(10000L));
+        assertThat(actual.get(1).getLong("longCol"), is(30000L));
+
+        OnMemoryLogWriter.assertLogContains("writer.memory", "cond[0] = [30000]");
+        OnMemoryLogWriter.assertLogContains("writer.memory", "cond[1] = [10000]");
     }
 
     /**

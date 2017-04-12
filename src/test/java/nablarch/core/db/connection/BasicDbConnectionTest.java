@@ -23,7 +23,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.sql.DataSource;
 
 import nablarch.core.db.DbAccessException;
 import nablarch.core.db.DbExecutionContext;
@@ -73,8 +72,6 @@ public class BasicDbConnectionTest {
     /** jdbc connection of target instance */
     private Connection jdbcConnection;
 
-    private static DataSource dataSource;
-
     @ClassRule
     public static SystemRepositoryResource repository = new SystemRepositoryResource("db-default.xml");
 
@@ -91,14 +88,13 @@ public class BasicDbConnectionTest {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        dataSource = repository.getComponentByType(DataSource.class);
         VariousDbTestHelper.createTable(UserTestEntity.class);
     }
 
     @Before
     public void before() throws SQLException {
 
-        jdbcConnection = dataSource.getConnection();
+        jdbcConnection = VariousDbTestHelper.getNativeConnection();
         sut = new BasicDbConnection(jdbcConnection);
         sut.initialize();
         sut.setContext(createContext(sut));
