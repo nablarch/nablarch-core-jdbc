@@ -383,6 +383,7 @@ public class ResultSetIterator implements Iterable<SqlRow> {
      * @throws DbAccessException {@link SQLException}が発生した場合
      * @see ResultSet#close()
      */
+    @Published
     public void close() {
         try {
             rs.close();
@@ -397,6 +398,7 @@ public class ResultSetIterator implements Iterable<SqlRow> {
      *
      * @return ResultSetMetaDataオブジェクト
      */
+    @Published(tag = "architect")
     public ResultSetMetaData getMetaData() {
         return metaData;
     }
