@@ -47,8 +47,6 @@ dependencies {
 
 test {
 
-  ignoreFailures = true
-
   cobertura {
     coverageSourceDirs = ["${projectDir}/src/main/java/"]
     coverageIgnoreTrivial = true
