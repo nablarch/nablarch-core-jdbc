@@ -570,7 +570,7 @@ public class BasicDbConnection implements TransactionManagerConnection {
      * ステートメントをクローズする。<br>
      * 本データベースオブジェクトから生成されたステートメントオブジェクトを一括でクローズする。
      */
-    private void closeStatements() {
+    public void closeStatements() {
         RuntimeException err = null;
         List<SqlStatement> temp = statements;
         statements = null;
@@ -584,6 +584,7 @@ public class BasicDbConnection implements TransactionManagerConnection {
                 }
             }
         }
+        statements = new ArrayList<SqlStatement>();
         if (err != null) {
             throw err;
         }
