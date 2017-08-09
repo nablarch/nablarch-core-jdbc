@@ -1,10 +1,10 @@
 package nablarch.core.db.dialect.converter;
 
-import nablarch.core.util.StringUtil;
-
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
+
+import nablarch.core.util.StringUtil;
 
 /**
  * {@link String}をデータベースとの間で入出力するために変換するクラス。
@@ -30,7 +30,7 @@ public class StringAttributeConverter implements AttributeConverter<String> {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <DB> DB convertToDatabase(final String javaAttribute, final Class<DB> databaseType) {
+    public <DB> Object convertToDatabase(final String javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(String.class)) {
             return databaseType.cast(javaAttribute);
         } else if (databaseType.isAssignableFrom(Short.class)) {

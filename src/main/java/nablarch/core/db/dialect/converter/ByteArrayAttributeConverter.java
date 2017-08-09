@@ -22,7 +22,7 @@ public class ByteArrayAttributeConverter implements AttributeConverter<byte[]> {
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
      */
     @Override
-    public <DB> DB convertToDatabase(final byte[] javaAttribute, final Class<DB> databaseType) {
+    public <DB> Object convertToDatabase(final byte[] javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(byte[].class)) {
             return databaseType.cast(javaAttribute);
         }

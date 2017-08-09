@@ -22,11 +22,11 @@ public class UtilDateAttributeConverter implements AttributeConverter<Date> {
      * </ul>
      *
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
-     * また、{@link null}もサポートしない。
+     * また、{@code null}もサポートしない。
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <DB> DB convertToDatabase(final Date javaAttribute, final Class<DB> databaseType) {
+    public <DB> Object convertToDatabase(final Date javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(java.sql.Date.class)) {
             return (DB) new java.sql.Date(DbUtil.trimTime(javaAttribute)
                                                 .getTimeInMillis());

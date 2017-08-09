@@ -6,6 +6,8 @@ import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 
+import org.hamcrest.CoreMatchers;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -27,28 +29,29 @@ public class BigDecimalAttributeConverterTest {
 
         @Test
         public void convertToBigDecimal() throws Exception {
-            assertThat(sut.convertToDatabase(BigDecimal.TEN, BigDecimal.class), is(BigDecimal.TEN));
+            assertThat(sut.convertToDatabase(BigDecimal.TEN, BigDecimal.class), CoreMatchers.<Object>is(BigDecimal.TEN));
         }
 
         @Test
         public void convertToInteger() throws Exception {
-            assertThat(sut.convertToDatabase(new BigDecimal("12123"), Integer.class), is(12123));
+            assertThat(sut.convertToDatabase(new BigDecimal("12123"), Integer.class), CoreMatchers.<Object>is(12123));
         }
 
         @Test
         public void convertToToLong() throws Exception {
-            assertThat(sut.convertToDatabase(new BigDecimal("321123"), Long.class), is(321123L));
+            assertThat(sut.convertToDatabase(new BigDecimal("321123"), Long.class), CoreMatchers.<Object>is(321123L));
         }
 
         @Test
         public void convertToShort() throws Exception {
-            assertThat(sut.convertToDatabase(new BigDecimal("100"), Short.class), is(Short.valueOf("100")));
+            assertThat(sut.convertToDatabase(new BigDecimal("100"), Short.class),
+                    CoreMatchers.<Object>is(Short.valueOf("100")));
 
         }
 
         @Test
         public void convertToString() throws Exception {
-            assertThat(sut.convertToDatabase(new BigDecimal("1.1"), String.class), is("1.1"));
+            assertThat(sut.convertToDatabase(new BigDecimal("1.1"), String.class), CoreMatchers.<Object>is("1.1"));
         }
 
         @Test

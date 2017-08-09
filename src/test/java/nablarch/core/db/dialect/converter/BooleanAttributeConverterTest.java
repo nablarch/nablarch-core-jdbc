@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 
+import org.hamcrest.CoreMatchers;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -28,31 +30,31 @@ public class BooleanAttributeConverterTest {
 
         @Test
         public void convertToBoolean() throws Exception {
-            assertThat(sut.convertToDatabase(true, Boolean.class), is(Boolean.TRUE));
+            assertThat(sut.convertToDatabase(true, Boolean.class), CoreMatchers.<Object>is(Boolean.TRUE));
         }
 
         @Test
         public void convertToBigDecimal() throws Exception {
-            assertThat(sut.convertToDatabase(true, BigDecimal.class), is(BigDecimal.ONE));
-            assertThat(sut.convertToDatabase(false, BigDecimal.class), is(BigDecimal.ZERO));
+            assertThat(sut.convertToDatabase(true, BigDecimal.class), CoreMatchers.<Object>is(BigDecimal.ONE));
+            assertThat(sut.convertToDatabase(false, BigDecimal.class), CoreMatchers.<Object>is(BigDecimal.ZERO));
         }
 
         @Test
         public void convertToInteger() throws Exception {
-            assertThat(sut.convertToDatabase(true, Integer.class), is(1));
-            assertThat(sut.convertToDatabase(false, Integer.class), is(0));
+            assertThat(sut.convertToDatabase(true, Integer.class), CoreMatchers.<Object>is(1));
+            assertThat(sut.convertToDatabase(false, Integer.class), CoreMatchers.<Object>is(0));
         }
 
         @Test
         public void convertToLong() throws Exception {
-            assertThat(sut.convertToDatabase(true, Long.class), is(1L));
-            assertThat(sut.convertToDatabase(false, Long.class), is(0L));
+            assertThat(sut.convertToDatabase(true, Long.class), CoreMatchers.<Object>is(1L));
+            assertThat(sut.convertToDatabase(false, Long.class), CoreMatchers.<Object>is(0L));
         }
 
         @Test
         public void convertToShort() throws Exception {
-            assertThat(sut.convertToDatabase(true, Short.class), is(Short.valueOf("1")));
-            assertThat(sut.convertToDatabase(false, Short.class), is(Short.valueOf("0")));
+            assertThat(sut.convertToDatabase(true, Short.class), CoreMatchers.<Object>is(Short.valueOf("1")));
+            assertThat(sut.convertToDatabase(false, Short.class), CoreMatchers.<Object>is(Short.valueOf("0")));
         }
 
         @Test
@@ -120,8 +122,8 @@ public class BooleanAttributeConverterTest {
 
         @Test
         public void convertToDatabase() throws Exception {
-            assertThat(sut.convertToDatabase(true, Boolean.class), is(true));
-            assertThat(sut.convertToDatabase(false, Boolean.class), is(false));
+            assertThat(sut.convertToDatabase(true, Boolean.class), CoreMatchers.<Object>is(true));
+            assertThat(sut.convertToDatabase(false, Boolean.class), CoreMatchers.<Object>is(false));
         }
         
         @Test

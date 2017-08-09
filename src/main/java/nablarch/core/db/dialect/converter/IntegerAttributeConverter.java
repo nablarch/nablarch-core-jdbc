@@ -21,11 +21,11 @@ public class IntegerAttributeConverter implements AttributeConverter<Integer> {
      * </ul>
      *
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
-     * また、{@link null}もサポートしない。
+     * また、{@code null}もサポートしない。
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <DB> DB convertToDatabase(final Integer javaAttribute, final Class<DB> databaseType) {
+    public <DB> Object convertToDatabase(final Integer javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(Integer.class)) {
             return databaseType.cast(javaAttribute);
         } else if (databaseType.isAssignableFrom(BigDecimal.class)) {
@@ -81,7 +81,7 @@ public class IntegerAttributeConverter implements AttributeConverter<Integer> {
         private final IntegerAttributeConverter converter = new IntegerAttributeConverter();
 
         @Override
-        public <DB> DB convertToDatabase(final Integer javaAttribute, final Class<DB> databaseType) {
+        public <DB> Object convertToDatabase(final Integer javaAttribute, final Class<DB> databaseType) {
             return converter.convertToDatabase(javaAttribute, databaseType);
         }
 

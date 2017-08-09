@@ -8,6 +8,8 @@ import java.sql.Date;
 import java.sql.Ref;
 import java.sql.Timestamp;
 
+import org.hamcrest.CoreMatchers;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -32,42 +34,44 @@ public class StringAttributeConverterTest {
 
         @Test
         public void toStringType() throws Exception {
-            assertThat(sut.convertToDatabase("abc", String.class), is("abc"));
+            assertThat(sut.convertToDatabase("abc", String.class), CoreMatchers.<Object>is("abc"));
         }
 
         @Test
         public void toBigDecimalType() throws Exception {
-            assertThat(sut.convertToDatabase("1", BigDecimal.class), is(BigDecimal.ONE));
+            assertThat(sut.convertToDatabase("1", BigDecimal.class), CoreMatchers.<Object>is(BigDecimal.ONE));
         }
 
         @Test
         public void toLongType() throws Exception {
-            assertThat(sut.convertToDatabase("1", Long.class), is(1L));
+            assertThat(sut.convertToDatabase("1", Long.class), CoreMatchers.<Object>is(1L));
         }
 
         @Test
         public void toIntegerType() throws Exception {
-            assertThat(sut.convertToDatabase("1", Integer.class), is(1));
+            assertThat(sut.convertToDatabase("1", Integer.class), CoreMatchers.<Object>is(1));
         }
 
         @Test
         public void toShortType() throws Exception {
-            assertThat(sut.convertToDatabase("1", Short.class), is(Short.valueOf("1")));
+            assertThat(sut.convertToDatabase("1", Short.class), CoreMatchers.<Object>is(Short.valueOf("1")));
         }
 
         @Test
         public void toDateType() throws Exception {
-            assertThat(sut.convertToDatabase("2016-12-02", Date.class), is(Date.valueOf("2016-12-02")));
+            assertThat(sut.convertToDatabase("2016-12-02", Date.class),
+                    CoreMatchers.<Object>is(Date.valueOf("2016-12-02")));
         }
 
         @Test
         public void toTimestampType() throws Exception {
-            assertThat(sut.convertToDatabase("2016-12-02 12:34:56.789123", Timestamp.class), is(Timestamp.valueOf("2016-12-02 12:34:56.789123")));
+            assertThat(sut.convertToDatabase("2016-12-02 12:34:56.789123", Timestamp.class),
+                    CoreMatchers.<Object>is(Timestamp.valueOf("2016-12-02 12:34:56.789123")));
         }
 
         @Test
         public void emptyStringToStringType() throws Exception {
-            assertThat(sut.convertToDatabase("", String.class), is(""));
+            assertThat(sut.convertToDatabase("", String.class), CoreMatchers.<Object>is(""));
         }
 
         @Test

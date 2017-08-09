@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Date;
 
+import org.hamcrest.CoreMatchers;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -30,27 +32,28 @@ public class LongAttributeConverterTest {
 
         @Test
         public void convertToLong() throws Exception {
-            assertThat(sut.convertToDatabase(INPUT, Long.class), is(12345L));
+            assertThat(sut.convertToDatabase(INPUT, Long.class), CoreMatchers.<Object>is(12345L));
         }
 
         @Test
         public void convertToBigDecimal() throws Exception {
-            assertThat(sut.convertToDatabase(INPUT, BigDecimal.class), is(BigDecimal.valueOf(12345L)));
+            assertThat(sut.convertToDatabase(INPUT, BigDecimal.class),
+                    CoreMatchers.<Object>is(BigDecimal.valueOf(12345L)));
         }
         
         @Test
         public void convertToInteger() throws Exception {
-            assertThat(sut.convertToDatabase(INPUT, Integer.class), is(12345));
+            assertThat(sut.convertToDatabase(INPUT, Integer.class), CoreMatchers.<Object>is(12345));
         }
         
         @Test
         public void convertToShort() throws Exception {
-            assertThat(sut.convertToDatabase(INPUT, Short.class), is((short) 12345));
+            assertThat(sut.convertToDatabase(INPUT, Short.class), CoreMatchers.<Object>is((short) 12345));
         }
 
         @Test
         public void convertToString() throws Exception {
-            assertThat(sut.convertToDatabase(INPUT, String.class), is("12345"));
+            assertThat(sut.convertToDatabase(INPUT, String.class), CoreMatchers.<Object>is("12345"));
         }
 
         @Test
@@ -114,8 +117,8 @@ public class LongAttributeConverterTest {
 
         @Test
         public void convertToDatabase() throws Exception {
-            assertThat(sut.convertToDatabase(100L, Long.class), is(100L));
-            assertThat(sut.convertToDatabase(100L, String.class), is("100"));
+            assertThat(sut.convertToDatabase(100L, Long.class), CoreMatchers.<Object>is(100L));
+            assertThat(sut.convertToDatabase(100L, String.class), CoreMatchers.<Object>is("100"));
         }
 
         @Test

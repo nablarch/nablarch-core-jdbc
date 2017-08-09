@@ -22,11 +22,11 @@ public class TimestampAttributeConverter implements AttributeConverter<Timestamp
      * </ul>
      *
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
-     * また、{@link null}もサポートしない。
+     * また、{@code null}もサポートしない。
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <DB> DB convertToDatabase(final Timestamp javaAttribute, final Class<DB> databaseType) {
+    public <DB> Object convertToDatabase(final Timestamp javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(Timestamp.class)) {
             return databaseType.cast(javaAttribute);
         } else if (databaseType.isAssignableFrom(Date.class)) {
