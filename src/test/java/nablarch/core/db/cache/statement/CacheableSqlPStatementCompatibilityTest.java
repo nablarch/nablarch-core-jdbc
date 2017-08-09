@@ -74,13 +74,13 @@ public class CacheableSqlPStatementCompatibilityTest extends BasicSqlPStatementT
         public String colName1;
         @Column(name = "COL_NAME_2")
         public String colName2;
-        @Column(name = "COL_NAME_3")
+        @Column(name = "COL_NAME_3", length = 10)
         public Integer colName3;
         @Column(name = "COL_NAME_4")
         public Date colName4;
         @Column(name = "COL_NAME_5")
         public Timestamp colName5;
-        @Column(name = "COL_NAME_6")
+        @Column(name = "COL_NAME_6", length = 18)
         public Long colName6;
         @Transient
         public Object[] array;
