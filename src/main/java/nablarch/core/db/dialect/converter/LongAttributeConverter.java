@@ -19,11 +19,11 @@ public class LongAttributeConverter implements AttributeConverter<Long> {
      * </ul>
      *
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
-     * また、{@link null}もサポートしない。
+     * また、{@code null}もサポートしない。
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <DB> DB convertToDatabase(final Long javaAttribute, final Class<DB> databaseType) {
+    public <DB> Object convertToDatabase(final Long javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(Long.class)) {
             return databaseType.cast(javaAttribute);
         } else if (databaseType.isAssignableFrom(BigDecimal.class)) {
@@ -79,7 +79,7 @@ public class LongAttributeConverter implements AttributeConverter<Long> {
         private final LongAttributeConverter converter = new LongAttributeConverter();
 
         @Override
-        public <DB> DB convertToDatabase(final Long javaAttribute, final Class<DB> databaseType) {
+        public <DB> Object convertToDatabase(final Long javaAttribute, final Class<DB> databaseType) {
             return converter.convertToDatabase(javaAttribute, databaseType);
         }
 

@@ -6,9 +6,19 @@ import static org.junit.Assert.assertThat;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.*;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.Calendar;
 import java.util.Date;
+
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
@@ -493,6 +503,10 @@ public class OracleDialectTest {
         expectedException.expectMessage("This dialect does not support [BigInteger] type.");
 
         sut.convertFromDatabase("100", BigInteger.class);
+    }
+    
+    private static Matcher<Object> is(Object expected) {
+        return Matchers.is(expected);
     }
 }
 

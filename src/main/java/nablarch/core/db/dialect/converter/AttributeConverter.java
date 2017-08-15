@@ -19,7 +19,7 @@ public interface AttributeConverter<T> {
      * @param <DB> データタイプのデータ型
      * @return 変換した値
      */
-    <DB> DB convertToDatabase(T javaAttribute, Class<DB> databaseType);
+    <DB> Object convertToDatabase(T javaAttribute, Class<DB> databaseType);
 
     /**
      * Javaのデータタイプに応じた値に変換する。

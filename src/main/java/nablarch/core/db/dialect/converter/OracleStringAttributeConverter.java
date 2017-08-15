@@ -24,8 +24,8 @@ public class OracleStringAttributeConverter extends StringAttributeConverter {
      * @return 変換後の値
      */
     @Override
-    public <DB> DB convertToDatabase(final String javaAttribute, final Class<DB> databaseType) {
-        final DB dbAttribute = super.convertToDatabase(javaAttribute, databaseType);
+    public <DB> Object convertToDatabase(final String javaAttribute, final Class<DB> databaseType) {
+        final Object dbAttribute = super.convertToDatabase(javaAttribute, databaseType);
         if (isEmptyString(dbAttribute)) {
             return null;
         } else {
@@ -40,7 +40,7 @@ public class OracleStringAttributeConverter extends StringAttributeConverter {
      * @param <DB> データベースの型
      * @return 空文字列の場合{@code true}
      */
-    private <DB> boolean isEmptyString(final DB dbAttribute) {
+    private <DB> boolean isEmptyString(final Object dbAttribute) {
         return dbAttribute instanceof String && ((String) dbAttribute).isEmpty();
     }
 }

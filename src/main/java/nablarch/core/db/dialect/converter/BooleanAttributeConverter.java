@@ -27,7 +27,7 @@ public class BooleanAttributeConverter implements AttributeConverter<Boolean> {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <DB> DB convertToDatabase(final Boolean javaAttribute, final Class<DB> databaseType) {
+    public <DB> Object convertToDatabase(final Boolean javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(Boolean.class)) {
             return databaseType.cast(javaAttribute);
         } else if (databaseType.isAssignableFrom(BigDecimal.class)) {
@@ -90,7 +90,7 @@ public class BooleanAttributeConverter implements AttributeConverter<Boolean> {
         private final BooleanAttributeConverter converter = new BooleanAttributeConverter();
 
         @Override
-        public <DB> DB convertToDatabase(final Boolean javaAttribute, final Class<DB> databaseType) {
+        public <DB> Object convertToDatabase(final Boolean javaAttribute, final Class<DB> databaseType) {
             return converter.convertToDatabase(javaAttribute, databaseType);
         }
 

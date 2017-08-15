@@ -112,7 +112,7 @@ public interface Dialect {
      * @param <DB> データベースに出力する型
      * @return 変換後の値
      */
-    <T, DB> DB convertToDatabase(final T value, final Class<DB> dbType);
+    <T, DB> Object convertToDatabase(final T value, final Class<DB> dbType);
 
     /**
      * データベースから入力(取得した値)を変換する。

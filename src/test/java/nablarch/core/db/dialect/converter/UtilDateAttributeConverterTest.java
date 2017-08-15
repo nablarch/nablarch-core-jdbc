@@ -6,6 +6,8 @@ import static org.junit.Assert.assertThat;
 import java.sql.Timestamp;
 import java.util.Date;
 
+import org.hamcrest.CoreMatchers;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -29,13 +31,14 @@ public class UtilDateAttributeConverterTest {
         
         @Test
         public void convertToSqlDate() throws Exception {
-            assertThat(sut.convertToDatabase(INPUT, java.sql.Date.class), is(java.sql.Date.valueOf("2016-12-01")));
+            assertThat(sut.convertToDatabase(INPUT, java.sql.Date.class),
+                    CoreMatchers.<Object>is(java.sql.Date.valueOf("2016-12-01")));
         }
         
         @Test
         public void convertToTimestamp() throws Exception {
             assertThat(sut.convertToDatabase(INPUT, Timestamp.class),
-                    is(Timestamp.valueOf("2016-12-01 01:02:03.123")));
+                    CoreMatchers.<Object>is(Timestamp.valueOf("2016-12-01 01:02:03.123")));
         }
         
         @Test

@@ -35,7 +35,7 @@ public class ByteArrayAttributeConverterTest {
         @Test
         public void convertToByteArray() throws Exception {
             final byte[] bytes = {0x30, 0x31};
-            assertThat(sut.convertToDatabase(bytes, byte[].class), is(bytes));
+            assertThat(sut.convertToDatabase(bytes, byte[].class), CoreMatchers.<Object>is(bytes));
         }
 
         @Test

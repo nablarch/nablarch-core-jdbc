@@ -21,11 +21,11 @@ public class ShortAttributeConverter implements AttributeConverter<Short> {
      * </ul>
      *
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
-     * また、{@link null}もサポートしない。
+     * また、{@code null}もサポートしない。
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <DB> DB convertToDatabase(final Short javaAttribute, final Class<DB> databaseType) {
+    public <DB> Object convertToDatabase(final Short javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(Short.class)) {
             return databaseType.cast(javaAttribute);
         } else if (databaseType.isAssignableFrom(Integer.class)) {
@@ -81,7 +81,7 @@ public class ShortAttributeConverter implements AttributeConverter<Short> {
         private final ShortAttributeConverter converter = new ShortAttributeConverter();
 
         @Override
-        public <DB> DB convertToDatabase(final Short javaAttribute, final Class<DB> databaseType) {
+        public <DB> Object convertToDatabase(final Short javaAttribute, final Class<DB> databaseType) {
             return converter.convertToDatabase(javaAttribute, databaseType);
         }
 

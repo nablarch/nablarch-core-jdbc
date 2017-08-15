@@ -1,25 +1,34 @@
 package nablarch.core.db.dialect;
 
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.Date;
+
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
+
+import nablarch.core.db.dialect.converter.AttributeConverter;
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.util.DbUtil;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
+
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.*;
-import java.util.Date;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
 
 /**
  * {@link DefaultDialect}のテストクラス。
@@ -156,19 +165,19 @@ public class DefaultDialectTest {
      */
     @Test
     public void testConvertToDatabase() {
-        assertThat("String", sut.convertToDatabase("string", String.class), is("string"));
-        assertThat("Short", sut.convertToDatabase(Short.valueOf("100"), BigDecimal.class), is(BigDecimal.valueOf(100)));
-        assertThat("Integer", sut.convertToDatabase(Integer.valueOf(1000), Long.class), is(Long.valueOf(1000)));
-        assertThat("Long", sut.convertToDatabase(Long.valueOf("10000"), BigDecimal.class), is(BigDecimal.valueOf(10000)));
-        assertThat("BigDecimal", sut.convertToDatabase(BigDecimal.valueOf(100000), String.class), is("100000"));
+        assertThat("String", sut.convertToDatabase("string", String.class), eq("string"));
+        assertThat("Short", sut.convertToDatabase(Short.valueOf("100"), BigDecimal.class), eq(BigDecimal.valueOf(100)));
+        assertThat("Integer", sut.convertToDatabase(Integer.valueOf(1000), Long.class), eq(Long.valueOf(1000)));
+        assertThat("Long", sut.convertToDatabase(Long.valueOf("10000"), BigDecimal.class), eq(BigDecimal.valueOf(10000)));
+        assertThat("BigDecimal", sut.convertToDatabase(BigDecimal.valueOf(100000), String.class), eq("100000"));
         assertThat("java.sql.Date", sut.convertToDatabase(java.sql.Date.valueOf("2016-12-02"), Timestamp.class),
-                is(Timestamp.valueOf("2016-12-02 00:00:00.000000")));
+                eq(Timestamp.valueOf("2016-12-02 00:00:00.000000")));
         assertThat("java.util.Date", sut.convertToDatabase(new java.util.Date(System.currentTimeMillis()), java.sql.Date.class),
-                is(new java.sql.Date(DbUtil.trimTime(new Date(System.currentTimeMillis())).getTimeInMillis())));
+                eq(new java.sql.Date(DbUtil.trimTime(new Date(System.currentTimeMillis())).getTimeInMillis())));
         assertThat("Timestamp", sut.convertToDatabase(Timestamp.valueOf("2016-12-02 11:22:33.123321"), java.sql.Date.class),
-                is(java.sql.Date.valueOf("2016-12-02")));
-        assertThat("byte[]", sut.convertToDatabase(new byte[] {0x30, 0x39}, byte[].class), is(new byte[] {0x30, 0x39}));
-        assertThat("Boolean", sut.convertToDatabase(true, Boolean.class), is(Boolean.TRUE));
+                eq(java.sql.Date.valueOf("2016-12-02")));
+        assertThat("byte[]", sut.convertToDatabase(new byte[] {0x30, 0x39}, byte[].class), eq(new byte[] {0x30, 0x39}));
+        assertThat("Boolean", sut.convertToDatabase(true, Boolean.class), eq(Boolean.TRUE));
     }
 
     /**
@@ -218,6 +227,38 @@ public class DefaultDialectTest {
     }
 
     /**
+     * カスタムなコンバータが使えること
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testCustomConverterFactory() throws Exception {
+        sut.setAttributeConverterFactory(new AttributeConverterFactory() {
+            @Override
+            public <T> AttributeConverter<T> factory(final Class<T> type) {
+                if (String.class.isAssignableFrom(type)) {
+                    return (AttributeConverter<T>) new AttributeConverter<String>() {
+                        @Override
+                        public <DB> DB convertToDatabase(final String javaAttribute, final Class<DB> databaseType) {
+                            return (DB) ('[' + javaAttribute + ']');
+                        }
+
+                        @Override
+                        public String convertFromDatabase(final Object databaseAttribute) {
+                            return '(' + databaseAttribute.toString() + ')';
+                        }
+                    };
+                } else {
+                    throw new IllegalArgumentException("ng!!!");
+                }
+            }
+        });
+
+        assertThat(sut.convertFromDatabase("テスト", String.class), eq("(テスト)"));
+        assertThat((String) sut.convertToDatabase("あいうえお", Types.VARCHAR), eq("[あいうえお]"));
+        assertThat(sut.convertToDatabase("かきくけこ", String.class), eq("[かきくけこ]"));
+    }
+
+    /**
      * DBから入力を変換するとき、
      * コンバータが設定されていないと例外を送出する。
      */
@@ -227,5 +268,9 @@ public class DefaultDialectTest {
         exception.expectMessage("This dialect does not support [BigInteger] type.");
 
         sut.convertFromDatabase("100", BigInteger.class);
+    }
+    
+    private static Matcher<Object> eq(Object expected) {
+        return Matchers.is(expected);
     }
 }

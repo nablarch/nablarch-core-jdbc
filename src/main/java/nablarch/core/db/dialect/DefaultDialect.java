@@ -4,23 +4,12 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import nablarch.core.db.dialect.converter.AttributeConverter;
-import nablarch.core.db.dialect.converter.BigDecimalAttributeConverter;
-import nablarch.core.db.dialect.converter.BooleanAttributeConverter;
-import nablarch.core.db.dialect.converter.ByteArrayAttributeConverter;
-import nablarch.core.db.dialect.converter.IntegerAttributeConverter;
-import nablarch.core.db.dialect.converter.LongAttributeConverter;
-import nablarch.core.db.dialect.converter.ShortAttributeConverter;
-import nablarch.core.db.dialect.converter.SqlDateAttributeConverter;
-import nablarch.core.db.dialect.converter.StringAttributeConverter;
-import nablarch.core.db.dialect.converter.TimestampAttributeConverter;
-import nablarch.core.db.dialect.converter.UtilDateAttributeConverter;
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
 import nablarch.core.util.annotation.Published;
@@ -37,30 +26,9 @@ public class DefaultDialect implements Dialect {
 
     /** {@link ResultSet}から値を取得するクラス */
     private static final ResultSetConvertor RESULT_SET_CONVERTOR = new DefaultResultSetConvertor();
-    
-    /**
-     * 型変換を行う{@link AttributeConverter}定義。
-     */
-    private static final Map<Class<?>, AttributeConverter<?>> ATTRIBUTE_CONVERTER_MAP;
 
-    static {
-        final Map<Class<?>, AttributeConverter<?>> attributeConverterMap = new HashMap<Class<?>, AttributeConverter<?>>();
-        attributeConverterMap.put(String.class, new StringAttributeConverter());
-        attributeConverterMap.put(Short.class, new ShortAttributeConverter());
-        attributeConverterMap.put(short.class, new ShortAttributeConverter.Primitive());
-        attributeConverterMap.put(Integer.class, new IntegerAttributeConverter());
-        attributeConverterMap.put(int.class, new IntegerAttributeConverter.Primitive());
-        attributeConverterMap.put(Long.class, new LongAttributeConverter());
-        attributeConverterMap.put(long.class, new LongAttributeConverter.Primitive());
-        attributeConverterMap.put(BigDecimal.class, new BigDecimalAttributeConverter());
-        attributeConverterMap.put(java.sql.Date.class, new SqlDateAttributeConverter());
-        attributeConverterMap.put(java.util.Date.class, new UtilDateAttributeConverter());
-        attributeConverterMap.put(Timestamp.class, new TimestampAttributeConverter());
-        attributeConverterMap.put(byte[].class, new ByteArrayAttributeConverter());
-        attributeConverterMap.put(Boolean.class, new BooleanAttributeConverter());
-        attributeConverterMap.put(boolean.class, new BooleanAttributeConverter.Primitive());
-        ATTRIBUTE_CONVERTER_MAP = Collections.unmodifiableMap(attributeConverterMap);
-    }
+    /** 型変換を行う{@link AttributeConverterFactory}を生成するクラス */
+    private AttributeConverterFactory attributeConverterFactory = new BasicAttributeConverterFactory();
 
     /**
      * SQL型に対応するJavaクラスのマッピング定義。
@@ -204,7 +172,7 @@ public class DefaultDialect implements Dialect {
 
     @Override
     public Object convertToDatabase(final Object value, final int sqlType) {
-        Class dbType = SQL_TYPE_CONVERTER_MAP.get(sqlType);
+        final Class dbType = SQL_TYPE_CONVERTER_MAP.get(sqlType);
         if (dbType == null) {
             throw new IllegalArgumentException("unsupported sqlType: " + sqlType);
         }
@@ -212,7 +180,7 @@ public class DefaultDialect implements Dialect {
     }
 
     @Override
-    public <T, DB> DB convertToDatabase(final T value, final Class<DB> dbType) {
+    public <T, DB> Object convertToDatabase(final T value, final Class<DB> dbType) {
         if (value == null) {
             return null;
         }
@@ -236,11 +204,16 @@ public class DefaultDialect implements Dialect {
      */
     @SuppressWarnings("unchecked")
     protected <T> AttributeConverter<T> getAttributeConverter(Class<T> javaType) {
-        AttributeConverter<T> converter = (AttributeConverter<T>) ATTRIBUTE_CONVERTER_MAP.get(javaType);
-        if (converter == null) {
-            throw new IllegalStateException("This dialect does not support [" + javaType.getSimpleName() + "] type.");
-        }
-        return converter;
+        return attributeConverterFactory.factory(javaType);
+    }
+
+    /**
+     * {@link AttributeConverter}のファクトリクラスを設定する。
+     *
+     * @param attributeConverterFactory ファクトリクラス。
+     */
+    public void setAttributeConverterFactory(final AttributeConverterFactory attributeConverterFactory) {
+        this.attributeConverterFactory = attributeConverterFactory;
     }
 }
 

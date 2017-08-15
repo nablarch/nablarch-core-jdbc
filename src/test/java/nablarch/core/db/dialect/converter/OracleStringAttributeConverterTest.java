@@ -6,6 +6,8 @@ import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.sql.Ref;
 
+import org.hamcrest.CoreMatchers;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -30,7 +32,7 @@ public class OracleStringAttributeConverterTest {
 
         @Test
         public void toStringType() throws Exception {
-            assertThat(sut.convertToDatabase("abc", String.class), is("abc"));
+            assertThat(sut.convertToDatabase("abc", String.class), CoreMatchers.<Object>is("abc"));
         }
 
         @Test
