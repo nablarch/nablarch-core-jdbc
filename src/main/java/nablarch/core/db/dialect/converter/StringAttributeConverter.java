@@ -1,9 +1,12 @@
 package nablarch.core.db.dialect.converter;
 
 import java.math.BigDecimal;
+import java.sql.Clob;
 import java.sql.Date;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 
+import nablarch.core.db.DbAccessException;
 import nablarch.core.util.StringUtil;
 
 /**
@@ -53,10 +56,25 @@ public class StringAttributeConverter implements AttributeConverter<String> {
     /**
      * 変換対象の値の文字列表現を返す。
      * 
-     * 変換対象が{@code null}の場合は、{@code null}を返す。
+     * 変換対象が{@code null}の場合は、{@code null}を返す。<br>
+     * 変換対象が{@link Clob}の場合には、{@link Clob#getSubString(long, int)}の結果を返す。
+     * このため、intの最大値を超える長さのCLOB値を本機能で扱うことは出来ない。
+     * {@link nablarch.core.db.statement.SqlRow#get(Object)}を使用して取得した
+     * {@link Clob}を直接使用すること。
      */
     @Override
     public String convertFromDatabase(final Object databaseAttribute) {
-        return databaseAttribute == null ? null : StringUtil.toString(databaseAttribute);
+        if (databaseAttribute == null) {
+            return null;
+        } else if (databaseAttribute instanceof Clob) {
+            final Clob clob = (Clob) databaseAttribute;
+            try {
+                return clob.getSubString(1, (int) clob.length());
+            } catch (SQLException e) {
+                throw new DbAccessException("CLOB access failed.", e);
+            }
+        } else {
+            return StringUtil.toString(databaseAttribute);
+        }
     }
 }

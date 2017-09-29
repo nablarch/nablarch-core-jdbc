@@ -4,17 +4,24 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 
 import java.math.BigDecimal;
+import java.sql.Clob;
 import java.sql.Date;
 import java.sql.Ref;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import org.hamcrest.CoreMatchers;
+
+import nablarch.core.db.DbAccessException;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+
+import mockit.Expectations;
+import mockit.Injectable;
 
 /**
  * {@link StringAttributeConverter}のテスト。
@@ -90,6 +97,9 @@ public class StringAttributeConverterTest {
 
         private final StringAttributeConverter sut = new StringAttributeConverter();
         
+        @Rule
+        public ExpectedException expectedException = ExpectedException.none();
+        
         @Test
         public void fromString() throws Exception {
             assertThat(sut.convertFromDatabase("123"), is("123"));
@@ -104,10 +114,32 @@ public class StringAttributeConverterTest {
         public void convertFromBigDecimal() throws Exception {
             assertThat(sut.convertFromDatabase(new BigDecimal("1.1")), is("1.1"));
         }
+        
+        @Test
+        public void convertFromClob(@Injectable final Clob mockClob) throws Exception {
+            new Expectations() {{
+                mockClob.length(); result = 5L;
+                mockClob.getSubString(1, 5); result = "12345";
+            }};
+
+            assertThat(sut.convertFromDatabase(mockClob), is("12345"));
+        }
+
+        @Test
+        public void convertFromClob_SQLException(@Injectable final Clob mockClob) throws Exception {
+            new Expectations() {{
+                mockClob.length(); result = new SQLException("clob access error");
+            }};
+
+            expectedException.expect(DbAccessException.class);
+            expectedException.expectMessage("CLOB access failed.");
+            sut.convertFromDatabase(mockClob);
+        }
 
         @Test
         public void fromNull() throws Exception {
             assertThat(sut.convertFromDatabase(null), is(nullValue()));
         }
     }
+
 }
