@@ -743,7 +743,6 @@ public class BasicSqlCStatementTest {
         final Date date = sut.getDate(2);
         assertThat("index:2", date, is(DateUtil.getDate("20150129")));
         assertThat("index:3", sut.getDate(3), is(nullValue()));
-        assertThat("index:4", sut.getDate(4), is(DateUtil.getDate("20150130")));
     }
 
     /**

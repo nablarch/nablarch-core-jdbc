@@ -216,13 +216,13 @@ public class OracleDialectTest {
             assertThat("変換するか否かの結果は全てtrue", convertor.isConvertible(meta, i), is(true));
         }
 
-        assertThat(convertor.convert(rs, meta, 2), is(nullValue()));
-        assertThat(convertor.convert(rs, meta, 3), is(nullValue()));
-        assertThat(convertor.convert(rs, meta, 4), is(nullValue()));
-        assertThat(convertor.convert(rs, meta, 5), is(nullValue()));
-        assertThat(convertor.convert(rs, meta, 6), is(nullValue()));
-        assertThat(convertor.convert(rs, meta, 7), is(nullValue()));
-        assertThat(convertor.convert(rs, meta, 8), is(nullValue()));
+        assertThat(convertor.convert(rs, meta, 2), nullValue());
+        assertThat(convertor.convert(rs, meta, 3), nullValue());
+        assertThat(convertor.convert(rs, meta, 4), nullValue());
+        assertThat(convertor.convert(rs, meta, 5), nullValue());
+        assertThat(convertor.convert(rs, meta, 6), nullValue());
+        assertThat(convertor.convert(rs, meta, 7), nullValue());
+        assertThat(convertor.convert(rs, meta, 8), nullValue());
     }
 
     /**
@@ -375,7 +375,7 @@ public class OracleDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
         final PreparedStatement statement = connection.prepareStatement(pingSql);
         final ResultSet rs = statement.executeQuery();
-        assertThat(rs, is(notNullValue()));
+        assertThat(rs, notNullValue());
         rs.close();
     }
 
@@ -383,7 +383,7 @@ public class OracleDialectTest {
     public void convertToDatabaseFromSqlType() throws Exception {
         // 文字データ型として出力
         Object converted = sut.convertToDatabase("", Types.VARCHAR);
-        assertThat("empty string->null", converted, is(nullValue()));
+        assertThat("empty string->null", converted, nullValue());
 
         String stringTarget = "test";
         assertThat("string->CHAR", (String) sut.convertToDatabase(stringTarget, Types.CHAR), is(stringTarget));
@@ -438,7 +438,7 @@ public class OracleDialectTest {
 
     @Test
     public void convertToDatabase() throws Exception {
-        assertThat("empty string->null", sut.convertToDatabase("", String.class), is(nullValue()));
+        assertThat("empty string->null", sut.convertToDatabase("", String.class), nullValue());
         assertThat("string", sut.convertToDatabase("あいうえお", String.class), is("あいうえお"));
         assertThat("Short", sut.convertToDatabase(Short.valueOf("100"), BigDecimal.class), is(BigDecimal.valueOf(100)));
         assertThat("Integer", sut.convertToDatabase(101, String.class), is("101"));
@@ -469,7 +469,7 @@ public class OracleDialectTest {
     @Test
     public void convertFromDatabase() throws Exception {
         assertThat("String", sut.convertFromDatabase("あああ", String.class), is("あああ"));
-        assertThat("empty string", sut.convertFromDatabase("", String.class), is(isEmptyString()));
+        assertThat("empty string", sut.convertFromDatabase("", String.class), isEmptyString());
         assertThat("Short", sut.convertFromDatabase(100, Short.class), is(Short.valueOf("100")));
         assertThat("short", sut.convertFromDatabase(99, short.class), is((short) 99));
         assertThat("null -> short", sut.convertFromDatabase(null, short.class), is(((short) 0)));
