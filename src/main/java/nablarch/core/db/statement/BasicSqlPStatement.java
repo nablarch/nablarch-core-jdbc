@@ -689,7 +689,7 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
     public void setObject(final int parameterIndex, final Object x, final int targetSqlType) {
         try {
             final Object dbValue = convertToDatabase(x, targetSqlType);
-            statement.setObject(parameterIndex, dbValue, targetSqlType);
+            statement.setObject(parameterIndex, dbValue);
             paramHolder.add(parameterIndex, dbValue);
         } catch (SQLException e) {
             throw new DbAccessException("failed to setObject.", e);

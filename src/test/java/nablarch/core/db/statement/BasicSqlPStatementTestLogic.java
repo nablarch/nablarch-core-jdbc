@@ -125,9 +125,13 @@ public abstract class BasicSqlPStatementTestLogic {
         @Column(name = "boolean_col")
         public Boolean booleanCol;
 
+        @Column(name = "clob_col", columnDefinition = "clob")
+        public String clob;
+
         @Transient
         public String[] varchars;
 
+        
         public TestEntity() {
         }
 
@@ -2056,7 +2060,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test(expected = DbAccessException.class)
     public void setObjectWithType_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
         new Expectations() {{
-            mockStatement.setObject(anyInt, any, anyInt);
+            mockStatement.setObject(anyInt, any);
             result = new SQLException("setObjectWithType error");
         }};
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
@@ -4085,6 +4089,22 @@ public abstract class BasicSqlPStatementTestLogic {
         SqlResultSet actual = sut.retrieve();
 
         assertThat(actual.get(0).getLong("ret"), is(30000000000L));
+    }
+
+    /**
+     * CLOBカラムが登録できることをテストする。
+     * @throws Exception
+     */
+    @Test
+    public void testClobColumn() throws Exception {
+        final SqlPStatement sut = dbCon.prepareStatement(
+                "insert into STATEMENT_TEST_TABLE (entity_id, clob_col) values ('99999', ?)");
+        sut.setObject(1, "input", Types.CLOB);
+        sut.executeUpdate();
+        dbCon.commit();
+
+        final TestEntity result = VariousDbTestHelper.findById(TestEntity.class, "99999");
+        assertThat(result.clob, is("input"));
     }
 
     /**
