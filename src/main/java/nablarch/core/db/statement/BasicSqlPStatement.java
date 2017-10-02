@@ -757,10 +757,13 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
 
     /** {@inheritDoc}未実装機能 */
     @Override
-    public void setCharacterStream(final int parameterIndex, final Reader reader,
-            final int length) {
-        throw new UnsupportedOperationException(
-                "BasicSqlPStatement#setCharacterStream is unsupported.");
+    public void setCharacterStream(final int parameterIndex, final Reader reader, final int length) {
+        try {
+            paramHolder.add(parameterIndex, reader);
+            statement.setCharacterStream(parameterIndex, reader, length);
+        } catch (SQLException e) {
+            throw new DbAccessException("failed to setCharacterStream.", e);
+        }
     }
 
     /** {@inheritDoc}未実装機能 */

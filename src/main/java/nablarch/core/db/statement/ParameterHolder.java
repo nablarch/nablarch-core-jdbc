@@ -1,13 +1,14 @@
 package nablarch.core.db.statement;
 
-import nablarch.core.log.Logger;
-import nablarch.core.util.StringUtil;
-
 import java.io.InputStream;
+import java.io.Reader;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+
+import nablarch.core.log.Logger;
+import nablarch.core.util.StringUtil;
 
 /**
  * ステートメントにバインドするパラメータ名とその値を保持するクラス。
@@ -29,6 +30,16 @@ public class ParameterHolder {
      */
     public void add(String name, InputStream notUsed) {
         add(name, new InputStreamValue());
+    }
+    
+    /**
+     * {@link Reader}のパラメータを追加する。
+     *
+     * @param name    パラメータ名
+     * @param notUsed 使用しない
+     */
+    public void add(String name, Reader notUsed) {
+        add(name, new ReaderValue());
     }
 
     /**
@@ -60,6 +71,16 @@ public class ParameterHolder {
      */
     public void add(int index, InputStream in) {
         add(indexToName(index), in);
+    }
+    
+    /**
+     * {@link Reader}のパラメータを追加する。
+     *
+     * @param index パラメータインデックス
+     * @param reader    パラメータ値
+     */
+    public void add(int index, Reader reader) {
+        add(indexToName(index), reader);
     }
 
     /**
@@ -170,6 +191,25 @@ public class ParameterHolder {
         @Override
         public String toString() {
             return "InputStream";
+        }
+    }
+    
+    /**
+     * Readerのパラメータ値。
+     * Readerの場合は、内容を読み取らないと等価判定ができないため
+     * 等値である（同一インスタンスである）場合以外、等価と判定しない。
+     * よって、本クラスでは{link #equals(Object)}メソッドをオーバライドしない。
+     * （{@link Object#equals(Object)}の動作）
+     */
+    static class ReaderValue implements ParamValue {
+
+        /**
+         * {@inheritDoc}
+         * Readerは内容を出力できないので代替文字列を返却する。
+         */
+        @Override
+        public String toString() {
+            return "Reader";
         }
     }
 
