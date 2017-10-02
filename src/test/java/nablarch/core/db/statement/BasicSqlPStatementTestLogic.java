@@ -7,6 +7,8 @@ import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -60,6 +62,7 @@ import org.junit.Test;
 
 import mockit.Deencapsulation;
 import mockit.Expectations;
+import mockit.Injectable;
 import mockit.Mocked;
 import mockit.Verifications;
 
@@ -2407,6 +2410,38 @@ public abstract class BasicSqlPStatementTestLogic {
 
         Deencapsulation.setField(sut, mockStatement);
         sut.setBinaryStream(2, new ByteArrayInputStream(new byte[] {0x31, 0x32, 0x33}), 2);
+    }
+
+    /**
+     * {@link BasicSqlPStatement#setCharacterStream(int, Reader, int)}のテスト。
+     */
+    @Test
+    public void setCharacterStream() throws Exception {
+        final SqlPStatement sut = dbCon.prepareStatement(
+                "insert into STATEMENT_TEST_TABLE (entity_id, clob_col) values (?, ?)");
+        sut.setLong(1, 9999999999L);
+        sut.setCharacterStream(2, new StringReader("あいうえおかきくけこ"), 10);
+        assertThat(sut.executeUpdate(), is(1));
+        dbCon.commit();
+
+        final TestEntity actual = VariousDbTestHelper.findById(TestEntity.class, 9999999999L);
+        assertThat(actual.clob, is("あいうえおかきくけこ"));
+    }
+    
+    /**
+     * {@link BasicSqlPStatement#setCharacterStream(int, Reader, int)}のテスト。
+     */
+    @Test(expected = DbAccessException.class)
+    public void setCharacterStream_SQLException(@Injectable final PreparedStatement mockStatement) throws Exception {
+        new Expectations() {{
+            mockStatement.setCharacterStream(anyInt, (Reader) any, anyInt);
+            result = new SQLException("setCharacterStream error");
+        }};
+        
+        final SqlPStatement sut = dbCon.prepareStatement(
+                "insert into STATEMENT_TEST_TABLE (entity_id, clob_col) values (?, ?)");
+        Deencapsulation.setField(sut, mockStatement);
+        sut.setCharacterStream(2, new StringReader("1234554321"), 10);
     }
 
     /**
