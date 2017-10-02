@@ -48,9 +48,9 @@ public class ByteArrayAttributeConverter implements AttributeConverter<byte[]> {
         } else if (databaseAttribute instanceof byte[]) {
             return byte[].class.cast(databaseAttribute);
         } else if (databaseAttribute instanceof Blob) {
+            Blob blob = Blob.class.cast(databaseAttribute);
             try {
-                final int length = (int) Blob.class.cast(databaseAttribute).length();
-                return ((Blob) databaseAttribute).getBytes(1, length);
+                return blob.getBytes(1, (int) blob.length());
             } catch (SQLException e) {
                 throw new DbAccessException("BLOB access failed.", e);
             }
