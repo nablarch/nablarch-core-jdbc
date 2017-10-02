@@ -25,30 +25,29 @@ public class StringAttributeConverter implements AttributeConverter<String> {
      *     <li>{@link Long}</li>
      *     <li>{@link Integer}</li>
      *     <li>{@link Short}</li>
-     *     <li>{@link java.sql.Timestamp}</li>
-     *     <li>{@link java.sql.Date}</li>
+     *     <li>{@link Timestamp}</li>
+     *     <li>{@link Date}</li>
      * </ul>
      *
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
      */
-    @SuppressWarnings("unchecked")
     @Override
     public <DB> Object convertToDatabase(final String javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(String.class)) {
-            return databaseType.cast(javaAttribute);
+            return javaAttribute;
         } else if (databaseType.isAssignableFrom(Short.class)) {
-            return (DB) Short.valueOf(javaAttribute);
+            return Short.valueOf(javaAttribute);
         } else if (databaseType.isAssignableFrom(Integer.class)) {
-            return (DB) Integer.valueOf(javaAttribute);
+            return Integer.valueOf(javaAttribute);
         } else if (databaseType.isAssignableFrom(Long.class)) {
-            return (DB) Long.valueOf(javaAttribute);
+            return Long.valueOf(javaAttribute);
         } else if (databaseType.isAssignableFrom(BigDecimal.class)) {
-            return (DB) new BigDecimal(javaAttribute);
+            return new BigDecimal(javaAttribute);
         } else if (databaseType.isAssignableFrom(Date.class)) {
-            return (DB) Date.valueOf(javaAttribute);
+            return Date.valueOf(javaAttribute);
         } else if (databaseType.isAssignableFrom(Timestamp.class)) {
-            return (DB) Timestamp.valueOf(javaAttribute);
-        };
+            return Timestamp.valueOf(javaAttribute);
+        }
         throw new IllegalArgumentException("unsupported database type:"
                 + databaseType.getName());
     }
@@ -67,7 +66,7 @@ public class StringAttributeConverter implements AttributeConverter<String> {
         if (databaseAttribute == null) {
             return null;
         } else if (databaseAttribute instanceof Clob) {
-            final Clob clob = (Clob) databaseAttribute;
+            final Clob clob = Clob.class.cast(databaseAttribute);
             try {
                 return clob.getSubString(1, (int) clob.length());
             } catch (SQLException e) {

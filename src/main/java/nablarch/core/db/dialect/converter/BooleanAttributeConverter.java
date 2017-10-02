@@ -25,19 +25,18 @@ public class BooleanAttributeConverter implements AttributeConverter<Boolean> {
      *
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
      */
-    @SuppressWarnings("unchecked")
     @Override
     public <DB> Object convertToDatabase(final Boolean javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(Boolean.class)) {
-            return databaseType.cast(javaAttribute);
+            return javaAttribute;
         } else if (databaseType.isAssignableFrom(BigDecimal.class)) {
-            return (DB) (javaAttribute ? BigDecimal.ONE : BigDecimal.ZERO);
+            return javaAttribute ? BigDecimal.ONE : BigDecimal.ZERO;
         } else if (databaseType.isAssignableFrom(Integer.class)) {
-            return (DB) (javaAttribute ? Integer.valueOf(1) : Integer.valueOf(0));
+            return javaAttribute ? Integer.valueOf(1) : Integer.valueOf(0);
         } else if (databaseType.isAssignableFrom(Long.class)) {
-            return (DB) (javaAttribute ? Long.valueOf(1L) : Long.valueOf(0L));
+            return javaAttribute ? Long.valueOf(1L) : Long.valueOf(0L);
         } else if (databaseType.isAssignableFrom(Short.class)) {
-            return (DB) (javaAttribute ? Short.valueOf((short) 1) : Short.valueOf((short) 0));
+            return javaAttribute ? Short.valueOf((short) 1) : Short.valueOf((short) 0);
         }
         throw new IllegalArgumentException("unsupported database type:"
                 + databaseType.getName());
@@ -65,14 +64,14 @@ public class BooleanAttributeConverter implements AttributeConverter<Boolean> {
         if (databaseAttribute == null) {
             return null;
         } else if (databaseAttribute instanceof Boolean) {
-            return (Boolean) databaseAttribute;
+            return Boolean.class.cast(databaseAttribute);
         } else if (databaseAttribute instanceof String) {
-            final String str = (String) databaseAttribute;
+            final String str = String.class.cast(databaseAttribute);
             return str.equals("1")
                     || str.equalsIgnoreCase("on")
                     || str.equalsIgnoreCase("true");
         } else if (databaseAttribute instanceof Number) {
-            return ((Number) databaseAttribute).intValue() != 0;
+            return Number.class.cast(databaseAttribute).intValue() != 0;
         }
         throw new IllegalArgumentException(
                 "unsupported data type:" + databaseAttribute.getClass()

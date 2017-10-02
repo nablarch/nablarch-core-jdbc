@@ -24,14 +24,12 @@ public class UtilDateAttributeConverter implements AttributeConverter<Date> {
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
      * また、{@code null}もサポートしない。
      */
-    @SuppressWarnings("unchecked")
     @Override
     public <DB> Object convertToDatabase(final Date javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(java.sql.Date.class)) {
-            return (DB) new java.sql.Date(DbUtil.trimTime(javaAttribute)
-                                                .getTimeInMillis());
+            return new java.sql.Date(DbUtil.trimTime(javaAttribute).getTimeInMillis());
         } else if (databaseType.isAssignableFrom(Timestamp.class)) {
-            return (DB) new Timestamp(javaAttribute.getTime());
+            return new Timestamp(javaAttribute.getTime());
         }
         throw new IllegalArgumentException("unsupported database type:"
                 + databaseType.getName());
@@ -52,7 +50,7 @@ public class UtilDateAttributeConverter implements AttributeConverter<Date> {
         if (databaseAttribute == null) {
             return null;
         } else if (databaseAttribute instanceof Date) {
-            return new Date(((Date) databaseAttribute).getTime());
+            return new Date(Date.class.cast(databaseAttribute).getTime());
         }
         throw new IllegalArgumentException(
                 "unsupported data type:" + databaseAttribute.getClass()
