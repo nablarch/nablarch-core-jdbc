@@ -755,7 +755,7 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
         return batchSize;
     }
 
-    /** {@inheritDoc}未実装機能 */
+    /** {@inheritDoc} */
     @Override
     public void setCharacterStream(final int parameterIndex, final Reader reader, final int length) {
         try {
