@@ -25,19 +25,18 @@ public class BigDecimalAttributeConverter implements AttributeConverter<BigDecim
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
      * また、{@code null}もサポートしない。
      */
-    @SuppressWarnings("unchecked")
     @Override
     public <DB> Object convertToDatabase(final BigDecimal javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(BigDecimal.class)) {
-            return databaseType.cast(javaAttribute);
+            return javaAttribute;
         } else if (databaseType.isAssignableFrom(Integer.class)) {
-            return (DB) Integer.valueOf(javaAttribute.intValueExact());
+            return Integer.valueOf(javaAttribute.intValueExact());
         } else if (databaseType.isAssignableFrom(Long.class)) {
-            return (DB) Long.valueOf(javaAttribute.longValueExact());
+            return Long.valueOf(javaAttribute.longValueExact());
         } else if (databaseType.isAssignableFrom(Short.class)) {
-            return (DB) Short.valueOf(javaAttribute.shortValueExact());
+            return Short.valueOf(javaAttribute.shortValueExact());
         } else if (databaseType.isAssignableFrom(String.class)) {
-            return (DB) javaAttribute.toPlainString();
+            return javaAttribute.toPlainString();
         }
         throw new IllegalArgumentException("unsupported database type:"
                 + databaseType.getName());
@@ -66,7 +65,7 @@ public class BigDecimalAttributeConverter implements AttributeConverter<BigDecim
         } else if (databaseAttribute instanceof Number) {
             return new BigDecimal(databaseAttribute.toString());
         } else if (databaseAttribute instanceof String) {
-            final BigDecimal result = new BigDecimal((String) databaseAttribute);
+            final BigDecimal result = new BigDecimal(String.class.cast(databaseAttribute));
             NumberUtil.verifyBigDecimalScale(result);
             return result;
         }

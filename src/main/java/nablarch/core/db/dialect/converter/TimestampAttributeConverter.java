@@ -24,15 +24,14 @@ public class TimestampAttributeConverter implements AttributeConverter<Timestamp
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
      * また、{@code null}もサポートしない。
      */
-    @SuppressWarnings("unchecked")
     @Override
     public <DB> Object convertToDatabase(final Timestamp javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(Timestamp.class)) {
-            return databaseType.cast(javaAttribute);
+            return javaAttribute;
         } else if (databaseType.isAssignableFrom(Date.class)) {
-            return (DB) new Date(DbUtil.trimTime(javaAttribute).getTimeInMillis());
+            return new Date(DbUtil.trimTime(javaAttribute).getTimeInMillis());
         } else if (databaseType.isAssignableFrom(String.class)) {
-            return (DB) javaAttribute.toString();
+            return javaAttribute.toString();
         }
         throw new IllegalArgumentException("unsupported database type:"
                 + databaseType.getName());
@@ -55,11 +54,11 @@ public class TimestampAttributeConverter implements AttributeConverter<Timestamp
         if (databaseAttribute == null) {
             return null;
         } else if (databaseAttribute instanceof Timestamp) {
-            return (Timestamp) databaseAttribute;
+            return Timestamp.class.cast(databaseAttribute);
         } else if (databaseAttribute instanceof java.util.Date) {
-            return new Timestamp(((java.util.Date) databaseAttribute).getTime());
+            return new Timestamp(java.util.Date.class.cast(databaseAttribute).getTime());
         } else if (databaseAttribute instanceof String) {
-            return Timestamp.valueOf((String) databaseAttribute);
+            return Timestamp.valueOf(String.class.cast(databaseAttribute));
         }
         throw new IllegalArgumentException("unsupported data type:"
                 + databaseAttribute.getClass()

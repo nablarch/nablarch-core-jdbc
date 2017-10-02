@@ -41,6 +41,6 @@ public class OracleStringAttributeConverter extends StringAttributeConverter {
      * @return 空文字列の場合{@code true}
      */
     private <DB> boolean isEmptyString(final Object dbAttribute) {
-        return dbAttribute instanceof String && ((String) dbAttribute).isEmpty();
+        return dbAttribute instanceof String && String.class.cast(dbAttribute).isEmpty();
     }
 }

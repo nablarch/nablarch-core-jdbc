@@ -5,9 +5,11 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -35,6 +37,7 @@ import nablarch.core.db.DbAccessException;
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.TransactionManagerConnection;
 import nablarch.core.transaction.TransactionContext;
+import nablarch.core.util.FileUtil;
 import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
@@ -1009,6 +1012,56 @@ public abstract class SqlRowTestLogic {
     }
 
     /**
+     * CLOB型カラムのテスト。
+     * @throws Exception
+     */
+    @Test
+    public void testGetStringFromCLOB() throws Exception {
+        // ------------------------------------------------ setup
+        VariousDbTestHelper.setUpTable(
+                SqlRowEntity.createDefaultValueInstance(1L)
+        );
+
+        // ------------------------------------------------ find
+        final SqlPStatement statement = connection.prepareStatement(
+                "select clob_col from sqlrow_test where sqlrow_id = 1");
+        final SqlResultSet rs = statement.retrieve();
+
+        // ------------------------------------------------ assert
+        final SqlRow sut = rs.get(0);
+        assertThat(sut.getString("clobCol"), is("clob col"));
+    }
+
+    /**
+     * CLOBの値をストリーム経由で取得できること。
+     */
+    @Test
+    public void testStreamAccessToClob() throws Exception {
+        // ------------------------------------------------ setup
+        final SqlRowEntity entity = SqlRowEntity.createDefaultValueInstance(1L);
+        entity.clobCol = "CLOBのカラムの値をStreamで取得できること";
+        VariousDbTestHelper.setUpTable(entity);
+
+        // ------------------------------------------------ find
+        final SqlPStatement statement = connection.prepareStatement(
+                "select clob_col from sqlrow_test where sqlrow_id = 1");
+        final SqlResultSet rs = statement.retrieve();
+
+        // ------------------------------------------------ assert
+        final SqlRow row = rs.get(0);
+
+        Reader reader = null;
+        try {
+            reader = ((Clob) row.get("clobCol")).getCharacterStream();
+            final char[] chars = new char[1024];
+            final int length = reader.read(chars);
+            assertThat(new String(chars, 0, length), is(entity.clobCol));
+        } finally {
+            FileUtil.closeQuietly(reader);
+        }
+    }
+
+    /**
      * Mapインタフェースを実装したメソッド全般のテスト
      * <p/>
      * Mapを引数に取るコンストラクタを使用してSqlRowを生成し、
@@ -1140,6 +1193,9 @@ public abstract class SqlRowTestLogic {
 
         @Column(name = "BOOLEAN_COL")
         public Boolean booleanCol = false;
+
+        @Column(name = "clob_col", columnDefinition = "clob")
+        public String clobCol = "clob col";
 
         public SqlRowEntity() {
         }

@@ -24,7 +24,7 @@ public class ByteArrayAttributeConverter implements AttributeConverter<byte[]> {
     @Override
     public <DB> Object convertToDatabase(final byte[] javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(byte[].class)) {
-            return databaseType.cast(javaAttribute);
+            return javaAttribute;
         }
         throw new IllegalArgumentException("unsupported database type:"
                 + databaseType.getName());
@@ -46,11 +46,11 @@ public class ByteArrayAttributeConverter implements AttributeConverter<byte[]> {
         if (databaseAttribute == null) {
             return null;
         } else if (databaseAttribute instanceof byte[]) {
-            return (byte[]) databaseAttribute;
+            return byte[].class.cast(databaseAttribute);
         } else if (databaseAttribute instanceof Blob) {
+            Blob blob = Blob.class.cast(databaseAttribute);
             try {
-                final int length = (int) ((Blob) databaseAttribute).length();
-                return ((Blob) databaseAttribute).getBytes(1, length);
+                return blob.getBytes(1, (int) blob.length());
             } catch (SQLException e) {
                 throw new DbAccessException("BLOB access failed.", e);
             }

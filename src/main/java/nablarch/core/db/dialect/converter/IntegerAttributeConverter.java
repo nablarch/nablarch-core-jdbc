@@ -23,19 +23,18 @@ public class IntegerAttributeConverter implements AttributeConverter<Integer> {
      * 上記に以外の型への変換はサポートしないため{@link IllegalArgumentException}を送出する。
      * また、{@code null}もサポートしない。
      */
-    @SuppressWarnings("unchecked")
     @Override
     public <DB> Object convertToDatabase(final Integer javaAttribute, final Class<DB> databaseType) {
         if (databaseType.isAssignableFrom(Integer.class)) {
-            return databaseType.cast(javaAttribute);
+            return javaAttribute;
         } else if (databaseType.isAssignableFrom(BigDecimal.class)) {
-            return (DB) BigDecimal.valueOf(javaAttribute);
+            return BigDecimal.valueOf(javaAttribute);
         } else if (databaseType.isAssignableFrom(Long.class)) {
-            return (DB) Long.valueOf(javaAttribute);
+            return Long.valueOf(javaAttribute);
         } else if (databaseType.isAssignableFrom(Short.class)) {
-            return (DB) Short.valueOf(javaAttribute.toString());
+            return Short.valueOf(javaAttribute.toString());
         } else if (databaseType.isAssignableFrom(String.class)) {
-            return (DB) String.valueOf(javaAttribute);
+            return String.valueOf(javaAttribute);
         }
         throw new IllegalArgumentException("unsupported database type:"
                 + databaseType.getName());
@@ -59,11 +58,11 @@ public class IntegerAttributeConverter implements AttributeConverter<Integer> {
         } else if (databaseAttribute instanceof Integer) {
             return Integer.class.cast(databaseAttribute);
         } else if (databaseAttribute instanceof BigDecimal) {
-            return ((BigDecimal) databaseAttribute).intValueExact();
+            return BigDecimal.class.cast(databaseAttribute).intValueExact();
         } else if (databaseAttribute instanceof Number) {
             return Integer.valueOf(databaseAttribute.toString());
         } else if (databaseAttribute instanceof String) {
-            return Integer.valueOf((String) databaseAttribute);
+            return Integer.valueOf(String.class.cast(databaseAttribute));
         }
         throw new IllegalArgumentException(
                 "unsupported data type:" + databaseAttribute.getClass()
