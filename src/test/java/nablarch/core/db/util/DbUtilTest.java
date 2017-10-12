@@ -1,6 +1,6 @@
 package nablarch.core.db.util;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -11,12 +11,12 @@ import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Vector;
+
+import org.hamcrest.collection.IsMapContaining;
 
 import nablarch.core.repository.SystemRepository;
 
@@ -280,38 +280,21 @@ public class DbUtilTest {
                 "grandPrivateStringValue", -3, -2L, grandObjectValue,
                 "parentPrivateStringValue", -1, 0L, parentObjectValue,
                 "privateStringValue", 1, 2L, objectValue);
-        Map<String, Object> expect = new HashMap<String, Object>();
-        expect.put("grandPrivateString", "grandPrivateStringValue");
-        expect.put("grandProtectedInt", -3);
-        expect.put("grandDefaultLong", -2L);
-        expect.put("grandPublicObject", grandObjectValue);
-        expect.put("parentPrivateString", "parentPrivateStringValue");
-        expect.put("parentProtectedInt", -1);
-        expect.put("parentDefaultLong", 0L);
-        expect.put("parentPublicObject", parentObjectValue);
-        expect.put("privateString", "privateStringValue");
-        expect.put("protectedInt", 1);
-        expect.put("defaultLong", 2L);
-        expect.put("publicObject", objectValue);
-        expect.put("duplicateFieldName", "ChildField");//重複したフィールドの場合、一番下のサブクラスが優先されることの確認。
         Map<String, Object> actual = DbUtil.createMapAndCopy(bean);
-        compareMaps(expect, actual);
-    }
-
-    /**
-     * マップの内容を比較する。
-     * @param expect 期待するマップ
-     * @param actual 実際のマップ
-     */
-    private static void compareMaps(Map<String, Object> expect, Map<String,Object> actual) {
-        String message = "\nExpected: is <" + expect.toString() + ">\n but: was <" + actual.toString() + ">";
-        Set<String> keys = actual.keySet();
-        Set<String> expectKeys = expect.keySet();
-        for (String key : keys) {
-            assertThat("マップの内容が一致 key=" + key + message, expect.get(key), is(actual.get(key)));
-            assertThat("キーが存在しない key="  + key, expectKeys.remove(key), is(true));
-        }
-        assertThat("マップのキーがすべて同じ " + message, expectKeys.size(), is(0));
+        
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("grandPrivateString", "grandPrivateStringValue"));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("grandProtectedInt", -3));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("grandDefaultLong", -2L));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("grandPublicObject", grandObjectValue));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("parentPrivateString", "parentPrivateStringValue"));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("parentProtectedInt", -1));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("parentDefaultLong", 0L));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("parentPublicObject", parentObjectValue));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("privateString", "privateStringValue"));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("protectedInt", 1));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("defaultLong", 2L));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("publicObject", objectValue));
+        assertThat(actual, IsMapContaining.<String, Object>hasEntry("duplicateFieldName", "ChildField"));
     }
 
     private static class StringCollection implements Collection<String> {

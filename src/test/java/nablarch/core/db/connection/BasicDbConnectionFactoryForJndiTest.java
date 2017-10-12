@@ -96,13 +96,8 @@ public class BasicDbConnectionFactoryForJndiTest {
         final Properties jndiProp = new Properties();
         jndiProp.putAll(property);
         new Expectations() {{
-            new InitialContext(jndiProp);
-        }};
-        new Expectations() {{
             jndiContext.lookup(lookupName);
             result = dataSource;
-        }};
-        new Expectations(){{
             dataSource.getConnection();
             result = con;
         }};
@@ -187,16 +182,7 @@ public class BasicDbConnectionFactoryForJndiTest {
     @Test
     public void testGetConnectionError() throws Exception {
         // 想定する振る舞いを設定。
-        Map<String, String> property = new HashMap<String, String>();
-        property.put(InitialContext.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.fscontext.RefFSContextFactory");
-        property.put(InitialContext.PROVIDER_URL, "file:./hoge/hoge");
         final String lookupName = "test";
-        final Properties jndiProp = new Properties();
-        jndiProp.putAll(property);
-        // 設定されたMAPをベースにコンテキストを作成し、lookup時にNamingExceptionが発生する。
-        new Expectations() {{
-            new InitialContext(jndiProp);
-        }};
         new Expectations() {{
             jndiContext.lookup(lookupName);
             result = new NamingException("リソースがない");
@@ -204,6 +190,10 @@ public class BasicDbConnectionFactoryForJndiTest {
 
         BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
         forJndi.setJndiResourceName(lookupName);
+        
+        Map<String, String> property = new HashMap<String, String>();
+        property.put(InitialContext.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.fscontext.RefFSContextFactory");
+        property.put(InitialContext.PROVIDER_URL, "file:./hoge/hoge");
         forJndi.setJndiProperties(property);
 
         try {
@@ -224,7 +214,7 @@ public class BasicDbConnectionFactoryForJndiTest {
      * @throws Exception テスト実行時の例外
      */
     @Test
-    public void testGetConnectionFailedToConnetion() throws Exception {
+    public void testGetConnectionFailedToConnection() throws Exception {
         // 想定する振る舞いを設定。
         Map<String, String> property = new HashMap<String, String>();
         property.put(InitialContext.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.fscontext.RefFSContextFactory");
@@ -235,20 +225,12 @@ public class BasicDbConnectionFactoryForJndiTest {
         final SQLException nativeException = new SQLException("connection取得時にエラー");
         final String message = "failed to get database connection. jndiResourceName = [test_error]";
         final DbConnectionException expected = new DbConnectionException(message, nativeException);
-        // 設定されたMAPをベースにコンテキストを作成し、取得したDataSourceがSQL例外を投げた場合、SQL例外を元に例外ファクトリが生成した例外を投げる。
-        new Expectations() {{
-            new InitialContext(jndiProp);
-        }};
         new Expectations() {{
             jndiContext.lookup(lookupName);
             result = dataSource;
-        }};
-        new Expectations() {{
             dataSource.getConnection();
             result = nativeException;
-        }};
-        // DataSourceが送出した例外を渡すことをverifyする。
-        new Expectations() {{
+            // DataSourceが送出した例外を渡すことをverifyする。
             exceptionFactory.createDbAccessException(message, nativeException, null);
             result = expected;
         }};
@@ -285,13 +267,8 @@ public class BasicDbConnectionFactoryForJndiTest {
         final Properties jndiProp = new Properties();
         jndiProp.putAll(property);
         new Expectations() {{
-            new InitialContext(jndiProp);
-        }};
-        new Expectations() {{
             jndiContext.lookup(lookupName);
             result = dataSource;
-        }};
-        new Expectations() {{
             dataSource.getConnection();
             result = null;
         }};

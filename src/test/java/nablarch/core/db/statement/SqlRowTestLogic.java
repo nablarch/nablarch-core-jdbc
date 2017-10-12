@@ -1,6 +1,5 @@
 package nablarch.core.db.statement;
 
-import static mockit.Deencapsulation.invoke;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -735,6 +734,7 @@ public abstract class SqlRowTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
+    @TargetDb(include = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
     public void getBytes_blogSQLException(@Mocked final Blob mockBlob) throws Exception {
         // ------------------------------------------------ setup
         VariousDbTestHelper.setUpTable(
@@ -748,8 +748,6 @@ public abstract class SqlRowTestLogic {
         // ------------------------------------------------ assert
         final SqlRow sut = rs.get(0);
         new Expectations(sut) {{
-            invoke(sut, "getObject", "binaryCol");
-            result = mockBlob;
             mockBlob.length();
             result = new SQLException("blob access error");
         }};
@@ -923,15 +921,14 @@ public abstract class SqlRowTestLogic {
     }
 
     @Test(expected = DbAccessException.class)
+    @TargetDb(include = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
     public void getObject_DbAccessException(@Mocked final Blob mockBlob) throws Exception {
         VariousDbTestHelper.setUpTable(SqlRowEntity.createDefaultValueInstance(1L));
 
         final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST");
         final SqlRow sut = statement.retrieve().get(0);
 
-        new Expectations(sut) {{
-            invoke(sut, "getObject", "binaryCol");
-            result = mockBlob;
+        new Expectations() {{
             mockBlob.length();
             result = new SQLException("blob access error");
         }};
