@@ -37,9 +37,6 @@ public class BasicDbConnectionFactoryForDataSourceTest {
     @Mocked
     public DbAccessExceptionFactory dbAccessExceptionFactory;
 
-    @Mocked
-    public DbAccessException dbAccessException;
-
     private static final String CONNECTION_NAME = TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY;
 
     /**
@@ -151,6 +148,7 @@ public class BasicDbConnectionFactoryForDataSourceTest {
             result = nativeException;
         }};
         // 例外を委譲されるクラスの振る舞い
+        final DbAccessException dbAccessException = new DbAccessException("message", nativeException);
         new Expectations() {{
             dbAccessExceptionFactory.createDbAccessException("failed to get database connection.", nativeException, null);
             result = dbAccessException;
