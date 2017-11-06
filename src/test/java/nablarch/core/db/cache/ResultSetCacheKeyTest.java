@@ -101,6 +101,14 @@ public class ResultSetCacheKeyTest {
     @Test
     public void testToString() {
         assertThat(target.toString(),
-                   containsString("sqlId='SQL_ID', params={bytes=bytes, name=yamda}, startPos=5, max=100"));
+                   allOf(
+                           containsString("sqlId='SQL_ID'"),
+                           containsString("startPos=5"),
+                           containsString("max=100"),
+                           containsString("params={"),
+                           containsString("bytes=bytes"),
+                           containsString("name=yamda")
+                   )
+        );
     }
 }

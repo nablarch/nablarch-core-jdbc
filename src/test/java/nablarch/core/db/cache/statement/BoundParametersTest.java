@@ -35,6 +35,6 @@ public class BoundParametersTest {
         BoundParameters target = new BoundParameters(holder);
         String actual = target.toString();
         assertThat(actual, containsString("name=yamada"));
-        assertThat(actual, containsString("addr=tokyo}"));
+        assertThat(actual, containsString("addr=tokyo"));
     }
 }
