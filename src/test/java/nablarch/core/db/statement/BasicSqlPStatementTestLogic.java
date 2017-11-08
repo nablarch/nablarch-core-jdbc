@@ -44,6 +44,8 @@ import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.TransactionManagerConnection;
 import nablarch.core.db.dialect.DefaultDialect;
 import nablarch.core.db.dialect.Dialect;
+import nablarch.core.db.statement.entity.ClobColumn;
+import nablarch.core.db.statement.entity.TextColumn;
 import nablarch.core.db.statement.exception.SqlStatementException;
 import nablarch.core.db.util.DbUtil;
 import nablarch.core.exception.IllegalOperationException;
@@ -62,7 +64,6 @@ import org.junit.Test;
 
 import mockit.Deencapsulation;
 import mockit.Expectations;
-import mockit.Injectable;
 import mockit.Mocked;
 import mockit.Verifications;
 
@@ -127,9 +128,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
         @Column(name = "boolean_col")
         public Boolean booleanCol;
-
-        @Column(name = "clob_col", columnDefinition = "clob")
-        public String clob;
 
         @Transient
         public String[] varchars;
@@ -2416,15 +2414,16 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#setCharacterStream(int, Reader, int)}のテスト。
      */
     @Test
+    @TargetDb(include = {TargetDb.Db.ORACLE, TargetDb.Db.DB2, TargetDb.Db.H2})
     public void setCharacterStream() throws Exception {
-        final SqlPStatement sut = dbCon.prepareStatement(
-                "insert into STATEMENT_TEST_TABLE (entity_id, clob_col) values (?, ?)");
-        sut.setLong(1, 9999999999L);
+        VariousDbTestHelper.createTable(ClobColumn.class);
+        final SqlPStatement sut = dbCon.prepareStatement( "insert into clob_table (id, clob_col) values (?, ?)");
+        sut.setLong(1, 1L);
         sut.setCharacterStream(2, new StringReader("あいうえおかきくけこ"), 10);
         assertThat(sut.executeUpdate(), is(1));
         dbCon.commit();
 
-        final TestEntity actual = VariousDbTestHelper.findById(TestEntity.class, 9999999999L);
+        final ClobColumn actual = VariousDbTestHelper.findById(ClobColumn.class, 1L);
         assertThat(actual.clob, is("あいうえおかきくけこ"));
     }
     
@@ -2432,14 +2431,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#setCharacterStream(int, Reader, int)}のテスト。
      */
     @Test(expected = DbAccessException.class)
-    public void setCharacterStream_SQLException(@Injectable final PreparedStatement mockStatement) throws Exception {
+    public void setCharacterStream_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
         new Expectations() {{
             mockStatement.setCharacterStream(anyInt, (Reader) any, anyInt);
             result = new SQLException("setCharacterStream error");
         }};
         
         final SqlPStatement sut = dbCon.prepareStatement(
-                "insert into STATEMENT_TEST_TABLE (entity_id, clob_col) values (?, ?)");
+                "insert into STATEMENT_TEST_TABLE (entity_id, varchar_col) values (?, ?)");
         Deencapsulation.setField(sut, mockStatement);
         sut.setCharacterStream(2, new StringReader("1234554321"), 10);
     }
@@ -4131,15 +4130,35 @@ public abstract class BasicSqlPStatementTestLogic {
      * @throws Exception
      */
     @Test
+    @TargetDb(include = {TargetDb.Db.ORACLE, TargetDb.Db.DB2, TargetDb.Db.H2})
     public void testClobColumn() throws Exception {
+        VariousDbTestHelper.createTable(ClobColumn.class);
         final SqlPStatement sut = dbCon.prepareStatement(
-                "insert into STATEMENT_TEST_TABLE (entity_id, clob_col) values ('99999', ?)");
+                "insert into clob_table (id, clob_col) values (99999, ?)");
         sut.setObject(1, "input", Types.CLOB);
         sut.executeUpdate();
         dbCon.commit();
 
-        final TestEntity result = VariousDbTestHelper.findById(TestEntity.class, "99999");
+        final ClobColumn result = VariousDbTestHelper.findById(ClobColumn.class, "99999");
         assertThat(result.clob, is("input"));
+    }
+    
+    /**
+     * TEXTカラムが登録できることをテストする。
+     * @throws Exception
+     */
+    @Test
+    @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
+    public void testTextColumn() throws Exception {
+        VariousDbTestHelper.createTable(TextColumn.class);
+        final SqlPStatement sut = dbCon.prepareStatement(
+                "insert into text_table (id, text_col) values (99999, ?)");
+        sut.setObject(1, "input", Types.CLOB);
+        sut.executeUpdate();
+        dbCon.commit();
+
+        final TextColumn result = VariousDbTestHelper.findById(TextColumn.class, "99999");
+        assertThat(result.text, is("input"));
     }
 
     /**

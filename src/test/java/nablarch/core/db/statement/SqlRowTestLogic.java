@@ -7,7 +7,6 @@ import static org.junit.Assert.fail;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Time;
@@ -36,6 +35,8 @@ import nablarch.core.db.DbAccessException;
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.TransactionManagerConnection;
 import nablarch.core.db.dialect.converter.StringAttributeConverter;
+import nablarch.core.db.statement.entity.ClobColumn;
+import nablarch.core.db.statement.entity.TextColumn;
 import nablarch.core.transaction.TransactionContext;
 import nablarch.core.util.FileUtil;
 import nablarch.test.support.db.helper.TargetDb;
@@ -737,57 +738,49 @@ public abstract class SqlRowTestLogic {
      */
     @Test
     public void getBoolean_String() throws Exception {
-        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST");
+        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST where SQLROW_ID = ?");
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, "1", null));
-        assertThat("1はtrue", statement.retrieve()
-                .get(0)
-                .getBoolean("charCol"), is(true));
+        VariousDbTestHelper.setUpTable(
+                SqlRowEntity.createFromStringCol(1L, "1", null),
+                SqlRowEntity.createFromStringCol(2L, null, "on"),
+                SqlRowEntity.createFromStringCol(3L, null, "ON"),
+                SqlRowEntity.createFromStringCol(4L, null, "true"),
+                SqlRowEntity.createFromStringCol(5L, null, "True"),
+                SqlRowEntity.createFromStringCol(6L, "0", null),
+                SqlRowEntity.createFromStringCol(7L, null, "off"),
+                SqlRowEntity.createFromStringCol(8L, null, "false"),
+                SqlRowEntity.createFromStringCol(9L, null, "othre"),
+                SqlRowEntity.createFromStringCol(10L, null, null)
+        );
+        statement.setLong(1, 1L);
+        assertThat("1はtrue", statement.retrieve().get(0).getBoolean("charCol"), is(true));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, null, "on"));
-        assertThat("onはtrue", statement.retrieve()
-                .get(0)
-                .getBoolean("varcharCol"), is(true));
+        statement.setLong(1, 2L);
+        assertThat("onはtrue", statement.retrieve().get(0).getBoolean("varcharCol"), is(true));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, null, "ON"));
-        assertThat("ONはtrue", statement.retrieve()
-                .get(0)
-                .getBoolean("varcharCol"), is(true));
+        statement.setLong(1, 3L);
+        assertThat("ONはtrue", statement.retrieve().get(0).getBoolean("varcharCol"), is(true));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, null, "true"));
-        assertThat("trueはtrue", statement.retrieve()
-                .get(0)
-                .getBoolean("varcharCol"), is(true));
+        statement.setLong(1, 4L);
+        assertThat("trueはtrue", statement.retrieve().get(0).getBoolean("varcharCol"), is(true));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, null, "True"));
-        assertThat("Trueはtrue", statement.retrieve()
-                .get(0)
-                .getBoolean("varcharCol"), is(true));
+        statement.setLong(1, 5L);
+        assertThat("Trueはtrue", statement.retrieve().get(0).getBoolean("varcharCol"), is(true));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, "0", null));
-        assertThat("0はfalse", statement.retrieve()
-                .get(0)
-                .getBoolean("charCol"), is(false));
+        statement.setLong(1, 6L);
+        assertThat("0はfalse", statement.retrieve().get(0).getBoolean("charCol"), is(false));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, null, "off"));
-        assertThat("offはfalse", statement.retrieve()
-                .get(0)
-                .getBoolean("varcharCol"), is(false));
+        statement.setLong(1, 7L);
+        assertThat("offはfalse", statement.retrieve().get(0).getBoolean("varcharCol"), is(false));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, null, "false"));
-        assertThat("falseはfalse", statement.retrieve()
-                .get(0)
-                .getBoolean("varcharCol"), is(false));
+        statement.setLong(1, 8L);
+        assertThat("falseはfalse", statement.retrieve().get(0).getBoolean("varcharCol"), is(false));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, null, "othre"));
-        assertThat("適当な値はfalse", statement.retrieve()
-                .get(0)
-                .getBoolean("varcharCol"), is(false));
+        statement.setLong(1, 9L);
+        assertThat("適当な値はfalse", statement.retrieve().get(0).getBoolean("varcharCol"), is(false));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromStringCol(1L, null, null));
-        assertThat("nullはnull", statement.retrieve()
-                .get(0)
-                .getBoolean("charCol"), is(nullValue()));
+        statement.setLong(1, 10L);
+        assertThat("nullはnull", statement.retrieve().get(0).getBoolean("charCol"), is(nullValue()));
     }
 
     /**
@@ -815,14 +808,14 @@ public abstract class SqlRowTestLogic {
     @Test
     @TargetDb(include = {TargetDb.Db.SQL_SERVER, TargetDb.Db.POSTGRE_SQL})
     public void getBoolean_Boolean() throws Exception {
-        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST");
-
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromBooleanCol(1L, true));
-
+        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST where SQLROW_ID = ?");
+        
+        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromBooleanCol(1L, true), SqlRowEntity.createFromBooleanCol(2L, false));
+        statement.setLong(1, 1L);
         assertThat("true", statement.retrieve().get(0)
                 .getBoolean("booleanCol"), is(true));
 
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createFromBooleanCol(1L, false));
+        statement.setLong(1, 2L);
         assertThat("false", statement.retrieve().get(0)
                 .getBoolean("booleanCol"), is(false));
     }
@@ -988,35 +981,65 @@ public abstract class SqlRowTestLogic {
      * @throws Exception
      */
     @Test
+    @TargetDb(include = {TargetDb.Db.ORACLE, TargetDb.Db.DB2, TargetDb.Db.H2})
     public void testGetStringFromCLOB() throws Exception {
         // ------------------------------------------------ setup
-        VariousDbTestHelper.setUpTable(
-                SqlRowEntity.createDefaultValueInstance(1L)
-        );
+        VariousDbTestHelper.createTable(ClobColumn.class);
+        final ClobColumn entity = new ClobColumn();
+        entity.id = 1;
+        entity.clob = "clob col";
+        VariousDbTestHelper.setUpTable(entity);
 
         // ------------------------------------------------ find
         final SqlPStatement statement = connection.prepareStatement(
-                "select clob_col from sqlrow_test where sqlrow_id = 1");
+                "select clob_col from clob_table where id = 1");
         final SqlResultSet rs = statement.retrieve();
 
         // ------------------------------------------------ assert
         final SqlRow sut = rs.get(0);
-        assertThat(sut.getString("clobCol"), is("clob col"));
+        assertThat(sut.getString("clob_col"), is("clob col"));
+    }
+    
+    /**
+     * TEXT型カラムのテスト。
+     * @throws Exception
+     */
+    @Test
+    @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
+    public void testGetStringFromTEXT() throws Exception {
+        // ------------------------------------------------ setup
+        VariousDbTestHelper.createTable(TextColumn.class);
+        final TextColumn entity = new TextColumn();
+        entity.id = 1;
+        entity.text = "text col";
+        VariousDbTestHelper.setUpTable(entity);
+
+        // ------------------------------------------------ find
+        final SqlPStatement statement = connection.prepareStatement(
+                "select text_col from text_table where id = 1");
+        final SqlResultSet rs = statement.retrieve();
+
+        // ------------------------------------------------ assert
+        final SqlRow sut = rs.get(0);
+        assertThat(sut.getString("text_col"), is("text col"));
     }
 
     /**
      * CLOBの値をストリーム経由で取得できること。
      */
     @Test
+    @TargetDb(include = {TargetDb.Db.ORACLE, TargetDb.Db.DB2, TargetDb.Db.H2})
     public void testStreamAccessToClob() throws Exception {
         // ------------------------------------------------ setup
-        final SqlRowEntity entity = SqlRowEntity.createDefaultValueInstance(1L);
-        entity.clobCol = "CLOBのカラムの値をStreamで取得できること";
+        VariousDbTestHelper.createTable(ClobColumn.class);
+        final ClobColumn entity = new ClobColumn();
+        entity.id = 100;
+        entity.clob = "CLOBのカラムの値をStreamで取得できること";
         VariousDbTestHelper.setUpTable(entity);
 
         // ------------------------------------------------ find
         final SqlPStatement statement = connection.prepareStatement(
-                "select clob_col from sqlrow_test where sqlrow_id = 1");
+                "select clob_col from clob_table where id = 100");
         final SqlResultSet rs = statement.retrieve();
 
         // ------------------------------------------------ assert
@@ -1024,10 +1047,10 @@ public abstract class SqlRowTestLogic {
 
         Reader reader = null;
         try {
-            reader = ((Clob) row.get("clobCol")).getCharacterStream();
+            reader = ((Clob) row.get("clob_col")).getCharacterStream();
             final char[] chars = new char[1024];
             final int length = reader.read(chars);
-            assertThat(new String(chars, 0, length), is(entity.clobCol));
+            assertThat(new String(chars, 0, length), is(entity.clob));
         } finally {
             FileUtil.closeQuietly(reader);
         }
@@ -1165,9 +1188,6 @@ public abstract class SqlRowTestLogic {
 
         @Column(name = "BOOLEAN_COL")
         public Boolean booleanCol = false;
-
-        @Column(name = "clob_col", columnDefinition = "clob")
-        public String clobCol = "clob col";
 
         public SqlRowEntity() {
         }

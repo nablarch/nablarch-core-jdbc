@@ -18,3 +18,5 @@ nablarch.core.db.dialect.SqlServerDialectTest$SqlServerDialectEntity
 nablarch.core.db.statement.BasicSqlPStatementTestLogic$SqlServerTestEntity
 nablarch.core.db.cache.statement.CacheableSqlPStatementCompatibilityTest$CacheTestEntity
 nablarch.core.db.transaction.SimpleDbTransactionExecutorTest$TestEntity
+nablarch.core.db.statement.entity.ClobColumn
+nablarch.core.db.statement.entity.TextColumn
