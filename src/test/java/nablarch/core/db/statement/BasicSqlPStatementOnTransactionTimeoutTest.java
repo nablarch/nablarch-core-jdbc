@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -77,6 +78,7 @@ public class BasicSqlPStatementOnTransactionTimeoutTest {
     @Before
     public void setup() throws Exception {
         dbConnection = createConnection();
+        dbConnection.rollback();
         VariousDbTestHelper.setUpTable(new TimeoutTestEntity("1"));
     }
 
@@ -625,7 +627,7 @@ public class BasicSqlPStatementOnTransactionTimeoutTest {
                     }
                 });
                 try {
-                    future.get();
+                    future.get(60, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
                     throw e;
                 } catch (ExecutionException e) {

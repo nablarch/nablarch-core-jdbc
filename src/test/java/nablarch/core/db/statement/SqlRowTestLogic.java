@@ -35,6 +35,7 @@ import org.hamcrest.collection.IsIterableContainingInAnyOrder;
 import nablarch.core.db.DbAccessException;
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.TransactionManagerConnection;
+import nablarch.core.db.dialect.converter.StringAttributeConverter;
 import nablarch.core.transaction.TransactionContext;
 import nablarch.core.util.FileUtil;
 import nablarch.test.support.db.helper.TargetDb;
@@ -730,31 +731,6 @@ public abstract class SqlRowTestLogic {
     }
 
     /**
-     * {@link SqlRow#getBytes(String)}でBLOBアクセス時にSQLExceptionが発生するケース。
-     * DbAccessExceptionが送出されること。
-     */
-    @Test(expected = DbAccessException.class)
-    @TargetDb(include = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
-    public void getBytes_blogSQLException(@Mocked final Blob mockBlob) throws Exception {
-        // ------------------------------------------------ setup
-        VariousDbTestHelper.setUpTable(
-                SqlRowEntity.createDefaultValueInstance(1L)
-        );
-
-        // ------------------------------------------------ find
-        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST");
-        final SqlResultSet rs = statement.retrieve();
-
-        // ------------------------------------------------ assert
-        final SqlRow sut = rs.get(0);
-        new Expectations(sut) {{
-            mockBlob.length();
-            result = new SQLException("blob access error");
-        }};
-        sut.getBytes("binaryCol");
-    }
-
-    /**
      * {@link SqlRow#getBoolean(String)}のテスト。
      *
      * DBの値が文字列の場合、"1" or "true" or "on"の場合、trueがかえされること。（大文字、小文字は区別しない)
@@ -921,18 +897,17 @@ public abstract class SqlRowTestLogic {
     }
 
     @Test(expected = DbAccessException.class)
-    @TargetDb(include = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
-    public void getObject_DbAccessException(@Mocked final Blob mockBlob) throws Exception {
+    public void getObject_DbAccessException(@Mocked final StringAttributeConverter mockConverter) throws Exception {
         VariousDbTestHelper.setUpTable(SqlRowEntity.createDefaultValueInstance(1L));
 
-        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST");
+        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST where SQLROW_ID = 1");
         final SqlRow sut = statement.retrieve().get(0);
 
         new Expectations() {{
-            mockBlob.length();
-            result = new SQLException("blob access error");
+            mockConverter.convertFromDatabase("a");
+            result = new DbAccessException("db error", new SQLException());
         }};
-        sut.getObject("binaryCol", byte[].class);
+        sut.getObject("char_col", String.class);
     }
 
     /**
