@@ -222,7 +222,7 @@ public class JdbcTransactionFactoryTest {
                     }
                 });
                 try {
-                    future.get(15, TimeUnit.SECONDS);
+                    future.get();
                 } catch (InterruptedException e) {
                     throw e;
                 } catch (ExecutionException e) {

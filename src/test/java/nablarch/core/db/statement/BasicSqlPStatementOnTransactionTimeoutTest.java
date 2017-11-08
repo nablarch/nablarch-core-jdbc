@@ -627,7 +627,7 @@ public class BasicSqlPStatementOnTransactionTimeoutTest {
                     }
                 });
                 try {
-                    future.get(15, TimeUnit.SECONDS);
+                    future.get();
                 } catch (InterruptedException e) {
                     throw e;
                 } catch (ExecutionException e) {
