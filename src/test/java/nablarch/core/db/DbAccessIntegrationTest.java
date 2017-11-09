@@ -4,6 +4,7 @@ import nablarch.core.db.DbAccessIntegrationTest.DbAccessJndiTest;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.TargetDb;
 
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -30,7 +31,7 @@ public class DbAccessIntegrationTest {
 
 
     @RunWith(DatabaseTestRunner.class)
-    @TargetDb(include = TargetDb.Db.ORACLE)
+    @Ignore
     public static class DbAccessJndiTest extends DbAccessTestLogic.ConfigurationsTest {
 
         @Override
