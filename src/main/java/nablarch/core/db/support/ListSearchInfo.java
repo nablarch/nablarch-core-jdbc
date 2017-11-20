@@ -10,6 +10,7 @@ import nablarch.core.util.annotation.Published;
  * 一覧検索用の情報を保持する基底クラス。
  * 
  * @author Kiyohito Itoh
+ * @see DbAccessSupport#search(String, ListSearchInfo) 
  */
 @Published
 public abstract class ListSearchInfo implements Serializable {
@@ -151,6 +152,10 @@ public abstract class ListSearchInfo implements Serializable {
     
     /**
      * 検索結果の総件数を設定する。
+     * 
+     * 本メソッドはフレームワークが検索処理を実行後に取得結果の総件数を設定するものである。
+     * アプリケーション側では、本メソッドを使用して値の設定は行わないこと。
+     * 
      * @param resultCount 検索結果の総件数
      */
     public final void setResultCount(int resultCount) {
