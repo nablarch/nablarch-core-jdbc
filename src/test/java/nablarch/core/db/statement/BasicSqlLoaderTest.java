@@ -5,8 +5,11 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
+import nablarch.core.db.statement.sqlpreprocessor.SqlPreProcessor;
 import org.junit.Test;
 
 /**
@@ -286,4 +289,35 @@ public class BasicSqlLoaderTest {
         Object o = loader.generateIndexKey("", null);
         assertThat(o, nullValue());
     }
+
+    /**
+     * SQL前処理のテスト。
+     * 指定した{@link SqlPreProcessor}実装クラスが実行されること。
+     */
+    @Test
+    public void testPreProcess() {
+        List<SqlPreProcessor> preProcessors = Arrays.asList(
+                new SqlPreProcessor() {    // 末尾のセミコロンを削除
+                    @Override
+                    public String preProcess(String original) {
+                        if (original.endsWith(";")) {
+                            return original.substring(0, original.length() - 1);
+                        }
+                        return original;
+                    }
+                }, new SqlPreProcessor() {  // 大文字に変換
+                    @Override
+                    public String preProcess(String original) {
+                        return original.toUpperCase();
+                    }
+                }
+        );
+        loader.setSqlPreProcessors(preProcessors);
+
+        Map<String, String> value = loader.getValue("nablarch.core.db.statement.sqlloader.PreProcessTest");
+        String actual = value.get("SQL001");
+        assertThat("元のSQLからセミコロンが除去され、大文字に変換されること",
+                   actual, is("SELECT USER_NAME, TEL, FROM USER_MTR"));
+    }
+
 }
