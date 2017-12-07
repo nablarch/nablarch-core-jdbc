@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import nablarch.core.db.statement.sqlpreprocessor.SqlPreProcessor;
+import nablarch.core.db.statement.sqlloader.SqlLoaderCallback;
 import org.junit.Test;
 
 /**
@@ -291,30 +291,30 @@ public class BasicSqlLoaderTest {
     }
 
     /**
-     * SQL前処理のテスト。
-     * 指定した{@link SqlPreProcessor}実装クラスが実行されること。
+     * SQL文ロード後の加工処理のテスト。
+     * 指定した{@link SqlLoaderCallback}実装クラスが実行されること。
      */
     @Test
-    public void testPreProcess() {
-        List<SqlPreProcessor> preProcessors = Arrays.asList(
-                new SqlPreProcessor() {    // 末尾のセミコロンを削除
+    public void testProcessOnAfterLoad() {
+        List<SqlLoaderCallback> preProcessors = Arrays.asList(
+                new SqlLoaderCallback() {    // 末尾のセミコロンを削除
                     @Override
-                    public String preProcess(String original, String unused) {
-                        if (original.endsWith(";")) {
-                            return original.substring(0, original.length() - 1);
+                    public String processOnAfterLoad(String sql, String unused) {
+                        if (sql.endsWith(";")) {
+                            return sql.substring(0, sql.length() - 1);
                         }
-                        return original;
+                        return sql;
                     }
-                }, new SqlPreProcessor() {  // 大文字に変換
+                }, new SqlLoaderCallback() {  // 大文字に変換
                     @Override
-                    public String preProcess(String original, String unused) {
-                        return original.toUpperCase();
+                    public String processOnAfterLoad(String sql, String unused) {
+                        return sql.toUpperCase();
                     }
                 }
         );
-        loader.setSqlPreProcessors(preProcessors);
+        loader.setSqlLoaderCallback(preProcessors);
 
-        Map<String, String> value = loader.getValue("nablarch.core.db.statement.sqlloader.PreProcessTest");
+        Map<String, String> value = loader.getValue("nablarch.core.db.statement.sqlloader.ProcessOnAfterLoadTest");
         String actual = value.get("SQL001");
         assertThat("元のSQLからセミコロンが除去され、大文字に変換されること",
                    actual, is("SELECT USER_NAME, TEL, FROM USER_MTR"));

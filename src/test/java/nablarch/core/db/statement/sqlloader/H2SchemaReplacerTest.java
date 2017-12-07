@@ -1,4 +1,4 @@
-package nablarch.core.db.statement.sqlpreprocessor;
+package nablarch.core.db.statement.sqlloader;
 
 import nablarch.core.db.connection.BasicDbConnectionFactoryForDataSource;
 import nablarch.core.db.connection.TransactionManagerConnection;
@@ -7,12 +7,10 @@ import nablarch.core.db.statement.SqlRow;
 import nablarch.core.transaction.TransactionContext;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
-import nablarch.test.support.db.helper.DbTestRule;
 import nablarch.test.support.db.helper.TargetDb;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -28,7 +26,7 @@ public class H2SchemaReplacerTest {
 
     @ClassRule
     public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
-            "nablarch/core/db/statement/sqlpreprocessor/H2SchemaReplacerTest.xml");
+            "nablarch/core/db/statement/sqlloader/H2SchemaReplacerTest.xml");
 
     private TransactionManagerConnection connection;
 

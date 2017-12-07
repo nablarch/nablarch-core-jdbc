@@ -8,9 +8,9 @@
   <component name="sqlLoader" class="nablarch.core.db.statement.BasicSqlLoader">
     <property name="fileEncoding" value="utf-8"/>
     <property name="extension" value="sql"/>
-    <property name="sqlPreProcessors">
+    <property name="sqlLoaderCallback">
       <list>
-        <component class="nablarch.core.db.statement.sqlpreprocessor.SchemaReplacer">
+        <component class="nablarch.core.db.statement.sqlloader.SchemaReplacer">
           <property name="schemaName" value="INFORMATION_SCHEMA"/>
         </component>
       </list>

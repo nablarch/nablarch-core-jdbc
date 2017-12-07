@@ -1,4 +1,4 @@
-package nablarch.core.db.statement.sqlpreprocessor;
+package nablarch.core.db.statement.sqlloader;
 
 import nablarch.core.util.StringUtil;
 
@@ -10,7 +10,7 @@ import nablarch.core.util.StringUtil;
  *
  * @author Tsuyoshi Kawasaki
  */
-public class SchemaReplacer implements SqlPreProcessor {
+public class SchemaReplacer implements SqlLoaderCallback {
 
     /** プレースホルダー文字列 */
     private static final String SCHEMA_PLACEHOLDER = "#SCHEMA#";
@@ -19,8 +19,8 @@ public class SchemaReplacer implements SqlPreProcessor {
     private String schemaName;
 
     @Override
-    public String preProcess(String original, String unused) {
-        return original.replace(SCHEMA_PLACEHOLDER, getSchemaName());
+    public String processOnAfterLoad(String sql, String unused) {
+        return sql.replace(SCHEMA_PLACEHOLDER, getSchemaName());
     }
 
     /**

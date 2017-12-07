@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import nablarch.core.cache.StaticDataLoader;
-import nablarch.core.db.statement.sqlpreprocessor.SqlPreProcessor;
+import nablarch.core.db.statement.sqlloader.SqlLoaderCallback;
 import nablarch.core.util.FileUtil;
 
 /**
@@ -49,17 +49,17 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
     /** SQLファイルの拡張子(デフォルトは、.sql) */
     private String extension = "sql";
 
-    /** SQLプリプロセッサ */
-    private List<SqlPreProcessor> sqlPreProcessors = Collections.emptyList();
+    /** コールバッククラス */
+    private List<SqlLoaderCallback> sqlLoaderCallbackList = Collections.emptyList();
 
     /**
-     * SQLプリプロセッサを設定する。
-     * プリプロセッサはリストの順序で実行される。
+     * コールバッククラスを設定する。
+     * コールバッククラスはリストの順序で実行される。
      *
-     * @param sqlPreProcessors SQLプリプロセッサのリスト
+     * @param sqlLoaderCallbackList SQLプリプロセッサのリスト
      */
-    public void setSqlPreProcessors(List<SqlPreProcessor> sqlPreProcessors) {
-        this.sqlPreProcessors = sqlPreProcessors;
+    public void setSqlLoaderCallback(List<SqlLoaderCallback> sqlLoaderCallbackList) {
+        this.sqlLoaderCallbackList = sqlLoaderCallbackList;
     }
 
     /**
@@ -161,9 +161,9 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
         String sqlId = line.substring(0, index).trim();
         String sql = line.substring(index + 1).trim();
         String formatted = trimWhiteSpaceAndUnEscape(sql);
-        String preProcessed = preProcess(formatted, sqlId);
+        String processed = processOnAfterLoad(formatted, sqlId);
 
-        if (holder.put(sqlId, preProcessed) != null) {
+        if (holder.put(sqlId, processed) != null) {
             throw new RuntimeException(String.format(
                     "SQL_ID is duplicated. SQL_ID = [%s], sql resource = [%s]", sqlId,
                     sqlResource));
@@ -171,16 +171,17 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
     }
 
     /**
-     * SQL文に前処理を行う。
+     * SQL文ロード後の加工処理を行う。
+     * {@link #setSqlLoaderCallback(List)}で設定されたコールバッククラスが順次適用される。
      *
      * @param before 元のSQL文
      * @param sqlId 元SQLのSQL_ID
-     * @return 前処理後のSQL文
+     * @return 処理後のSQL文
      */
-    private String preProcess(String before, String sqlId) {
+    private String processOnAfterLoad(String before, String sqlId) {
         String processed = before;
-        for (SqlPreProcessor sqlPreProcessor : sqlPreProcessors) {
-            processed = sqlPreProcessor.preProcess(processed, sqlId);
+        for (SqlLoaderCallback sqlLoaderCallback : sqlLoaderCallbackList) {
+            processed = sqlLoaderCallback.processOnAfterLoad(processed, sqlId);
         }
         return processed;
     }
