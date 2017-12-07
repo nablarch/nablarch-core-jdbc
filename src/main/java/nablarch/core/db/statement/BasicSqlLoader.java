@@ -4,11 +4,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import nablarch.core.cache.StaticDataLoader;
+import nablarch.core.db.statement.sqlloader.SqlLoaderCallback;
 import nablarch.core.util.FileUtil;
 
 /**
@@ -46,6 +48,19 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
 
     /** SQLファイルの拡張子(デフォルトは、.sql) */
     private String extension = "sql";
+
+    /** コールバッククラス */
+    private List<SqlLoaderCallback> sqlLoaderCallbackList = Collections.emptyList();
+
+    /**
+     * コールバッククラスを設定する。
+     * コールバッククラスはリストの順序で実行される。
+     *
+     * @param sqlLoaderCallbackList SQLプリプロセッサのリスト
+     */
+    public void setSqlLoaderCallback(List<SqlLoaderCallback> sqlLoaderCallbackList) {
+        this.sqlLoaderCallbackList = sqlLoaderCallbackList;
+    }
 
     /**
      * ファイルエンコーディングを設定する。<br/>
@@ -98,7 +113,7 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
             while ((line = reader.readLine()) != null) {
                 if (line.trim().length() == 0 && sb.length() != 0) {
                     // SQLの終端の場合
-                    formatSql(sqlResource, sb.toString(), sqlHolder);
+                    registerSql(sqlResource, sb.toString(), sqlHolder);
                     sb.setLength(0);
                     continue;
                 }
@@ -117,7 +132,7 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
             }
             if (sb.length() != 0) {
                 // 最後が空行で終っていなかった場合の対処
-                formatSql(sqlResource, sb.toString(), sqlHolder);
+                registerSql(sqlResource, sb.toString(), sqlHolder);
             }
         } catch (IOException e) {
             throw new RuntimeException(String.format(
@@ -135,7 +150,7 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
      * @param line 1SQL
      * @param holder SQL文を保持するMap
      */
-    private void formatSql(String sqlResource, String line, Map<String, String> holder) {
+    private void registerSql(String sqlResource, String line, Map<String, String> holder) {
         // SQL文とSQLIDは'='で区切られている。
         int index = line.indexOf('=');
         if (index == -1) {
@@ -145,12 +160,30 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
         }
         String sqlId = line.substring(0, index).trim();
         String sql = line.substring(index + 1).trim();
+        String formatted = trimWhiteSpaceAndUnEscape(sql);
+        String processed = processOnAfterLoad(formatted, sqlId);
 
-        if (holder.put(sqlId, trimWhiteSpaceAndUnEscape(sql)) != null) {
+        if (holder.put(sqlId, processed) != null) {
             throw new RuntimeException(String.format(
                     "SQL_ID is duplicated. SQL_ID = [%s], sql resource = [%s]", sqlId,
                     sqlResource));
         }
+    }
+
+    /**
+     * SQL文ロード後の加工処理を行う。
+     * {@link #setSqlLoaderCallback(List)}で設定されたコールバッククラスが順次適用される。
+     *
+     * @param before 元のSQL文
+     * @param sqlId 元SQLのSQL_ID
+     * @return 処理後のSQL文
+     */
+    private String processOnAfterLoad(String before, String sqlId) {
+        String processed = before;
+        for (SqlLoaderCallback sqlLoaderCallback : sqlLoaderCallbackList) {
+            processed = sqlLoaderCallback.processOnAfterLoad(processed, sqlId);
+        }
+        return processed;
     }
 
     /**
