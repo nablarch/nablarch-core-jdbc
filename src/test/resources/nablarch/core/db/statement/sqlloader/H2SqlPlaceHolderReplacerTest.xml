@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration"
+                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ../../../../../../main/resources/component-configuration.xsd">
+
+  <import file="db-default.xml"/>
+  <!-- SQLLoaderの設定 -->
+  <component name="sqlLoader" class="nablarch.core.db.statement.BasicSqlLoader">
+    <property name="fileEncoding" value="utf-8"/>
+    <property name="extension" value="sql"/>
+    <property name="sqlLoaderCallback">
+      <list>
+        <component class="nablarch.core.db.statement.sqlloader.SqlPlaceHolderReplacer">
+          <property name="placeHolderValuePair">
+            <map>
+              <entry key="#SCHEMA_A#" value="INFORMATION_SCHEMA"/>
+              <entry key="#SCHEMA_B#" value="INFORMATION_SCHEMA"/>
+              <entry key="#SCHEMA_C#" value="INFORMATION_SCHEMA"/>
+            </map>
+          </property>
+        </component>
+      </list>
+    </property>
+  </component>
+</component-configuration>

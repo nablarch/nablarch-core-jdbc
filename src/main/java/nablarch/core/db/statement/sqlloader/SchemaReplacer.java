@@ -1,6 +1,7 @@
 package nablarch.core.db.statement.sqlloader;
 
-import nablarch.core.util.StringUtil;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * スキーマのプレースホルダーを置き換えるクラス。
@@ -12,28 +13,15 @@ import nablarch.core.util.StringUtil;
  */
 public class SchemaReplacer implements SqlLoaderCallback {
 
+    /** 実際の置換を行うクラス */
+    private final SqlPlaceHolderReplacer replacer = new SqlPlaceHolderReplacer();
+
     /** プレースホルダー文字列 */
     private static final String SCHEMA_PLACEHOLDER = "#SCHEMA#";
 
-    /** スキーマ名 */
-    private String schemaName;
-
     @Override
-    public String processOnAfterLoad(String sql, String unused) {
-        return sql.replace(SCHEMA_PLACEHOLDER, getSchemaName());
-    }
-
-    /**
-     * スキーマ名を取得する。
-     * スキーマ名が設定されていない場合、例外が発生する。
-     *
-     * @return スキーマ名
-     */
-    private String getSchemaName() {
-        if (StringUtil.isNullOrEmpty(schemaName)) {
-            throw new IllegalStateException("schema name must be set.");
-        }
-        return schemaName;
+    public String processOnAfterLoad(String sql, String sqlId) {
+        return replacer.processOnAfterLoad(sql, sqlId);
     }
 
     /**
@@ -41,7 +29,9 @@ public class SchemaReplacer implements SqlLoaderCallback {
      * @param schemaName スキーマ名
      */
     public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
+        Map<String, String> placeHolderValuePair = new HashMap<String, String>();
+        placeHolderValuePair.put(SCHEMA_PLACEHOLDER, schemaName);
+        replacer.setPlaceHolderValuePair(placeHolderValuePair);
     }
 
 }
