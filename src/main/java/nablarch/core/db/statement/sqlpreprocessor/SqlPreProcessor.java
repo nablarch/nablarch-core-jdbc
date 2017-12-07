@@ -1,11 +1,14 @@
 package nablarch.core.db.statement.sqlpreprocessor;
 
+import nablarch.core.util.annotation.Published;
+
 /**
  * SQL文の前処理を行うインタフェース。
  *
  * @author Tsuyoshi Kawasaki
  * @see nablarch.core.db.statement.BasicSqlLoader
  */
+@Published(tag = "architect")
 public interface SqlPreProcessor {
 
     /**
