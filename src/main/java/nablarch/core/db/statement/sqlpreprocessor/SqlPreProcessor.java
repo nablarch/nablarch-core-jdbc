@@ -13,8 +13,10 @@ public interface SqlPreProcessor {
 
     /**
      * 前処理を行う。
-     * @param original 元のSQL文
+     *
+     * @param before 元のSQL文
+     * @param sqlId 元SQLのSQL_ID
      * @return 前処理実行後のSQL文
      */
-    String preProcess(String original);
+    String preProcess(String before, String sqlId);
 }

@@ -161,7 +161,7 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
         String sqlId = line.substring(0, index).trim();
         String sql = line.substring(index + 1).trim();
         String formatted = trimWhiteSpaceAndUnEscape(sql);
-        String preProcessed = preProcess(formatted);
+        String preProcessed = preProcess(formatted, sqlId);
 
         if (holder.put(sqlId, preProcessed) != null) {
             throw new RuntimeException(String.format(
@@ -173,13 +173,14 @@ public class BasicSqlLoader implements StaticDataLoader<Map<String, String>> {
     /**
      * SQL文に前処理を行う。
      *
-     * @param original 元のSQL文
+     * @param before 元のSQL文
+     * @param sqlId 元SQLのSQL_ID
      * @return 前処理後のSQL文
      */
-    private String preProcess(String original) {
-        String processed = original;
+    private String preProcess(String before, String sqlId) {
+        String processed = before;
         for (SqlPreProcessor sqlPreProcessor : sqlPreProcessors) {
-            processed = sqlPreProcessor.preProcess(processed);
+            processed = sqlPreProcessor.preProcess(processed, sqlId);
         }
         return processed;
     }

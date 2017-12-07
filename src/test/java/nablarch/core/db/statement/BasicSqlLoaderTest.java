@@ -299,7 +299,7 @@ public class BasicSqlLoaderTest {
         List<SqlPreProcessor> preProcessors = Arrays.asList(
                 new SqlPreProcessor() {    // 末尾のセミコロンを削除
                     @Override
-                    public String preProcess(String original) {
+                    public String preProcess(String original, String unused) {
                         if (original.endsWith(";")) {
                             return original.substring(0, original.length() - 1);
                         }
@@ -307,7 +307,7 @@ public class BasicSqlLoaderTest {
                     }
                 }, new SqlPreProcessor() {  // 大文字に変換
                     @Override
-                    public String preProcess(String original) {
+                    public String preProcess(String original, String unused) {
                         return original.toUpperCase();
                     }
                 }

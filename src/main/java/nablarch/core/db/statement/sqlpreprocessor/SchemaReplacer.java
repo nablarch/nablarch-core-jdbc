@@ -19,7 +19,7 @@ public class SchemaReplacer implements SqlPreProcessor {
     private String schemaName;
 
     @Override
-    public String preProcess(String original) {
+    public String preProcess(String original, String unused) {
         return original.replace(SCHEMA_PLACEHOLDER, getSchemaName());
     }
 
