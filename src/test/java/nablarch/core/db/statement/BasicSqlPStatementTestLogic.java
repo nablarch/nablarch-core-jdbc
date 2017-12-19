@@ -243,7 +243,8 @@ public abstract class BasicSqlPStatementTestLogic {
         VariousDbTestHelper.setUpTable(
                 new TestEntity("10001", "a", 10000L, calendar.getTime(), 1, 1.1f),
                 new TestEntity("10002", "b", 20000L, calendar.getTime(), 2, 2.2f),
-                new TestEntity("10003", "c_\\(like検索用)", 30000L, calendar.getTime(), 3, 3.3f)
+                new TestEntity("10003", "c_\\(like検索用)", 30000L, calendar.getTime(), 3, 3.3f),
+                new TestEntity("10004", "\uD840\uDC0B", 40000L, calendar.getTime(), 4, 4.4f)
         );
     }
 
@@ -269,6 +270,25 @@ public abstract class BasicSqlPStatementTestLogic {
                 + "\t01 = \\Q[10001]\\E"));
         assertLog("終了ログ", Pattern.compile("\texecute time\\(ms\\) = \\[\\d+\\]"));
     }
+
+    /**
+     * {@link BasicSqlPStatement#executeQuery()}で条件パラメータ(サロゲートペアを含む文字列)有りのSQLログが出力されること。
+     */
+    @Test
+    public void executeQuery_writeSqlLog_withSurrogatePair() throws Exception {
+        SqlPStatement statement = dbCon.prepareStatement(
+                "SELECT ENTITY_ID FROM STATEMENT_TEST_TABLE WHERE VARCHAR_COL = ?");
+        statement.setString(1, "\uD840\uDC0B");
+        statement.executeQuery();
+
+        assertLog("開始ログ", Pattern.compile(
+                "\\Qnablarch.core.db.statement.BasicSqlPStatement#executeQuery "
+                        + "SQL = [SELECT ENTITY_ID FROM STATEMENT_TEST_TABLE WHERE VARCHAR_COL = ?]\\E"));
+        assertLog("パラメータ", Pattern.compile("Parameters" + Logger.LS
+                + "\t01 = \\Q[\uD840\uDC0B]\\E"));
+        assertLog("終了ログ", Pattern.compile("\texecute time\\(ms\\) = \\[\\d+\\]"));
+    }
+
 
     @Test
     public void executeQuery_writeSqlLog_withOption() throws Exception {
@@ -321,7 +341,9 @@ public abstract class BasicSqlPStatementTestLogic {
         // -- second result (10003)
         assertThat("2件目が取得できる", actual.next(), is(true));
         assertThat(actual.getRow().getString("entityId"), is("10003"));
-        assertThat("3件目は取得できない", actual.next(), is(false));
+        assertThat("3件目が取得できる", actual.next(), is(true));
+        assertThat(actual.getRow().getString("entityId"), is("10004"));
+        assertThat("4件目は取得できない", actual.next(), is(false));
     }
 
     /**
@@ -343,6 +365,9 @@ public abstract class BasicSqlPStatementTestLogic {
         assertThat(actual.next(), is(true));
         row = actual.getRow();
         assertThat(row.getString("entityId"), is("10003"));
+        assertThat(actual.next(), is(true));
+        row = actual.getRow();
+        assertThat(row.getString("entityId"), is("10004"));
         assertThat(actual.next(), is(false));
     }
 
@@ -362,7 +387,10 @@ public abstract class BasicSqlPStatementTestLogic {
         assertThat("3レコード目は存在する", actual.next(), is(true));
         assertThat("3レコード目:主キー", actual.getRow()
                 .getString("entityId"), is("10003"));
-        assertThat("4レコード目は存在しない", actual.next(), is(false));
+        assertThat("4レコード目は存在する", actual.next(), is(true));
+        assertThat("4レコード目:主キー", actual.getRow()
+                .getString("entityId"), is("10004"));
+        assertThat("5レコード目は存在しない", actual.next(), is(false));
     }
 
     /**
@@ -419,7 +447,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final SqlPStatement sut = dbCon.prepareStatement(
                 "UPDATE STATEMENT_TEST_TABLE SET VARCHAR_COL = ? WHERE ENTITY_ID = ?");
         Deencapsulation.setField(sut, mockStatement);
-        sut.setString(1, "あいうえお");
+        sut.setString(1, "あいうえお\uD840\uDC0B");
         sut.setString(2, "10001");
         sut.executeUpdate();
 
@@ -428,7 +456,7 @@ public abstract class BasicSqlPStatementTestLogic {
                         + "UPDATE STATEMENT_TEST_TABLE SET VARCHAR_COL = ? WHERE ENTITY_ID = ?]\\E"));
         assertLog("パラメータ", Pattern.compile(
                 "Parameters" + Logger.LS
-                        + "\t\\Q01 = [あいうえお]" + Logger.LS + "\t02 = [10001]\\E"));
+                        + "\t\\Q01 = [あいうえお\uD840\uDC0B]" + Logger.LS + "\t02 = [10001]\\E"));
 
         assertLog("終了ログ", Pattern.compile(
                 "nablarch.core.db.statement.BasicSqlPStatement#executeUpdate"
@@ -474,12 +502,12 @@ public abstract class BasicSqlPStatementTestLogic {
                 "UPDATE STATEMENT_TEST_TABLE SET LONG_COL = LONG_COL + 1");
         final int updated = statement.executeUpdate();
 
-        assertThat("レコードが全て更新される", updated, is(3));
+        assertThat("レコードが全て更新される", updated, is(4));
 
         dbCon.commit();
 
         final List<TestEntity> actual = VariousDbTestHelper.findAll(TestEntity.class, "id");
-        long[] expected = {10001, 20001, 30001};
+        long[] expected = {10001, 20001, 30001, 40001};
         int index = 0;
         for (TestEntity entity : actual) {
             assertThat("更新されている", entity.longCol, is(expected[index++]));
@@ -508,14 +536,16 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void execute() throws Exception {
         final SqlPStatement sut = dbCon.prepareStatement(
-                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID) VALUES (?)");
+                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID,VARCHAR_COL) VALUES (?,?)");
         sut.setString(1, "12345");
+        sut.setString(2, "\uD840\uDC0B");
         final boolean result = sut.execute();
         assertThat(result, is(false));
         dbCon.commit();
 
         final TestEntity actual = VariousDbTestHelper.findById(TestEntity.class, "12345");
-        assertThat(actual, is(notNullValue()));
+        assertThat(actual.getId(), is("12345"));
+        assertThat(actual.getVarcharCol(), is("\uD840\uDC0B"));
     }
 
     /**
@@ -524,16 +554,19 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void execute_writeSqlLog() throws Exception {
         final SqlPStatement sut = dbCon.prepareStatement(
-                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID) VALUES (?)");
+                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID,VARCHAR_COL) VALUES (?,?)");
         sut.setString(1, "12345");
+        sut.setString(2, "\uD840\uDC0B");
         sut.execute();
 
         assertLog("開始ログ",
                 Pattern.compile("\\Qnablarch.core.db.statement.BasicSqlPStatement#execute"
-                        + " SQL = [INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID) VALUES (?)]\\E"));
+                        + " SQL = [INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID,VARCHAR_COL) VALUES (?,?)]\\E"));
         assertLog("パラメータログ",
                 Pattern.compile("\\QParameters" + Logger.LS
-                        + "\t01 = [12345]\\E"));
+                        + "\t01 = [12345]" + Logger.LS
+                        + "\t02 = [\uD840\uDC0B]\\E"
+                ));
         assertLog("実行ログ",
                 Pattern.compile("\\Qnablarch.core.db.statement.BasicSqlPStatement#execute" + Logger.LS
                         + "\texecute time(ms)\\E = \\[[0-9]+\\]"));
@@ -595,7 +628,7 @@ public abstract class BasicSqlPStatementTestLogic {
         assertLog("パラメータログ", Pattern.compile("Parameters$"));
         assertLog("終了ログ", Pattern.compile("nablarch.core.db.statement.BasicSqlPStatement#retrieve"
                         + Logger.LS
-                        + "\texecute time\\(ms\\) = \\[[0-9]+\\] retrieve time\\(ms\\) = \\[[0-9]+\\] count = \\[3\\]"
+                        + "\texecute time\\(ms\\) = \\[[0-9]+\\] retrieve time\\(ms\\) = \\[[0-9]+\\] count = \\[4\\]"
         ));
     }
 
@@ -642,7 +675,7 @@ public abstract class BasicSqlPStatementTestLogic {
         ));
         assertLog("パラメータログ", Pattern.compile("Parameters$"));
         assertLog("終了ログ", Pattern.compile("nablarch.core.db.statement.BasicSqlPStatement#retrieve"
-                        + Logger.LS + "\texecute time\\(ms\\) = \\[[0-9]+\\] retrieve time\\(ms\\) = \\[[0-9]+\\] count = \\[2\\]"
+                        + Logger.LS + "\texecute time\\(ms\\) = \\[[0-9]+\\] retrieve time\\(ms\\) = \\[[0-9]+\\] count = \\[3\\]"
         ));
     }
 
@@ -680,9 +713,10 @@ public abstract class BasicSqlPStatementTestLogic {
         sut.setString(1, "10001");
 
         final SqlResultSet actual = sut.retrieve();
-        assertThat("2レコード取得できる", actual.size(), is(2));
+        assertThat("3レコード取得できる", actual.size(), is(3));
         assertThat(actual.get(0).getString("entityId"), is("10002"));
         assertThat(actual.get(1).getString("entityId"), is("10003"));
+        assertThat(actual.get(2).getString("entityId"), is("10004"));
     }
 
     /**
@@ -694,7 +728,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
         final SqlResultSet actual = sut.retrieve();
 
-        assertThat("テーブルの全てのレコードが取得できる", actual.size(), is(3));
+        assertThat("テーブルの全てのレコードが取得できる", actual.size(), is(4));
     }
 
     /**
@@ -775,12 +809,13 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void retrieve_withOffsetOption() throws Exception {
         // 2件目以降を取得
-        assertThat(VariousDbTestHelper.findAll(TestEntity.class).size(), is(3));
+        assertThat(VariousDbTestHelper.findAll(TestEntity.class).size(), is(4));
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE ORDER BY ENTITY_ID", new SelectOption(2, 0));
         SqlResultSet rs = sut.retrieve();
-        assertThat(rs.size(), is(2));
+        assertThat(rs.size(), is(3));
         assertThat(rs.get(0).getString("entity_id"), is("10002"));
         assertThat(rs.get(1).getString("entity_id"), is("10003"));
+        assertThat(rs.get(2).getString("entity_id"), is("10004"));
     }
 
     /**
@@ -792,7 +827,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void retrieve_withLimitOption() throws Exception {
         // 1件目から2件取得
-        assertThat(VariousDbTestHelper.findAll(TestEntity.class).size(), is(3));
+        assertThat(VariousDbTestHelper.findAll(TestEntity.class).size(), is(4));
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE ORDER BY ENTITY_ID", new SelectOption(1, 2));
         SqlResultSet rs = sut.retrieve();
         assertThat(rs.size(), is(2));
@@ -994,21 +1029,23 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void executeBatch_writeSqlLog() throws Exception {
         final SqlPStatement sut = dbCon.prepareStatement(
-                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID) VALUES (?)");
+                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID,VARCHAR_COL) VALUES (?,?)");
         sut.setString(1, "88888");
+        sut.setString(2, "\uD840\uDC0B");
         sut.addBatch();
         sut.setString(1, "99999");
+        sut.setString(2, "\uD844\uDE3D");
         sut.addBatch();
         sut.executeBatch();
 
         assertLog("開始ログ", Pattern.compile(
                 "\\Qablarch.core.db.statement.BasicSqlPStatement#executeBatch SQL = ["
-                        + "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID) VALUES (?)]\\E"));
+                        + "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID,VARCHAR_COL) VALUES (?,?)]\\E"));
 
         assertLog("パラメータログ", Pattern.compile(
                 "Parameters" + Logger.LS
-                        + "\t\\Qbatch count = [1]" + Logger.LS + "\t\t01 = [88888]" + Logger.LS
-                        + "\tbatch count = [2]" + Logger.LS + "\t\t01 = [99999]\\E"
+                        + "\t\\Qbatch count = [1]" + Logger.LS + "\t\t01 = [88888]" + Logger.LS + "\t\t02 = [\uD840\uDC0B]" + Logger.LS
+                        + "\tbatch count = [2]" + Logger.LS + "\t\t01 = [99999]"+ Logger.LS + "\t\t02 = [\uD844\uDE3D]\\E"
         ));
         assertLog("終了ログ", Pattern.compile(
                 "nablarch.core.db.statement.BasicSqlPStatement#executeBatch"
@@ -1033,10 +1070,10 @@ public abstract class BasicSqlPStatementTestLogic {
         assertThat("executeBatch実行後はバッチサイズは0になる", sut.getBatchSize(), is(0));
 
         final List<TestEntity> actual = VariousDbTestHelper.findAll(TestEntity.class, "id");
-        assertThat("2レコード増えていること", actual.size(), is(5));
+        assertThat("2レコード増えていること", actual.size(), is(6));
 
-        assertThat("登録されていること", actual.get(3).id, is("88888"));
-        assertThat("登録されていること", actual.get(4).id, is("99999"));
+        assertThat("登録されていること", actual.get(4).id, is("88888"));
+        assertThat("登録されていること", actual.get(5).id, is("99999"));
     }
 
     /**
@@ -1443,13 +1480,13 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setFloat() throws Exception {
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE FLOAT_COL > ?");
-        sut.setFloat(1, 3.2f);
+        sut.setFloat(1, 4.3f);
         final SqlResultSet actual = sut.retrieve();
 
         assertThat("1レコード取得できる", actual.size(), is(1));
         assertThat("条件の値が取得できる", actual.get(0)
                 .getBigDecimal("floatCol")
-                .floatValue(), is(3.3f));
+                .floatValue(), is(4.4f));
     }
 
     /**
@@ -1538,13 +1575,13 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setBigDecimal() throws Exception {
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE FLOAT_COL > ?");
-        sut.setBigDecimal(1, new BigDecimal("3.2"));
+        sut.setBigDecimal(1, new BigDecimal("4.3"));
         final SqlResultSet actual = sut.retrieve();
 
         assertThat("1レコード取得できる", actual.size(), is(1));
         assertThat("条件の値が取得できる", actual.get(0)
                 .getBigDecimal("floatCol")
-                .floatValue(), is(3.3f));
+                .floatValue(), is(4.4f));
     }
 
     /**
@@ -1583,13 +1620,16 @@ public abstract class BasicSqlPStatementTestLogic {
      */
     @Test
     public void setString() throws Exception {
-        final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
-        sut.setString(1, "10001");
+        final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ? AND VARCHAR_COL = ?");
+        sut.setString(1, "10004");
+        sut.setString(2, "\uD840\uDC0B");
         final SqlResultSet actual = sut.retrieve();
 
         assertThat("1レコード取得できる", actual.size(), is(1));
         assertThat("条件の値が取得できる", actual.get(0)
-                .getString("entityId"), is("10001"));
+                .getString("entityId"), is("10004"));
+        assertThat("条件の値が取得できる", actual.get(0)
+                .getString("varcharCol"), is("\uD840\uDC0B"));
     }
 
     /**
@@ -2110,8 +2150,8 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void getUpdateCount() throws Exception {
         final SqlPStatement sut = dbCon.prepareStatement("UPDATE STATEMENT_TEST_TABLE SET ENTITY_ID = ENTITY_ID");
-        assertThat("更新件数は3", sut.executeUpdate(), is(3));
-        assertThat("更新件数が取得できる", sut.getUpdateCount(), is(3));
+        assertThat("更新件数は4", sut.executeUpdate(), is(4));
+        assertThat("更新件数が取得できる", sut.getUpdateCount(), is(4));
     }
 
     public static class ParameterizedParameterObject {
@@ -2697,7 +2737,7 @@ public abstract class BasicSqlPStatementTestLogic {
         Map<String, String> condition = new HashMap<String, String>();
         condition.put("id", "000");
         final SqlResultSet actual = sut.retrieve(condition);
-        assertThat(actual.size(), is(3));
+        assertThat(actual.size(), is(4));
 
         assertThat(actual.get(0)
                 .getString("entityId"), is("10001"));
@@ -2705,6 +2745,8 @@ public abstract class BasicSqlPStatementTestLogic {
                 .getString("entityId"), is("10002"));
         assertThat(actual.get(2)
                 .getString("entityId"), is("10003"));
+        assertThat(actual.get(3)
+                .getString("entityId"), is("10004"));
         OnMemoryLogWriter.assertLogContains("writer.memory", "%id% = [%000%]");
     }
 
@@ -2905,11 +2947,13 @@ public abstract class BasicSqlPStatementTestLogic {
             condition = entity;
         }
         final SqlResultSet actual = sut.retrieve(condition);
-        assertThat("2レコード取得できること", actual.size(), is(2));
+        assertThat("3レコード取得できること", actual.size(), is(3));
         assertThat(actual.get(0)
                 .getString("entityId"), is("10002"));
         assertThat(actual.get(1)
                 .getString("entityId"), is("10003"));
+        assertThat(actual.get(2)
+                .getString("entityId"), is("10004"));
     }
 
     /**
@@ -3109,7 +3153,7 @@ public abstract class BasicSqlPStatementTestLogic {
             condition = entity;
         }
         final SqlResultSet actual = sut.retrieve(condition);
-        assertThat(actual.size(), is(3));
+        assertThat(actual.size(), is(4));
 
         assertThat(actual.get(0)
                 .getString("entityId"), is("10001"));
@@ -3117,6 +3161,8 @@ public abstract class BasicSqlPStatementTestLogic {
                 .getString("entityId"), is("10002"));
         assertThat(actual.get(2)
                 .getString("entityId"), is("10003"));
+        assertThat(actual.get(3)
+                .getString("entityId"), is("10004"));
 
     }
 
@@ -3708,7 +3754,7 @@ public abstract class BasicSqlPStatementTestLogic {
                 condition);
 
         SqlResultSet actual = sut.retrieve(condition);
-        assertThat(actual.size(), is(3));
+        assertThat(actual.size(), is(4));
 
         if(!isFieldAccess){
             final TestEntity entity = (TestEntity) condition;
@@ -3721,7 +3767,7 @@ public abstract class BasicSqlPStatementTestLogic {
                 "select * from STATEMENT_TEST_TABLE WHERE ENTITY_ID LIKE :id% AND $if(varcharCol) {VARCHAR_COL = :varcharCol}",
                 condition);
         actual = sut.retrieve(condition);
-        assertThat(actual.size(), is(3));
+        assertThat(actual.size(), is(4));
 
         if(!isFieldAccess){
             final TestEntity entity = (TestEntity) condition;
@@ -4096,7 +4142,7 @@ public abstract class BasicSqlPStatementTestLogic {
         );
         SqlResultSet actual = sut.retrieve();
 
-        assertThat(actual.get(0).getBigDecimal("ret"), is(new BigDecimal("3.3")));
+        assertThat(actual.get(0).getBigDecimal("ret"), is(new BigDecimal("4.4")));
     }
 
     /**
@@ -4109,7 +4155,7 @@ public abstract class BasicSqlPStatementTestLogic {
         );
         SqlResultSet actual = sut.retrieve();
 
-        assertThat(actual.get(0).getInteger("ret"), is(30));
+        assertThat(actual.get(0).getInteger("ret"), is(40));
     }
 
     /**
@@ -4122,7 +4168,7 @@ public abstract class BasicSqlPStatementTestLogic {
         );
         SqlResultSet actual = sut.retrieve();
 
-        assertThat(actual.get(0).getLong("ret"), is(30000000000L));
+        assertThat(actual.get(0).getLong("ret"), is(40000000000L));
     }
 
     /**
