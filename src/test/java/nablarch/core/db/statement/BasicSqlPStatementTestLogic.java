@@ -4135,7 +4135,7 @@ public abstract class BasicSqlPStatementTestLogic {
         VariousDbTestHelper.createTable(ClobColumn.class);
         final SqlPStatement sut = dbCon.prepareStatement(
                 "insert into clob_table (id, clob_col) values (99999, ?)");
-        sut.setObject(1, "input", Types.CLOB);
+        sut.setObject(1, "input");
         sut.executeUpdate();
         dbCon.commit();
 
