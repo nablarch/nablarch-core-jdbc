@@ -489,11 +489,8 @@ public abstract class SqlRowTestLogic {
     /**
      * {@link SqlRow#getDate(String)}のテスト。
      *
-     * ※Oracle11g以降は、日付型は全てTimestampとして扱われるので、本テストは実施しない。
-     * (OracleのDateは時間情報を保持しているので、Dateで取得するとその情報が欠落するため。）
      */
     @Test
-    @TargetDb(exclude = TargetDb.Db.ORACLE)
     public void getDate() throws Exception {
         // ------------------------------------------------ setup
         VariousDbTestHelper.setUpTable(
@@ -506,7 +503,8 @@ public abstract class SqlRowTestLogic {
 
         // ------------------------------------------------ assert
         final SqlRow sut = rs.get(0);
-        assertThat(sut.getDate("dateCol"), is(testDate));
+        //正しく時刻が取得されていればテストOKとする。比較の際、DBによって返却される型が異なるため、型をjava.util.Dateに揃えた上で比較する
+        assertThat(new Date(sut.getDate("dateCol").getTime()), is(testDate));
     }
 
     /**
