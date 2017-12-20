@@ -2061,7 +2061,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test(expected = DbAccessException.class)
     public void setObjectWithType_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
         new Expectations() {{
-            mockStatement.setObject(anyInt, any);
+            mockStatement.setObject(anyInt, any, anyInt);
             result = new SQLException("setObjectWithType error");
         }};
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");

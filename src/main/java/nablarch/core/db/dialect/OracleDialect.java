@@ -26,10 +26,9 @@ public class OracleDialect extends DefaultDialect {
     /**
      * コンストラクタ。
      *
-     * デフォルトで使用する{@link OracleAttributeConverterFactory}を設定する。
      */
     public OracleDialect() {
-        setAttributeConverterFactory(new OracleAttributeConverterFactory());
+
     }
 
     /**

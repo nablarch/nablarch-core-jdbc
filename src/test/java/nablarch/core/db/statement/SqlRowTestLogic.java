@@ -1,6 +1,6 @@
 package nablarch.core.db.statement;
 
-import static org.hamcrest.CoreMatchers.*;
+    import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -31,10 +31,8 @@ import javax.persistence.TemporalType;
 
 import org.hamcrest.collection.IsIterableContainingInAnyOrder;
 
-import nablarch.core.db.DbAccessException;
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.TransactionManagerConnection;
-import nablarch.core.db.dialect.converter.StringAttributeConverter;
 import nablarch.core.db.statement.entity.ClobColumn;
 import nablarch.core.db.statement.entity.TextColumn;
 import nablarch.core.transaction.TransactionContext;
@@ -46,8 +44,6 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import mockit.Expectations;
-import mockit.Mocked;
 
 /**
  * {@link SqlRow}およびそのサブクラスをテストするためのテストロジック。
@@ -226,7 +222,7 @@ public abstract class SqlRowTestLogic {
      * {@link SqlRow#getInteger(String)}のテストで、
      * 対象の値がIntegerの範囲外の場合エラーとなること。
      */
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = NumberFormatException.class)
     public void getInteger_overflow() throws Exception {
         // ------------------------------------------------ setup
         VariousDbTestHelper.setUpTable(
@@ -246,7 +242,7 @@ public abstract class SqlRowTestLogic {
      * {@link SqlRow#getInteger(String)}のテストで、
      * 対象の値が数値ではない場合はエラーとなること。
      */
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = NumberFormatException.class)
     public void getInteger_notNumeric() throws Exception {
         // ------------------------------------------------ setup
         VariousDbTestHelper.setUpTable(
@@ -330,7 +326,7 @@ public abstract class SqlRowTestLogic {
      * {@link SqlRow#getLong(String)}のテストで、
      * 対象の値がLongの範囲外の場合エラーとなること。
      */
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = NumberFormatException.class)
     public void getLong_overflow() throws Exception {
         // ------------------------------------------------ setup
         final SqlRowEntity entity = SqlRowEntity.createDefaultValueInstance(1L);
@@ -350,7 +346,7 @@ public abstract class SqlRowTestLogic {
      * {@link SqlRow#getLong(String)}のテストで、
      * 対象の値が数値ではない場合はエラーとなること。
      */
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = NumberFormatException.class)
     public void getLong_notNumeric() throws Exception {
         // ------------------------------------------------ setup
         VariousDbTestHelper.setUpTable(
@@ -435,7 +431,7 @@ public abstract class SqlRowTestLogic {
      * {@link SqlRow#getBigDecimal(String)}のテストで、
      * 対象の値が数値ではない場合はエラーとなること。
      */
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void getBigDecimal_notNumeric() throws Exception {
         // ------------------------------------------------ setup
         VariousDbTestHelper.setUpTable(
@@ -463,11 +459,9 @@ public abstract class SqlRowTestLogic {
         try {
             sut.getBigDecimal("varcharCol");
             fail();
-        } catch (IllegalStateException e) {
+        } catch (IllegalArgumentException e) {
             e.printStackTrace();
-            final Throwable cause = e.getCause();
-            assertThat(cause, instanceOf(IllegalArgumentException.class));
-            assertThat(cause.getMessage(), is("Illegal scale(10000): needs to be between(-9999, 9999)"));
+            assertThat(e.getMessage(), is("Illegal scale(10000): needs to be between(-9999, 9999)"));
         }
     }
 
@@ -849,58 +843,6 @@ public abstract class SqlRowTestLogic {
         // ------------------------------------------------ assert
         final SqlRow sut = rs.get(0);
         sut.getBoolean("notFound");
-    }
-
-    @Test
-    public void getObject_String() throws Exception {
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createDefaultValueInstance(1L));
-
-        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST");
-        SqlRow sut = statement.retrieve().get(0);
-        assertThat("Stringを指定して取得できる",
-                sut.getObject("varcharCol", String.class), is("あいうえおかきくけこ"));
-    }
-
-    @Test
-    public void getObject_Integer() throws Exception {
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createSetIntegerValueInstance(1L));
-
-        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST");
-        SqlRow sut = statement.retrieve().get(0);
-        assertThat("Integerを指定して取得できる",
-                sut.getObject("integerCol", Integer.class), is(2));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void getObject_columnNotFound() throws Exception {
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createDefaultValueInstance(1L));
-        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST");
-        final SqlRow sut = statement.retrieve().get(0);
-
-        sut.getObject("notFound", String.class);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void getObject_invalidType() throws Exception {
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createDefaultValueInstance(1L));
-        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST");
-        final SqlRow sut = statement.retrieve().get(0);
-
-        sut.getObject("longCol", BigInteger.class);
-    }
-
-    @Test(expected = DbAccessException.class)
-    public void getObject_DbAccessException(@Mocked final StringAttributeConverter mockConverter) throws Exception {
-        VariousDbTestHelper.setUpTable(SqlRowEntity.createDefaultValueInstance(1L));
-
-        final SqlPStatement statement = connection.prepareStatement("SELECT * FROM SQLROW_TEST where SQLROW_ID = 1");
-        final SqlRow sut = statement.retrieve().get(0);
-
-        new Expectations() {{
-            mockConverter.convertFromDatabase("a");
-            result = new DbAccessException("db error", new SQLException());
-        }};
-        sut.getObject("char_col", String.class);
     }
 
     /**
