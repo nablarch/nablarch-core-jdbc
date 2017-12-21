@@ -1,14 +1,12 @@
 package nablarch.core.db.statement;
 
-    import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.io.Reader;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.Clob;
-import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
