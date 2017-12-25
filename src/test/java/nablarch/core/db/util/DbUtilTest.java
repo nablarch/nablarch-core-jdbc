@@ -178,14 +178,6 @@ public class DbUtilTest {
         }
     }
 
-    @Test
-    public void testTrimTime() throws Exception {
-        final Timestamp timestamp = Timestamp.valueOf("2016-12-03 01:02:03.123321");
-        assertThat(DbUtil.trimTime(timestamp)
-                         .getTimeInMillis(), is(Timestamp.valueOf("2016-12-03 00:00:00.0")
-                                                         .getTime()));
-    }
-
     /**
      * {@link DbUtil#getField(Object, String)} のテスト
      * @throws Exception
