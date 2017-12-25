@@ -128,7 +128,6 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
             }
         }
         closed = false;
-
     }
 
     /** {@inheritDoc} */
@@ -188,7 +187,7 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
 
                 try {
                     long fetchStart = System.currentTimeMillis();
-                    result = createSqlResultSet(new ResultSetIterator(rs, getResultSetConvertor(), context), start, limit);
+                    result = createSqlResultSet(new ResultSetIterator(rs, getResultSetConvertor()), start, limit);
                     fetchTime = System.currentTimeMillis() - fetchStart;
 
                 } catch (RuntimeException e) {
@@ -440,7 +439,7 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
 
             @Override
             ResultSetIterator execute() throws SQLException {
-                ResultSetIterator iter = new ResultSetIterator(statement.executeQuery(), getResultSetConvertor(), context);
+                ResultSetIterator iter = new ResultSetIterator(statement.executeQuery(), getResultSetConvertor());
                 iter.setStatement(BasicSqlPStatement.this);
                 if (needsClientSidePagination()) {
                     for (int i = 0; (i < selectOption.getOffset()) && iter.next(); i++);
@@ -688,9 +687,8 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
     @Override
     public void setObject(final int parameterIndex, final Object x, final int targetSqlType) {
         try {
-            final Object dbValue = convertToDatabase(x, targetSqlType);
-            statement.setObject(parameterIndex, dbValue);
-            paramHolder.add(parameterIndex, dbValue);
+            statement.setObject(parameterIndex, x, targetSqlType);
+            paramHolder.add(parameterIndex, x);
         } catch (SQLException e) {
             throw new DbAccessException("failed to setObject.", e);
         }
@@ -700,9 +698,8 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
     @Override
     public void setObject(final int parameterIndex, final Object x) {
         try {
-            final Object dbValue = convertToDatabase(x);
-            statement.setObject(parameterIndex, dbValue);
-            paramHolder.add(parameterIndex, dbValue);
+            statement.setObject(parameterIndex, x);
+            paramHolder.add(parameterIndex, x);
         } catch (SQLException e) {
             throw new DbAccessException("failed to setObject.", e);
         }
@@ -1111,33 +1108,9 @@ public class BasicSqlPStatement implements SqlPStatement, ParameterizedSqlPState
                     value = DbUtil.getArrayValue(value, position);
                 }
             }
-
-            final Object dbValue = convertToDatabase(value);
-            statement.setObject(i + 1, dbValue);
-            paramHolder.add(namedParameterHolder.getOriginalParameterName(), dbValue);
+            statement.setObject(i + 1, value);
+            paramHolder.add(namedParameterHolder.getOriginalParameterName(), value);
         }
-    }
-
-    /**
-     * データベースへ出力する値に変換する。
-     * @param value 変換対象の値
-     * @return 出力する値
-     */
-    private Object convertToDatabase(final Object value) {
-        final Class<?> javaType = value == null ? null : value.getClass();
-        final Dialect dialect = context.getDialect();
-        return dialect.convertToDatabase(value, (Class) javaType);
-    }
-
-    /**
-     * データベースへ出力する値に変換する。
-     * @param value 変換対象の値
-     * @param sqlType SQL型
-     * @return 出力する値
-     */
-    private Object convertToDatabase(final Object value, final int sqlType) {
-        Dialect dialect = context.getDialect();
-        return dialect.convertToDatabase(value, sqlType);
     }
 
     /**

@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import nablarch.core.db.dialect.converter.AttributeConverter;
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
 import nablarch.core.util.annotation.Published;
@@ -26,9 +25,6 @@ public class DefaultDialect implements Dialect {
 
     /** {@link ResultSet}から値を取得するクラス */
     private static final ResultSetConvertor RESULT_SET_CONVERTOR = new DefaultResultSetConvertor();
-
-    /** 型変換を行う{@link AttributeConverterFactory}を生成するクラス */
-    private AttributeConverterFactory attributeConverterFactory = new BasicAttributeConverterFactory();
 
     /**
      * SQL型に対応するJavaクラスのマッピング定義。
@@ -170,50 +166,5 @@ public class DefaultDialect implements Dialect {
         }
     }
 
-    @Override
-    public Object convertToDatabase(final Object value, final int sqlType) {
-        final Class dbType = SQL_TYPE_CONVERTER_MAP.get(sqlType);
-        if (dbType == null) {
-            throw new IllegalArgumentException("unsupported sqlType: " + sqlType);
-        }
-        return convertToDatabase(value, dbType);
-    }
-
-    @Override
-    public <T, DB> Object convertToDatabase(final T value, final Class<DB> dbType) {
-        if (value == null) {
-            return null;
-        }
-        @SuppressWarnings("unchecked")
-        final AttributeConverter<T> converter = getAttributeConverter((Class<T>) value.getClass());
-        return converter.convertToDatabase(value, dbType);
-    }
-
-    @Override
-    public <T> T convertFromDatabase(final Object value, final Class<T> javaType) {
-        final AttributeConverter<T> converter = getAttributeConverter(javaType);
-        return converter.convertFromDatabase(value);
-    }
-
-    /**
-     * 指定の型をデータベースの入出力で変換するためのコンバータを返す。
-     *
-     * @param javaType データベースへの入出力対象のクラス
-     * @param <T> データベースへの入出力対象の型
-     * @return 指定の型を変換するコンバータ
-     */
-    @SuppressWarnings("unchecked")
-    protected <T> AttributeConverter<T> getAttributeConverter(Class<T> javaType) {
-        return attributeConverterFactory.factory(javaType);
-    }
-
-    /**
-     * {@link AttributeConverter}のファクトリクラスを設定する。
-     *
-     * @param attributeConverterFactory ファクトリクラス。
-     */
-    public void setAttributeConverterFactory(final AttributeConverterFactory attributeConverterFactory) {
-        this.attributeConverterFactory = attributeConverterFactory;
-    }
 }
 

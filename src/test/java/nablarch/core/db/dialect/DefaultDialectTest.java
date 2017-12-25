@@ -4,21 +4,17 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.Date;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 
-import nablarch.core.db.dialect.converter.AttributeConverter;
 import nablarch.core.db.statement.ResultSetConvertor;
-import nablarch.core.db.util.DbUtil;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
@@ -159,117 +155,6 @@ public class DefaultDialectTest {
         sut.getPingSql();
     }
 
-    /**
-     * DBに出力する値へ変換する。
-     * デフォルトで設定されてる型すべて。
-     */
-    @Test
-    public void testConvertToDatabase() {
-        assertThat("String", sut.convertToDatabase("string", String.class), eq("string"));
-        assertThat("Short", sut.convertToDatabase(Short.valueOf("100"), BigDecimal.class), eq(BigDecimal.valueOf(100)));
-        assertThat("Integer", sut.convertToDatabase(Integer.valueOf(1000), Long.class), eq(Long.valueOf(1000)));
-        assertThat("Long", sut.convertToDatabase(Long.valueOf("10000"), BigDecimal.class), eq(BigDecimal.valueOf(10000)));
-        assertThat("BigDecimal", sut.convertToDatabase(BigDecimal.valueOf(100000), String.class), eq("100000"));
-        assertThat("java.sql.Date", sut.convertToDatabase(java.sql.Date.valueOf("2016-12-02"), Timestamp.class),
-                eq(Timestamp.valueOf("2016-12-02 00:00:00.000000")));
-        assertThat("java.util.Date", sut.convertToDatabase(new java.util.Date(System.currentTimeMillis()), java.sql.Date.class),
-                eq(new java.sql.Date(DbUtil.trimTime(new Date(System.currentTimeMillis())).getTimeInMillis())));
-        assertThat("Timestamp", sut.convertToDatabase(Timestamp.valueOf("2016-12-02 11:22:33.123321"), java.sql.Date.class),
-                eq(java.sql.Date.valueOf("2016-12-02")));
-        assertThat("byte[]", sut.convertToDatabase(new byte[] {0x30, 0x39}, byte[].class), eq(new byte[] {0x30, 0x39}));
-        assertThat("Boolean", sut.convertToDatabase(true, Boolean.class), eq(Boolean.TRUE));
-    }
-
-    /**
-     * DBに出力するとき、nullはnullとして返す。
-     */
-    @Test
-    public void testConvertToDatabaseNull() {
-        assertThat("null value", sut.convertToDatabase(null, String.class), is(nullValue()));
-    }
-
-    /**
-     * DBに出力するとき、
-     * コンバータが設定されていないと例外を送出する。
-     */
-    @Test
-    public void testConvertToDatabaseNotFound() {
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("This dialect does not support [BigInteger] type.");
-
-        sut.convertToDatabase(BigInteger.valueOf(100), Integer.class);
-    }
-
-    /**
-     * DBから入力を変換する。
-     * デフォルトで設定されている型すべて。
-     */
-    @Test
-    public void testConvertFromDatabase() {
-        assertThat("String", sut.convertFromDatabase("あああ", String.class), is("あああ"));
-        assertThat("Short", sut.convertFromDatabase(100, Short.class), is(Short.valueOf("100")));
-        assertThat("short", sut.convertFromDatabase(99, short.class), is((short) 99));
-        assertThat("Integer", sut.convertFromDatabase(101L, Integer.class), is(101));
-        assertThat("int", sut.convertFromDatabase("102", int.class), is(102));
-        assertThat("Long", sut.convertFromDatabase("103", Long.class), is(103L));
-        assertThat("long", sut.convertFromDatabase(104, long.class), is(104L));
-        assertThat("BigDecimal", sut.convertFromDatabase("11.1", BigDecimal.class), is(new BigDecimal("11.1")));
-        assertThat("java.sql.Date", sut.convertFromDatabase(java.sql.Date.valueOf("2016-12-03"), java.sql.Date.class),
-                is(java.sql.Date.valueOf("2016-12-03")));
-        assertThat("java.util.Date", sut.convertFromDatabase(java.sql.Date.valueOf("2016-12-04"), Date.class), is(new Date(
-                java.sql.Date.valueOf("2016-12-04")
-                        .getTime())));
-        assertThat("Timestamp", sut.convertFromDatabase("2016-12-03 01:02:03.123321", Timestamp.class),
-                is(Timestamp.valueOf("2016-12-03 01:02:03.123321")));
-        assertThat("byte[]", sut.convertFromDatabase(new byte[] {0x00, 0x30}, byte[].class), is(new byte[] {0x00, 0x30}));
-        assertThat("Boolean", sut.convertFromDatabase("on", Boolean.class), is(Boolean.TRUE));
-        assertThat("boolean", sut.convertFromDatabase("off", boolean.class), is(false));
-    }
-
-    /**
-     * カスタムなコンバータが使えること
-     */
-    @Test
-    @SuppressWarnings("unchecked")
-    public void testCustomConverterFactory() throws Exception {
-        sut.setAttributeConverterFactory(new AttributeConverterFactory() {
-            @Override
-            public <T> AttributeConverter<T> factory(final Class<T> type) {
-                if (String.class.isAssignableFrom(type)) {
-                    return (AttributeConverter<T>) new AttributeConverter<String>() {
-                        @Override
-                        public <DB> DB convertToDatabase(final String javaAttribute, final Class<DB> databaseType) {
-                            return (DB) ('[' + javaAttribute + ']');
-                        }
-
-                        @Override
-                        public String convertFromDatabase(final Object databaseAttribute) {
-                            return '(' + databaseAttribute.toString() + ')';
-                        }
-                    };
-                } else {
-                    throw new IllegalArgumentException("ng!!!");
-                }
-            }
-        });
-
-        assertThat(sut.convertFromDatabase("テスト", String.class), eq("(テスト)"));
-        assertThat((String) sut.convertToDatabase("あいうえお", Types.VARCHAR), eq("[あいうえお]"));
-        assertThat(sut.convertToDatabase("かきくけこ", String.class), eq("[かきくけこ]"));
-    }
-
-    /**
-     * DBから入力を変換するとき、
-     * コンバータが設定されていないと例外を送出する。
-     */
-    @Test
-    public void testConvertFromDatabaseNotFound() {
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("This dialect does not support [BigInteger] type.");
-
-        sut.convertFromDatabase("100", BigInteger.class);
-    }
-    
     private static Matcher<Object> eq(Object expected) {
         return Matchers.is(expected);
     }

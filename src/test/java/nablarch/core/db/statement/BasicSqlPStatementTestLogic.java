@@ -2061,7 +2061,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test(expected = DbAccessException.class)
     public void setObjectWithType_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
         new Expectations() {{
-            mockStatement.setObject(anyInt, any);
+            mockStatement.setObject(anyInt, any, anyInt);
             result = new SQLException("setObjectWithType error");
         }};
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
@@ -4135,7 +4135,7 @@ public abstract class BasicSqlPStatementTestLogic {
         VariousDbTestHelper.createTable(ClobColumn.class);
         final SqlPStatement sut = dbCon.prepareStatement(
                 "insert into clob_table (id, clob_col) values (99999, ?)");
-        sut.setObject(1, "input", Types.CLOB);
+        sut.setObject(1, "input");
         sut.executeUpdate();
         dbCon.commit();
 
@@ -4153,7 +4153,7 @@ public abstract class BasicSqlPStatementTestLogic {
         VariousDbTestHelper.createTable(TextColumn.class);
         final SqlPStatement sut = dbCon.prepareStatement(
                 "insert into text_table (id, text_col) values (99999, ?)");
-        sut.setObject(1, "input", Types.CLOB);
+        sut.setObject(1, "input");
         sut.executeUpdate();
         dbCon.commit();
 
