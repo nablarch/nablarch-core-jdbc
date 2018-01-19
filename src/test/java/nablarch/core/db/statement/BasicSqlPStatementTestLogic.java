@@ -86,7 +86,7 @@ public abstract class BasicSqlPStatementTestLogic {
         @Column(name = "id", columnDefinition = "bigint identity")
         public Long id;
 
-        @Column(name = "name")
+        @Column(name = "name", columnDefinition = "nvarchar(100)")
         public String name;
     }
 
@@ -534,6 +534,7 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#execute()}で更新処理を実行するケース
      */
     @Test
+    @TargetDb(exclude = TargetDb.Db.SQL_SERVER)
     public void execute() throws Exception {
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID,VARCHAR_COL) VALUES (?,?)");
@@ -547,7 +548,7 @@ public abstract class BasicSqlPStatementTestLogic {
         assertThat(actual.getId(), is("12345"));
         assertThat(actual.getVarcharCol(), is("\uD840\uDC0B"));
     }
-
+    
     /**
      * {@link BasicSqlPStatement#execute()}のSQLログのテスト。
      */
@@ -1619,6 +1620,7 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#setString(int, String)}のテスト。
      */
     @Test
+    @TargetDb(exclude = TargetDb.Db.SQL_SERVER)
     public void setString() throws Exception {
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ? AND VARCHAR_COL = ?");
         sut.setString(1, "10004");
