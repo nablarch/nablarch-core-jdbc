@@ -921,6 +921,7 @@ public class BasicDbConnectionTest {
      *
      * @throws Exception テスト実行時の例外
      */
+    @Test
     public void testPrepareParameterizedSqlStatementBySqlIdAfterTerminate() throws Exception {
         sut.terminate();
         try {
