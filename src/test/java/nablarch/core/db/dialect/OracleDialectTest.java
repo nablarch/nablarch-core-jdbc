@@ -79,6 +79,12 @@ public class OracleDialectTest {
         assertThat("falseがかえされること", sut.supportsIdentity(), is(false));
     }
 
+    @Test
+    public void supportsIdentityWithBatchInsert() {
+        assertThat("Oracleではbatch insert & identityが使えないのでfalseが返される",
+                sut.supportsIdentityWithBatchInsert(), is(false));
+    }
+
     /**
      * {@link OracleDialect#supportsSequence()}のテスト。
      *

@@ -61,6 +61,11 @@ public class DefaultDialectTest {
         assertThat(sut.supportsIdentity(), is(false));
     }
 
+    @Test
+    public void supportsIdentityWithBatchInsert() {
+        assertThat(sut.supportsIdentityWithBatchInsert(), is(false));
+    }
+
     /**
      * SEQUENCEが使用できない。
      */

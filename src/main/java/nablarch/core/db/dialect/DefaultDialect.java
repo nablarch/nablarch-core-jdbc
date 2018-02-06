@@ -27,43 +27,18 @@ public class DefaultDialect implements Dialect {
     private static final ResultSetConvertor RESULT_SET_CONVERTOR = new DefaultResultSetConvertor();
 
     /**
-     * SQL型に対応するJavaクラスのマッピング定義。
+     * @return {@code false}を返す。
      */
-    private static final Map<Integer, Class<?>> SQL_TYPE_CONVERTER_MAP;
-
-    static {
-        final Map<Integer, Class<?>> sqlTypeConverterMap = new HashMap<Integer, Class<?>>();
-        sqlTypeConverterMap.put(Types.BIT, Boolean.class);
-        sqlTypeConverterMap.put(Types.TINYINT, Byte.class);
-        sqlTypeConverterMap.put(Types.SMALLINT, Short.class);
-        sqlTypeConverterMap.put(Types.INTEGER, Integer.class);
-        sqlTypeConverterMap.put(Types.BIGINT, Long.class);
-        sqlTypeConverterMap.put(Types.FLOAT, Double.class);
-        sqlTypeConverterMap.put(Types.REAL, Float.class);
-        sqlTypeConverterMap.put(Types.DOUBLE, Double.class);
-        sqlTypeConverterMap.put(Types.NUMERIC, BigDecimal.class);
-        sqlTypeConverterMap.put(Types.DECIMAL, BigDecimal.class);
-        sqlTypeConverterMap.put(Types.CHAR, String.class);
-        sqlTypeConverterMap.put(Types.VARCHAR, String.class);
-        sqlTypeConverterMap.put(Types.LONGVARCHAR, String.class);
-        sqlTypeConverterMap.put(Types.DATE, java.sql.Date.class);
-        sqlTypeConverterMap.put(Types.TIME, java.sql.Time.class);
-        sqlTypeConverterMap.put(Types.TIMESTAMP, java.sql.Timestamp.class);
-        sqlTypeConverterMap.put(Types.BINARY, byte[].class);
-        sqlTypeConverterMap.put(Types.VARBINARY, byte[].class);
-        sqlTypeConverterMap.put(Types.LONGVARBINARY, byte[].class);
-        sqlTypeConverterMap.put(Types.BLOB, byte[].class);
-        sqlTypeConverterMap.put(Types.CLOB, String.class);
-        sqlTypeConverterMap.put(Types.BOOLEAN, Boolean.class);
-
-        SQL_TYPE_CONVERTER_MAP = Collections.unmodifiableMap(sqlTypeConverterMap);
+    @Override
+    public boolean supportsIdentity() {
+        return false;
     }
 
     /**
      * @return {@code false}を返す。
      */
     @Override
-    public boolean supportsIdentity() {
+    public boolean supportsIdentityWithBatchInsert() {
         return false;
     }
 

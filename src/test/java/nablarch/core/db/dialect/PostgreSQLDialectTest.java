@@ -68,6 +68,12 @@ public class PostgreSQLDialectTest {
         assertThat("IDENTITYがサポートされる。", sut.supportsIdentity(), is(true));
     }
 
+    @Test
+    public void supportsIdentityWithBatchInsert() {
+        assertThat("PostgreSQLではbatch insert & identityが使えるのでtrueが返される",
+                sut.supportsIdentityWithBatchInsert(), is(true));
+    }
+
     /**
      * {@link PostgreSQLDialect#supportsSequence()}のテスト。
      * <p/>

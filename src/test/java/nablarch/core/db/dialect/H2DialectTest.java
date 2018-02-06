@@ -63,6 +63,12 @@ public class H2DialectTest {
     public void supportsIdentity() throws Exception {
         assertThat("IDENTITYがサポートされる。", sut.supportsIdentity(), is(true));
     }
+    
+    @Test
+    public void supportsIdentityWithBatchInsert() {
+        assertThat("H2ではbatch insert & identityが使えるのでtrueが返される",
+                sut.supportsIdentityWithBatchInsert(), is(true));
+    }
 
     /**
      * {@link H2Dialect#supportsSequence()}のテスト。
