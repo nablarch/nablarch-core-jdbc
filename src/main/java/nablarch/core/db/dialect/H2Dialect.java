@@ -32,6 +32,16 @@ public class H2Dialect extends DefaultDialect {
 
     /**
      * {@inheritDoc}
+     * 
+     * H2では、batch insertでIDENTITYカラムが使用できるため、{@code true}を返す。
+     */
+    @Override
+    public boolean supportsIdentityWithBatchInsert() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
      * <p/>
      * H2では、シーケンスオブジェクトが使用できるので、 {@code true}を返す。
      */

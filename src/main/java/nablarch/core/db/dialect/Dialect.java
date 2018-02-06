@@ -23,6 +23,13 @@ public interface Dialect {
     boolean supportsIdentity();
 
     /**
+     * batch insert時にIDENTITY(オートインクリメントカラム)が使用できるか否か。
+     *
+     * @return 使用可能な倍は、{@code true}
+     */
+    boolean supportsIdentityWithBatchInsert();
+
+    /**
      * SEQUENCEが使用できるか否か。
      * <p/>
      *

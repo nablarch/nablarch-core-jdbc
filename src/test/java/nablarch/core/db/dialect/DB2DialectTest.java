@@ -66,6 +66,12 @@ public class DB2DialectTest {
         assertThat("DB2では、identityが使えるのでtrueが返される", sut.supportsIdentity(), is(true));
     }
 
+    @Test
+    public void supportsIdentityWithBatchInsert() {
+        assertThat("DB2ではbatch insert & identityが使えないのでfalseが返される",
+                sut.supportsIdentityWithBatchInsert(), is(false));
+    }
+
     /**
      * {@link DB2Dialect#supportsSequence()}のテスト。
      * <p/>

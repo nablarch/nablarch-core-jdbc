@@ -75,6 +75,11 @@ public class SqlServerDialectTest {
         assertThat("trueがかえされること", sut.supportsIdentity(), is(true));
     }
 
+    @Test
+    public void supportsIdentityWithBatchInsert() {
+        assertThat("SQL Serverではbatch insert & identityが使えないのでfalseが返される",
+                sut.supportsIdentityWithBatchInsert(), is(false));
+    }
 
     /**
      * {@link SqlServerDialect#supportsSequence()}のテスト。

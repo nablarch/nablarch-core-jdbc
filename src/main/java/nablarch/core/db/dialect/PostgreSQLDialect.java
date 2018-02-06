@@ -31,6 +31,16 @@ public class PostgreSQLDialect extends DefaultDialect {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * PostgreSQLでは、batch insertでIDENTITYカラムが使用できるため、{@code true}を返す。
+     */
+    @Override
+    public boolean supportsIdentityWithBatchInsert() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
      * <p/>
      * PostgreSQLでは、シーケンスオブジェクトが使用できるので、 {@code true}を返す。
      */

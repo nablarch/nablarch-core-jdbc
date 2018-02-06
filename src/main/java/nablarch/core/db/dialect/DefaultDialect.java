@@ -38,6 +38,14 @@ public class DefaultDialect implements Dialect {
      * @return {@code false}を返す。
      */
     @Override
+    public boolean supportsIdentityWithBatchInsert() {
+        return false;
+    }
+
+    /**
+     * @return {@code false}を返す。
+     */
+    @Override
     public boolean supportsSequence() {
         return false;
     }
