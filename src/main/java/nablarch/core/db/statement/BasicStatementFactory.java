@@ -448,10 +448,8 @@ public class BasicStatementFactory implements StatementFactory {
      * フィールド情報保持インスタンスを設定する。
      *
      * @param objectFieldCache オブジェクトのフィールド情報保持インスタンス
-     * @deprecated 本プロパティは、仕様変更に伴い使用しなくなりました。(値を設定しても、意味が無い)
      */
-    @IgnoreProperty("フィールドではなくプロパティアクセスするよう仕様変更を行ったため本プロパティは廃止")
-    @Deprecated
+    @IgnoreProperty("フィールドではなくプロパティアクセスするよう仕様変更を行ったため本プロパティは廃止しました。(値を設定しても意味がありません)")
     public void setObjectFieldCache(
             StaticDataCache<Map<String, Map<String, Object>>> objectFieldCache) {
     }

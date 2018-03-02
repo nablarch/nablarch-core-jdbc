@@ -13,12 +13,12 @@ import nablarch.core.util.annotation.Published;
 /**
  * フィールド情報とフィールドに設定されたアノテーション情報をロードするクラス。<br>
  * 本クラスは、初期化時の一括ロード、インデックスによるデータロードをサポートしない。
+ * 
+ * フィールドのアノテーション情報を都度取得する(キャッシュしなくなった)ため、データベース機能では本クラスは利用していない。
  *
  * @author Hisaaki Sioiri
- * @deprecated フィールドではなくプロパティを参照するように機能改修を行ったため、フィールド情報をロードする本クラスは非推奨に変更
  */
 @Published(tag = "architect")
-@Deprecated
 public class FieldAndAnnotationLoader implements StaticDataLoader<Map<String, Map<String, Object>>> {
 
     /**
