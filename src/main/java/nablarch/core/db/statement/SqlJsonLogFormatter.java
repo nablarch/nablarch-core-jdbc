@@ -126,6 +126,10 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         endExecuteBatchStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_END_EXECUTE_BATCH_TARGETS, DEFAULT_END_EXECUTE_BATCH_TARGETS);
     }
 
+    /**
+     * フォーマット対象のログ出力項目を取得する。
+     * @return フォーマット対象のログ出力項目
+     */
     protected Map<String, JsonLogObjectBuilder<SqlLogContext>> getObjectBuilders() {
 
         Map<String, JsonLogObjectBuilder<SqlLogContext>> objectBuilders
@@ -155,7 +159,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * @param defaultTargets デフォルトの出力項目
      * @return フォーマット済みのログ出力項目
      */
-    protected List<JsonLogObjectBuilder<SqlLogContext>> getStructuredTargets(
+    private List<JsonLogObjectBuilder<SqlLogContext>> getStructuredTargets(
             Map<String, JsonLogObjectBuilder<SqlLogContext>> objectBuilders,
             Map<String, String> props,
             String targetsPropName, String defaultTargets) {
@@ -358,6 +362,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_METHOD_NAME, context.getMethodName());
         }
@@ -372,6 +377,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_SQL, context.getSql());
         }
@@ -386,6 +392,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_START_POSITION, context.getStartPosition());
         }
@@ -400,6 +407,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_SIZE, context.getSize());
         }
@@ -414,6 +422,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_QUERY_TIMEOUT, context.getQueryTimeout());
         }
@@ -428,6 +437,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_FETCH_SIZE, context.getFetchSize());
         }
@@ -442,6 +452,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_EXECUTE_TIME, context.getExecuteTime());
         }
@@ -456,6 +467,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_RETRIEVE_TIME, context.getRetrieveTime());
         }
@@ -470,6 +482,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_COUNT, context.getCount());
         }
@@ -484,6 +497,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_UPDATE_COUNT, context.getUpdateCount());
         }
@@ -498,6 +512,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             structuredObject.put(TARGET_NAME_BATCH_COUNT, context.getBatchCount());
         }
@@ -512,6 +527,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             String info = context.getAdditionalInfo();
             if ("".equals(info)) info = null;
