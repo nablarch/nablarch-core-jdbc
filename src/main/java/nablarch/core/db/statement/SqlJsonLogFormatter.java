@@ -1,7 +1,9 @@
 package nablarch.core.db.statement;
 
+import nablarch.core.log.app.AppLogUtil;
 import nablarch.core.log.app.JsonLogFormatterSupport;
 import nablarch.core.log.basic.JsonLogObjectBuilder;
+import nablarch.core.text.json.JsonSerializationSettings;
 import nablarch.core.util.StringUtil;
 
 import java.util.*;
@@ -110,7 +112,8 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      */
     @Override
     protected void initialize(Map<String, String> props) {
-        support = new JsonLogFormatterSupport(PROPS_PREFIX, null);
+        support = new JsonLogFormatterSupport(
+                new JsonSerializationSettings(props, PROPS_PREFIX, AppLogUtil.getFilePath()));
 
         Map<String, JsonLogObjectBuilder<SqlLogContext>> objectBuilders = getObjectBuilders();
 
