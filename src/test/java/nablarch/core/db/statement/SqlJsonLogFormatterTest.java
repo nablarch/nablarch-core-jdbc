@@ -274,7 +274,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
         Exception e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
             @Override
             public void run() throws Throwable {
-                SqlLogFormatter formatter = new SqlJsonLogFormatter();
+                new SqlJsonLogFormatter();
             }
         });
 
