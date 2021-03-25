@@ -1,12 +1,13 @@
 package nablarch.core.db.statement;
 
 import nablarch.core.log.LogTestSupport;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 
-import static com.jayway.jsonpath.matchers.JsonPathMatchers.*;
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.isJson;
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.withJsonPath;
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.withoutJsonPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
