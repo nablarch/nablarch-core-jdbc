@@ -25,11 +25,6 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
         System.clearProperty("sqlLogFormatter.endRetrieveTargets");
     }
 
-    @After
-    public void clearThreadContext() throws Exception {
-        System.clearProperty("sqlLogFormatter.endRetrieveTargets");
-    }
-
     /**
      * {@link SqlJsonLogFormatter#startRetrieve}メソッドのテスト。
      */
