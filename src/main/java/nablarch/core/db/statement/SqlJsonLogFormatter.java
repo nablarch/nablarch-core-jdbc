@@ -167,7 +167,9 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
             String targetsPropName, String defaultTargets) {
 
         String targetsStr = props.get(targetsPropName);
-        if (StringUtil.isNullOrEmpty(targetsStr)) targetsStr = defaultTargets;
+        if (StringUtil.isNullOrEmpty(targetsStr)) {
+            targetsStr = defaultTargets;
+        }
 
         List<JsonLogObjectBuilder<SqlLogContext>> structuredTargets = new ArrayList<JsonLogObjectBuilder<SqlLogContext>>();
 
@@ -489,7 +491,9 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         @Override
         public void build(Map<String, Object> structuredObject, SqlLogContext context) {
             String info = context.getAdditionalInfo();
-            if ("".equals(info)) info = null;
+            if ("".equals(info)) {
+                info = null;
+            }
             structuredObject.put(TARGET_NAME_ADDITIONAL_INFO, info);
         }
     }
