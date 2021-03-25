@@ -43,7 +43,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.startRetrieve(methodName, sql, startPosition, size, queryTimeout, fetchSize, additionalInfo);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("sql", "select * from T")),
                 withJsonPath("$", hasEntry("startPosition", 0)),
@@ -67,7 +67,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.endRetrieve(methodName, executeTime, retrieveTime, count);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("executeTime", 30)),
                 withJsonPath("$", hasEntry("retrieveTime", 20)),
@@ -87,7 +87,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.startExecuteQuery(methodName, sql, additionalInfo);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("sql", "select * from T")),
                 withJsonPath("$", hasEntry("additionalInfo", "ex")))));
@@ -105,7 +105,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.endExecuteQuery(methodName, executeTime);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("executeTime", 30)))));
     }
@@ -123,7 +123,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.startExecuteUpdate(methodName, sql, additionalInfo);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("sql", "select * from T")),
                 withJsonPath("$", hasEntry("additionalInfo", "ex")))));
@@ -142,7 +142,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.endExecuteUpdate(methodName, executeTime, updateCount);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("executeTime", 30)),
                 withJsonPath("$", hasEntry("updateCount", 7)))));
@@ -161,7 +161,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.startExecute(methodName, sql, additionalInfo);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("sql", "select * from T")),
                 withJsonPath("$", hasEntry("additionalInfo", "ex")))));
@@ -179,7 +179,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.endExecute(methodName, executeTime);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("executeTime", 30)))));
     }
@@ -197,7 +197,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.startExecuteBatch(methodName, sql, additionalInfo);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("sql", "select * from T")),
                 withJsonPath("$", hasEntry("additionalInfo", "ex")))));
@@ -216,7 +216,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.endExecuteBatch(methodName, executeTime, batchCount);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("executeTime", 30)),
                 withJsonPath("$", hasEntry("batchCount", 7)))));
@@ -238,7 +238,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.endRetrieve(methodName, executeTime, retrieveTime, count);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withoutJsonPath("$.executeTime"),
                 withoutJsonPath("$.retrieveTime"),
@@ -258,7 +258,7 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         String message = formatter.startExecuteQuery(methodName, sql, additionalInfo);
         assertThat(message.startsWith("$JSON$"), is(true));
-        assertThat(message.substring(6), isJson(allOf(
+        assertThat(message.substring("$JSON$".length()), isJson(allOf(
                 withJsonPath("$", hasEntry("methodName", "method01")),
                 withJsonPath("$", hasEntry("sql", "select * from T")),
                 withoutJsonPath("$.additionalInfo"))));
