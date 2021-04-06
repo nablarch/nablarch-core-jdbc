@@ -1,7 +1,8 @@
 package nablarch.core.db.statement;
 
 import nablarch.core.log.LogTestSupport;
-import org.junit.Before;
+import nablarch.test.support.SystemPropertyCleaner;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 
@@ -21,10 +22,8 @@ import static org.junit.Assert.assertThrows;
  */
 public class SqlJsonLogFormatterTest extends LogTestSupport {
 
-    @Before
-    public void classSetup() throws Exception {
-        System.clearProperty("sqlLogFormatter.endRetrieveTargets");
-    }
+    @Rule
+    public SystemPropertyCleaner systemPropertyCleaner = new SystemPropertyCleaner();
 
     /**
      * {@link SqlJsonLogFormatter#startRetrieve}メソッドのテスト。
