@@ -323,7 +323,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * メソッド名を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class MethodNameBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class MethodNameBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -338,7 +338,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * SQL文を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class SqlBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class SqlBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -353,7 +353,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * 取得開始位置を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class StartPositionBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class StartPositionBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -368,7 +368,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * 最大取得件数を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class SizeBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class SizeBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -383,7 +383,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * タイムアウト時間を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class QueryTimeoutBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class QueryTimeoutBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -398,7 +398,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * フェッチ件数を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class FetchSizeBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class FetchSizeBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -413,7 +413,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * 実行時間を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class ExecuteTimeBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class ExecuteTimeBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -428,7 +428,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * データ取得時間を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class RetrieveTimeBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class RetrieveTimeBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -443,7 +443,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * 検索件数を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class CountBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class CountBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -458,7 +458,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * 更新件数を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class UpdateCountBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class UpdateCountBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -473,7 +473,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * バッチ件数を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class BatchCountBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class BatchCountBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
@@ -488,7 +488,7 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * 付加情報を処理するクラス。
      * @author Shuji Kitamura
      */
-    private static class AdditionalInfoBuilder implements JsonLogObjectBuilder<SqlLogContext> {
+    public static class AdditionalInfoBuilder implements JsonLogObjectBuilder<SqlLogContext> {
 
         /**
          * {@inheritDoc}
