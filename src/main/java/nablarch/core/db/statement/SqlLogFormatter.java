@@ -121,28 +121,34 @@ public class SqlLogFormatter {
      * フォーマット済みのログ出力項目を初期化する。
      */
     public SqlLogFormatter() {
-        
-        Map<String, String> props = AppLogUtil.getProps();
+        initialize(AppLogUtil.getProps());
+    }
+
+    /**
+     * 初期化
+     * @param props 各種ログの設定情報
+     */
+    protected void initialize(Map<String, String> props)  {
         Map<String, LogItem<SqlLogContext>> logItems = getLogItems();
-        
+
         startRetrieveLogItems = getFormattedLogItems(logItems, props, PROPS_START_RETRIEVE_FORMAT, DEFAULT_START_RETRIEVE_FORMAT);
-        
+
         endRetrieveLogItems = getFormattedLogItems(logItems, props, PROPS_END_RETRIEVE_FORMAT, DEFAULT_END_RETRIEVE_FORMAT);
-        
+
         startExecuteLogItems = getFormattedLogItems(logItems, props, PROPS_START_EXECUTE_FORMAT, DEFAULT_START_EXECUTE_FORMAT);
-        
+
         endExecuteLogItems = getFormattedLogItems(logItems, props, PROPS_END_EXECUTE_FORMAT, DEFAULT_END_EXECUTE_FORMAT);
-        
+
         startExecuteQueryLogItems = getFormattedLogItems(logItems, props, PROPS_START_EXECUTE_QUERY_FORMAT, DEFAULT_START_EXECUTE_QUERY_FORMAT);
-        
+
         endExecuteQueryLogItems = getFormattedLogItems(logItems, props, PROPS_END_EXECUTE_QUERY_FORMAT, DEFAULT_END_EXECUTE_QUERY_FORMAT);
-        
+
         startExecuteUpdateLogItems = getFormattedLogItems(logItems, props, PROPS_START_EXECUTE_UPDATE_FORMAT, DEFAULT_START_EXECUTE_UPDATE_FORMAT);
-        
+
         endExecuteUpdateLogItems = getFormattedLogItems(logItems, props, PROPS_END_EXECUTE_UPDATE_FORMAT, DEFAULT_END_EXECUTE_UPDATE_FORMAT);
-        
+
         startExecuteBatchLogItems = getFormattedLogItems(logItems, props, PROPS_START_EXECUTE_BATCH_FORMAT, DEFAULT_START_EXECUTE_BATCH_FORMAT);
-        
+
         endExecuteBatchLogItems = getFormattedLogItems(logItems, props, PROPS_END_EXECUTE_BATCH_FORMAT, DEFAULT_END_EXECUTE_BATCH_FORMAT);
     }
     
