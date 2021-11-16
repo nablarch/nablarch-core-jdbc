@@ -488,19 +488,172 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
     }
 
     /**
-     * 不正なターゲットのテスト。
+     * startRetrieve でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
      */
     @Test
-    public void testIllegalTargets() {
-        System.setProperty("sqlLogFormatter.endRetrieveTargets", "mouseName");
+    public void testUnsupportedTargetByStartRetrieve() {
+        System.setProperty("sqlLogFormatter.startRetrieveTargets", "methodName,sql,executeTime,additionalInfo");
 
-        Exception e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
             @Override
-            public void run() throws Throwable {
+            public void run() {
                 new SqlJsonLogFormatter();
             }
         });
 
-        assertThat(e.getMessage(), is("[mouseName] is unknown target. property name = [sqlLogFormatter.endRetrieveTargets]"));
+        assertThat(e.getMessage(), is("[executeTime] is not supported target by [sqlLogFormatter.startRetrieveTargets]."));
+    }
+
+    /**
+     * endRetrieve でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
+     */
+    @Test
+    public void testUnsupportedTargetByEndRetrieve() {
+        System.setProperty("sqlLogFormatter.endRetrieveTargets", "methodName,sql,executeTime");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                new SqlJsonLogFormatter();
+            }
+        });
+
+        assertThat(e.getMessage(), is("[sql] is not supported target by [sqlLogFormatter.endRetrieveTargets]."));
+    }
+
+    /**
+     * startExecute でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
+     */
+    @Test
+    public void testUnsupportedTargetByStartExecute() {
+        System.setProperty("sqlLogFormatter.startExecuteTargets", "methodName,sql,executeTime");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                new SqlJsonLogFormatter();
+            }
+        });
+
+        assertThat(e.getMessage(), is("[executeTime] is not supported target by [sqlLogFormatter.startExecuteTargets]."));
+    }
+
+    /**
+     * endExecute でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
+     */
+    @Test
+    public void testUnsupportedTargetByEndExecute() {
+        System.setProperty("sqlLogFormatter.endExecuteTargets", "methodName,sql,executeTime");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                new SqlJsonLogFormatter();
+            }
+        });
+
+        assertThat(e.getMessage(), is("[sql] is not supported target by [sqlLogFormatter.endExecuteTargets]."));
+    }
+
+    /**
+     * startExecuteQuery でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
+     */
+    @Test
+    public void testUnsupportedTargetByStartExecuteQuery() {
+        System.setProperty("sqlLogFormatter.startExecuteQueryTargets", "methodName,sql,executeTime");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                new SqlJsonLogFormatter();
+            }
+        });
+
+        assertThat(e.getMessage(), is("[executeTime] is not supported target by [sqlLogFormatter.startExecuteQueryTargets]."));
+    }
+
+    /**
+     * endExecuteQuery でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
+     */
+    @Test
+    public void testUnsupportedTargetByEndExecuteQuery() {
+        System.setProperty("sqlLogFormatter.endExecuteQueryTargets", "methodName,sql,executeTime");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                new SqlJsonLogFormatter();
+            }
+        });
+
+        assertThat(e.getMessage(), is("[sql] is not supported target by [sqlLogFormatter.endExecuteQueryTargets]."));
+    }
+
+    /**
+     * startExecuteUpdate でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
+     */
+    @Test
+    public void testUnsupportedTargetByStartExecuteUpdate() {
+        System.setProperty("sqlLogFormatter.startExecuteUpdateTargets", "methodName,sql,executeTime");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                new SqlJsonLogFormatter();
+            }
+        });
+
+        assertThat(e.getMessage(), is("[executeTime] is not supported target by [sqlLogFormatter.startExecuteUpdateTargets]."));
+    }
+
+    /**
+     * endExecuteUpdate でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
+     */
+    @Test
+    public void testUnsupportedTargetByEndExecuteUpdate() {
+        System.setProperty("sqlLogFormatter.endExecuteUpdateTargets", "methodName,sql,executeTime,updateCount");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                new SqlJsonLogFormatter();
+            }
+        });
+
+        assertThat(e.getMessage(), is("[sql] is not supported target by [sqlLogFormatter.endExecuteUpdateTargets]."));
+    }
+
+    /**
+     * startExecuteBatch でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
+     */
+    @Test
+    public void testUnsupportedTargetByStartExecuteBatch() {
+        System.setProperty("sqlLogFormatter.startExecuteBatchTargets", "methodName,sql,executeTime");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                new SqlJsonLogFormatter();
+            }
+        });
+
+        assertThat(e.getMessage(), is("[executeTime] is not supported target by [sqlLogFormatter.startExecuteBatchTargets]."));
+    }
+
+    /**
+     * endExecuteBatch でサポートされていないターゲットが指定されている場合はエラーになることをテスト。
+     */
+    @Test
+    public void testUnsupportedTargetByEndExecuteBatch() {
+        System.setProperty("sqlLogFormatter.endExecuteBatchTargets", "methodName,sql,executeTime");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                new SqlJsonLogFormatter();
+            }
+        });
+
+        assertThat(e.getMessage(), is("[sql] is not supported target by [sqlLogFormatter.endExecuteBatchTargets]."));
     }
 }

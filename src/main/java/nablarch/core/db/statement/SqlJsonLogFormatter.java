@@ -7,6 +7,7 @@ import nablarch.core.text.json.JsonSerializationSettings;
 import nablarch.core.util.StringUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -87,6 +88,81 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
     /** SqlPStatement#executeBatchメソッドの更新終了時のデフォルトの出力項目 */
     private static final String DEFAULT_END_EXECUTE_BATCH_TARGETS = "methodName,executeTime,batchCount";
 
+    /** startRetrieve でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_START_RETRIEVE = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_SQL,
+        TARGET_NAME_START_POSITION,
+        TARGET_NAME_SIZE,
+        TARGET_NAME_QUERY_TIMEOUT,
+        TARGET_NAME_FETCH_SIZE,
+        TARGET_NAME_ADDITIONAL_INFO
+    );
+    /** endRetrieve でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_END_RETRIEVE = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_EXECUTE_TIME,
+        TARGET_NAME_RETRIEVE_TIME,
+        TARGET_NAME_COUNT
+    );
+    /** startExecute でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_START_EXECUTE = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_SQL,
+        TARGET_NAME_ADDITIONAL_INFO
+    );
+    /** endExecute でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_END_EXECUTE = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_EXECUTE_TIME
+    );
+    /** startExecuteQuery でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_START_EXECUTE_QUERY = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_SQL,
+        TARGET_NAME_ADDITIONAL_INFO
+    );
+    /** endExecuteQuery でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_END_EXECUTE_QUERY = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_EXECUTE_TIME
+    );
+    /** startExecuteUpdate でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_START_EXECUTE_UPDATE = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_SQL,
+        TARGET_NAME_ADDITIONAL_INFO
+    );
+    /** endExecuteUpdate でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_END_EXECUTE_UPDATE = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_EXECUTE_TIME,
+        TARGET_NAME_UPDATE_COUNT
+    );
+    /** startExecuteBatch でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_START_EXECUTE_BATCH = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_SQL,
+        TARGET_NAME_ADDITIONAL_INFO
+    );
+    /** endExecuteBatch でサポートしている出力項目の一覧。 */
+    private static final Set<String> SUPPORTED_TARGETS_BY_END_EXECUTE_BATCH = newUnmodifiableSet(
+        TARGET_NAME_METHOD_NAME,
+        TARGET_NAME_EXECUTE_TIME,
+        TARGET_NAME_BATCH_COUNT
+    );
+
+    /**
+     * 引数で指定した要素を持つ変更不可能な{@link Set}を生成する。
+     * @param values {@link Set}の要素
+     * @return 変更不可能な{@link Set}
+     */
+    private static Set<String> newUnmodifiableSet(String... values) {
+        Set<String> set = new HashSet<String>();
+        Collections.addAll(set, values);
+        return Collections.unmodifiableSet(set);
+    }
+
     /** SqlPStatement#retrieveメソッドの検索開始時のログ出力項目 */
     private List<JsonLogObjectBuilder<SqlLogContext>> startRetrieveStructuredTargets;
     /** SqlPStatement#retrieveメソッドの検索終了時のログ出力項目 */
@@ -121,16 +197,66 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
 
         Map<String, JsonLogObjectBuilder<SqlLogContext>> objectBuilders = getObjectBuilders();
 
-        startRetrieveStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_START_RETRIEVE_TARGETS, DEFAULT_START_RETRIEVE_TARGETS);
-        endRetrieveStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_END_RETRIEVE_TARGETS, DEFAULT_END_RETRIEVE_TARGETS);
-        startExecuteStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_START_EXECUTE_TARGETS, DEFAULT_START_EXECUTE_TARGETS);
-        endExecuteStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_END_EXECUTE_TARGETS, DEFAULT_END_EXECUTE_TARGETS);
-        startExecuteQueryStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_START_EXECUTE_QUERY_TARGETS, DEFAULT_START_EXECUTE_QUERY_TARGETS);
-        endExecuteQueryStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_END_EXECUTE_QUERY_TARGETS, DEFAULT_END_EXECUTE_QUERY_TARGETS);
-        startExecuteUpdateStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_START_EXECUTE_UPDATE_TARGETS, DEFAULT_START_EXECUTE_UPDATE_TARGETS);
-        endExecuteUpdateStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_END_EXECUTE_UPDATE_TARGETS, DEFAULT_END_EXECUTE_UPDATE_TARGETS);
-        startExecuteBatchStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_START_EXECUTE_BATCH_TARGETS, DEFAULT_START_EXECUTE_BATCH_TARGETS);
-        endExecuteBatchStructuredTargets = getStructuredTargets(objectBuilders, props, PROPS_END_EXECUTE_BATCH_TARGETS, DEFAULT_END_EXECUTE_BATCH_TARGETS);
+        startRetrieveStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_START_RETRIEVE_TARGETS,
+                DEFAULT_START_RETRIEVE_TARGETS,
+                SUPPORTED_TARGETS_BY_START_RETRIEVE);
+        endRetrieveStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_END_RETRIEVE_TARGETS,
+                DEFAULT_END_RETRIEVE_TARGETS,
+                SUPPORTED_TARGETS_BY_END_RETRIEVE);
+        startExecuteStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_START_EXECUTE_TARGETS,
+                DEFAULT_START_EXECUTE_TARGETS,
+                SUPPORTED_TARGETS_BY_START_EXECUTE);
+        endExecuteStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_END_EXECUTE_TARGETS,
+                DEFAULT_END_EXECUTE_TARGETS,
+                SUPPORTED_TARGETS_BY_END_EXECUTE);
+        startExecuteQueryStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_START_EXECUTE_QUERY_TARGETS,
+                DEFAULT_START_EXECUTE_QUERY_TARGETS,
+                SUPPORTED_TARGETS_BY_START_EXECUTE_QUERY);
+        endExecuteQueryStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_END_EXECUTE_QUERY_TARGETS,
+                DEFAULT_END_EXECUTE_QUERY_TARGETS,
+                SUPPORTED_TARGETS_BY_END_EXECUTE_QUERY);
+        startExecuteUpdateStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_START_EXECUTE_UPDATE_TARGETS,
+                DEFAULT_START_EXECUTE_UPDATE_TARGETS,
+                SUPPORTED_TARGETS_BY_START_EXECUTE_UPDATE);
+        endExecuteUpdateStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_END_EXECUTE_UPDATE_TARGETS,
+                DEFAULT_END_EXECUTE_UPDATE_TARGETS,
+                SUPPORTED_TARGETS_BY_END_EXECUTE_UPDATE);
+        startExecuteBatchStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_START_EXECUTE_BATCH_TARGETS,
+                DEFAULT_START_EXECUTE_BATCH_TARGETS,
+                SUPPORTED_TARGETS_BY_START_EXECUTE_BATCH);
+        endExecuteBatchStructuredTargets = getStructuredTargets(
+                objectBuilders,
+                props,
+                PROPS_END_EXECUTE_BATCH_TARGETS,
+                DEFAULT_END_EXECUTE_BATCH_TARGETS,
+                SUPPORTED_TARGETS_BY_END_EXECUTE_BATCH);
     }
 
     /**
@@ -164,12 +290,14 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      * @param props 各種ログ出力の設定情報
      * @param targetsPropName 出力項目のプロパティ名
      * @param defaultTargets デフォルトの出力項目
+     * @param supportedTargets サポートされている出力項目
      * @return フォーマット済みのログ出力項目
      */
     private List<JsonLogObjectBuilder<SqlLogContext>> getStructuredTargets(
             Map<String, JsonLogObjectBuilder<SqlLogContext>> objectBuilders,
             Map<String, String> props,
-            String targetsPropName, String defaultTargets) {
+            String targetsPropName, String defaultTargets,
+            Set<String> supportedTargets) {
 
         String targetsStr = props.get(targetsPropName);
         if (StringUtil.isNullOrEmpty(targetsStr)) {
@@ -182,14 +310,16 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
         Set<String> keys = new HashSet<String>(targets.length);
         for (String target: targets) {
             String key = target.trim();
+
             if (!StringUtil.isNullOrEmpty(key) && !keys.contains(key)) {
-                keys.add(key);
-                if (objectBuilders.containsKey(key)) {
-                    structuredTargets.add(objectBuilders.get(key));
-                } else {
+                if (!supportedTargets.contains(key)) {
                     throw new IllegalArgumentException(
-                            String.format("[%s] is unknown target. property name = [%s]", key, targetsPropName));
+                        String.format("[%s] is not supported target by [%s].", key, targetsPropName)
+                    );
                 }
+
+                keys.add(key);
+                structuredTargets.add(objectBuilders.get(key));
             }
         }
 
