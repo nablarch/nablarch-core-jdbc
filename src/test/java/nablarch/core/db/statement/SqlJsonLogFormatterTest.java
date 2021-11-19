@@ -13,6 +13,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThrows;
 
@@ -655,5 +656,56 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
         });
 
         assertThat(e.getMessage(), is("[sql] is not supported target by [sqlLogFormatter.endExecuteBatchTargets]."));
+    }
+
+    /**
+     * {@code structuredMessagePrefix}が指定できることをテスト。
+     */
+    @Test
+    public void testStructuredMessagePrefix() {
+        System.setProperty("sqlLogFormatter.startRetrieveTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endRetrieveTargets", "methodName");
+        System.setProperty("sqlLogFormatter.startExecuteTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endExecuteTargets", "methodName");
+        System.setProperty("sqlLogFormatter.startExecuteQueryTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endExecuteQueryTargets", "methodName");
+        System.setProperty("sqlLogFormatter.startExecuteUpdateTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endExecuteUpdateTargets", "methodName");
+        System.setProperty("sqlLogFormatter.startExecuteBatchTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endExecuteBatchTargets", "methodName");
+
+        System.setProperty("sqlLogFormatter.structuredMessagePrefix", "@JSON@");
+
+        final SqlJsonLogFormatter sut = new SqlJsonLogFormatter();
+
+        final String startRetrieve = sut.startRetrieve("startRetrieve", null, 0, 0, 0, 0, null);
+        assertThat(startRetrieve, startsWith("@JSON@"));
+
+        final String endRetrieve = sut.endRetrieve("endRetrieve", 1, 1, 1);
+        assertThat(endRetrieve, startsWith("@JSON@"));
+
+        final String startExecute = sut.startExecute("startExecute", null, null);
+        assertThat(startExecute, startsWith("@JSON@"));
+
+        final String endExecute = sut.endExecute("endExecute", 1);
+        assertThat(endExecute, startsWith("@JSON@"));
+
+        final String startExecuteQuery = sut.startExecuteQuery("startExecuteQuery", null, null);
+        assertThat(startExecuteQuery, startsWith("@JSON@"));
+
+        final String endExecuteQuery = sut.endExecuteQuery("endExecuteQuery", 1);
+        assertThat(endExecuteQuery, startsWith("@JSON@"));
+
+        final String startExecuteUpdate = sut.startExecuteUpdate("startExecuteUpdate", null, null);
+        assertThat(startExecuteUpdate, startsWith("@JSON@"));
+
+        final String endExecuteUpdate = sut.endExecuteUpdate("endExecuteUpdate", 1, 1);
+        assertThat(endExecuteUpdate, startsWith("@JSON@"));
+
+        final String startExecuteBatch = sut.startExecuteBatch("startExecuteBatch", null, null);
+        assertThat(startExecuteBatch, startsWith("@JSON@"));
+
+        final String endExecuteBatch = sut.endExecuteBatch("endExecuteBatch", 1, 1);
+        assertThat(endExecuteBatch, startsWith("@JSON@"));
     }
 }
