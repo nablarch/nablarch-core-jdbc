@@ -1,10 +1,16 @@
 package nablarch.core.db.statement;
 
 import nablarch.core.log.LogTestSupport;
+import nablarch.core.text.json.BasicJsonSerializationManager;
+import nablarch.core.text.json.JsonSerializationSettings;
+import nablarch.core.text.json.JsonSerializer;
 import nablarch.test.support.SystemPropertyCleaner;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
+
+import java.io.IOException;
+import java.io.Writer;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.isJson;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.withJsonPath;
@@ -707,5 +713,77 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
 
         final String endExecuteBatch = sut.endExecuteBatch("endExecuteBatch", 1, 1);
         assertThat(endExecuteBatch, startsWith("@JSON@"));
+    }
+
+    /**
+     * {@code structuredMessagePrefix}が指定できることをテスト。
+     */
+    @Test
+    public void testJsonSerializationManagerClassName() {
+        System.setProperty("sqlLogFormatter.startRetrieveTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endRetrieveTargets", "methodName");
+        System.setProperty("sqlLogFormatter.startExecuteTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endExecuteTargets", "methodName");
+        System.setProperty("sqlLogFormatter.startExecuteQueryTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endExecuteQueryTargets", "methodName");
+        System.setProperty("sqlLogFormatter.startExecuteUpdateTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endExecuteUpdateTargets", "methodName");
+        System.setProperty("sqlLogFormatter.startExecuteBatchTargets", "methodName");
+        System.setProperty("sqlLogFormatter.endExecuteBatchTargets", "methodName");
+
+        System.setProperty("sqlLogFormatter.jsonSerializationManagerClassName", MockJsonSerializationManager.class.getName());
+
+        final SqlJsonLogFormatter sut = new SqlJsonLogFormatter();
+
+        final String startRetrieve = sut.startRetrieve("startRetrieve", null, 0, 0, 0, 0, null);
+        assertThat(startRetrieve, is("$JSON$mock serialization"));
+
+        final String endRetrieve = sut.endRetrieve("endRetrieve", 1, 1, 1);
+        assertThat(endRetrieve, is("$JSON$mock serialization"));
+
+        final String startExecute = sut.startExecute("startExecute", null, null);
+        assertThat(startExecute, is("$JSON$mock serialization"));
+
+        final String endExecute = sut.endExecute("endExecute", 1);
+        assertThat(endExecute, is("$JSON$mock serialization"));
+
+        final String startExecuteQuery = sut.startExecuteQuery("startExecuteQuery", null, null);
+        assertThat(startExecuteQuery, is("$JSON$mock serialization"));
+
+        final String endExecuteQuery = sut.endExecuteQuery("endExecuteQuery", 1);
+        assertThat(endExecuteQuery, is("$JSON$mock serialization"));
+
+        final String startExecuteUpdate = sut.startExecuteUpdate("startExecuteUpdate", null, null);
+        assertThat(startExecuteUpdate, is("$JSON$mock serialization"));
+
+        final String endExecuteUpdate = sut.endExecuteUpdate("endExecuteUpdate", 1, 1);
+        assertThat(endExecuteUpdate, is("$JSON$mock serialization"));
+
+        final String startExecuteBatch = sut.startExecuteBatch("startExecuteBatch", null, null);
+        assertThat(startExecuteBatch, is("$JSON$mock serialization"));
+
+        final String endExecuteBatch = sut.endExecuteBatch("endExecuteBatch", 1, 1);
+        assertThat(endExecuteBatch, is("$JSON$mock serialization"));
+    }
+
+    public static class MockJsonSerializationManager extends BasicJsonSerializationManager {
+        @Override
+        public JsonSerializer getSerializer(Object value) {
+            return new JsonSerializer() {
+                @Override
+                public void serialize(Writer writer, Object value) throws IOException {
+                    writer.write("mock serialization");
+                }
+
+                @Override
+                public void initialize(JsonSerializationSettings settings) {
+                }
+
+                @Override
+                public boolean isTarget(Class<?> valueClass) {
+                    return false;
+                }
+            };
+        }
     }
 }
