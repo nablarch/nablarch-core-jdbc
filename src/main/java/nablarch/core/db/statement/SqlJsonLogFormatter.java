@@ -3,6 +3,8 @@ package nablarch.core.db.statement;
 import nablarch.core.log.app.AppLogUtil;
 import nablarch.core.log.app.JsonLogFormatterSupport;
 import nablarch.core.log.basic.JsonLogObjectBuilder;
+import nablarch.core.text.json.BasicJsonSerializationManager;
+import nablarch.core.text.json.JsonSerializationManager;
 import nablarch.core.text.json.JsonSerializationSettings;
 import nablarch.core.util.StringUtil;
 
@@ -192,8 +194,9 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
      */
     @Override
     protected void initialize(Map<String, String> props) {
-        support = new JsonLogFormatterSupport(
-                new JsonSerializationSettings(props, PROPS_PREFIX, AppLogUtil.getFilePath()));
+        JsonSerializationSettings settings = new JsonSerializationSettings(props, PROPS_PREFIX, AppLogUtil.getFilePath());
+        JsonSerializationManager serializationManager = createSerializationManager(settings);
+        support = new JsonLogFormatterSupport(serializationManager, settings);
 
         Map<String, JsonLogObjectBuilder<SqlLogContext>> objectBuilders = getObjectBuilders();
 
@@ -257,6 +260,15 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
                 PROPS_END_EXECUTE_BATCH_TARGETS,
                 DEFAULT_END_EXECUTE_BATCH_TARGETS,
                 SUPPORTED_TARGETS_BY_END_EXECUTE_BATCH);
+    }
+
+    /**
+     * 変換処理に使用する{@link JsonSerializationManager}を生成する。
+     * @param settings 各種ログ出力の設定情報
+     * @return {@link JsonSerializationManager}
+     */
+    protected JsonSerializationManager createSerializationManager(JsonSerializationSettings settings) {
+        return new BasicJsonSerializationManager();
     }
 
     /**

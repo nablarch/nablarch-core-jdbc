@@ -2,6 +2,7 @@ package nablarch.core.db.statement;
 
 import nablarch.core.log.LogTestSupport;
 import nablarch.core.text.json.BasicJsonSerializationManager;
+import nablarch.core.text.json.JsonSerializationManager;
 import nablarch.core.text.json.JsonSerializationSettings;
 import nablarch.core.text.json.JsonSerializer;
 import nablarch.test.support.SystemPropertyCleaner;
@@ -731,9 +732,22 @@ public class SqlJsonLogFormatterTest extends LogTestSupport {
         System.setProperty("sqlLogFormatter.startExecuteBatchTargets", "methodName");
         System.setProperty("sqlLogFormatter.endExecuteBatchTargets", "methodName");
 
-        System.setProperty("sqlLogFormatter.jsonSerializationManagerClassName", MockJsonSerializationManager.class.getName());
-
-        final SqlJsonLogFormatter sut = new SqlJsonLogFormatter();
+        final SqlJsonLogFormatter sut = new SqlJsonLogFormatter() {
+            @Override
+            protected JsonSerializationManager createSerializationManager(JsonSerializationSettings settings) {
+                assertThat(settings.getProp("startRetrieveTargets"), is("methodName"));
+                assertThat(settings.getProp("endRetrieveTargets"), is("methodName"));
+                assertThat(settings.getProp("startExecuteTargets"), is("methodName"));
+                assertThat(settings.getProp("endExecuteTargets"), is("methodName"));
+                assertThat(settings.getProp("startExecuteQueryTargets"), is("methodName"));
+                assertThat(settings.getProp("endExecuteQueryTargets"), is("methodName"));
+                assertThat(settings.getProp("startExecuteUpdateTargets"), is("methodName"));
+                assertThat(settings.getProp("endExecuteUpdateTargets"), is("methodName"));
+                assertThat(settings.getProp("startExecuteBatchTargets"), is("methodName"));
+                assertThat(settings.getProp("endExecuteBatchTargets"), is("methodName"));
+                return new MockJsonSerializationManager();
+            }
+        };
 
         final String startRetrieve = sut.startRetrieve("startRetrieve", null, 0, 0, 0, 0, null);
         assertThat(startRetrieve, is("$JSON$mock serialization"));
