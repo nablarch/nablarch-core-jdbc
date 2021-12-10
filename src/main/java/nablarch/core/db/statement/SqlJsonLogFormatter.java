@@ -77,9 +77,21 @@ public class SqlJsonLogFormatter extends SqlLogFormatter {
     private static final String DEFAULT_START_EXECUTE_TARGETS = "methodName,sql,additionalInfo";
     /** SqlPStatement#executeメソッドの実行終了時のデフォルトの出力項目 */
     private static final String DEFAULT_END_EXECUTE_TARGETS = "methodName,executeTime";
-    /** SqlPStatement#executeQueryメソッドの検索開始時のデフォルトの出力項目 */
+    /**
+     * SqlPStatement#executeQueryメソッドの検索開始時のデフォルトの出力項目
+     * <p>
+     * SonarQube で同じ値の定数が定義されているという指摘が出るが、
+     * 値が同じだけで定数としての意味は異なるため問題ない。
+     * </p>
+     */
     private static final String DEFAULT_START_EXECUTE_QUERY_TARGETS = "methodName,sql,additionalInfo";
-    /** SqlPStatement#executeQueryメソッドの検索終了時のデフォルトの出力項目 */
+    /**
+     * SqlPStatement#executeQueryメソッドの検索終了時のデフォルトの出力項目
+     * <p>
+     * SonarQube で同じ値の定数が定義されているという指摘が出るが、
+     * 値が同じだけで定数としての意味は異なるため問題ない。
+     * </p>
+     */
     private static final String DEFAULT_END_EXECUTE_QUERY_TARGETS = "methodName,executeTime";
     /** SqlPStatement#executeUpdateメソッドの更新開始時のデフォルトの出力項目 */
     private static final String DEFAULT_START_EXECUTE_UPDATE_TARGETS = "methodName,sql,additionalInfo";
