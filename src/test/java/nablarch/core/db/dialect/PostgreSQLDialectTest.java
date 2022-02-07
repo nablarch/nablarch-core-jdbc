@@ -137,7 +137,7 @@ public class PostgreSQLDialectTest {
         calendar.set(2015, 2, 9, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
-        Timestamp timestamp = new Timestamp(System.nanoTime());
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         VariousDbTestHelper.setUpTable(
                 new DialectEntity(1L, "12345", 100, 1234554321L, date, new BigDecimal("12345.54321"), timestamp,
                         new byte[] {0x00, 0x50, (byte) 0xFF}));
