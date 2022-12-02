@@ -109,18 +109,16 @@ public class H2DialectTest {
     /**
      * {@link H2Dialect#isTransactionTimeoutError(SQLException)}のテスト。
      * <p/>
-     * SQLStateが、57014の場合にトランザクションタイムアウト例外となる。
+     * SQLStateが、HYT00の場合にトランザクションタイムアウト例外となる。
      */
     @Test
-    public void isTransactionTimeoutError() throws Exception {
+    public void isTransactionTimeoutError() {
 
-        assertThat("SQLStateが57014なのでトランザクションタイムアウトの対象",
-                sut.isTransactionTimeoutError(new SQLException("", "57014")), is(true));
+        assertThat("SQLStateが HYT00 なのでトランザクションタイムアウトの対象",
+                sut.isTransactionTimeoutError(new SQLException("", "HYT00")), is(true));
 
-        assertThat("ロックタイムアウトのSQLStateである50200は対象外",
-                sut.isTransactionTimeoutError(new SQLException("", "50200")), is(false));
-
-        assertThat("エラーコードが57014は対象外", sut.isTransactionTimeoutError(new SQLException("", "", 57014)), is(false));
+        assertThat("SQLStateが HYT00 以外の場合は、トランザクションタイムアウトではない",
+                sut.isTransactionTimeoutError(new SQLException("", "HYC00")), is(false));
     }
 
     /**
