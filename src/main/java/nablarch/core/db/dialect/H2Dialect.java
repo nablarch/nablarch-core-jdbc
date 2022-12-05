@@ -21,7 +21,7 @@ public class H2Dialect extends DefaultDialect {
     private static final String QUERY_CANCEL_SQL_STATE = "57014";
 
     /** 2.1.214 でロック試行タイムアウト時に発生する例外のエラーコード */
-    private static final String TIMEOUT_TRYING_TO_LOCK_TABLE = "HYT00";
+    private static final String LOCK_TIMEOUT_SQL_STATE = "HYT00";
 
     /**
      * {@inheritDoc}
@@ -85,7 +85,7 @@ public class H2Dialect extends DefaultDialect {
     @Override
     public boolean isTransactionTimeoutError(SQLException sqlException) {
         final String sqlState = sqlException.getSQLState();
-        return QUERY_CANCEL_SQL_STATE.equals(sqlState) || TIMEOUT_TRYING_TO_LOCK_TABLE.equals(sqlState);
+        return QUERY_CANCEL_SQL_STATE.equals(sqlState) || LOCK_TIMEOUT_SQL_STATE.equals(sqlState);
     }
 
     /**
