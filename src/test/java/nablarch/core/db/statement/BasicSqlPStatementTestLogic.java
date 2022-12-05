@@ -83,7 +83,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Table(name="statement_test_sqlserver")
     private static class SqlServerTestEntity {
         @Id
-        @Column(name = "id", columnDefinition = "bigint identity")
+        @Column(name = "id", columnDefinition = "bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY")
         public Long id;
 
         @Column(name = "name", columnDefinition = "nvarchar(100)")
@@ -1790,7 +1790,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setTime() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(0, 0, 0, 1, 2, 3);
+        calendar.set(1970, 1, 1, 1, 2, 3);
         calendar.set(Calendar.MILLISECOND, 0);
         final Time insertTime = new Time(calendar.getTimeInMillis());
 
@@ -1814,7 +1814,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setTime_writeSqlLog() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(0, 0, 0, 1, 2, 3);
+        calendar.set(1970, 1, 1, 1, 2, 3);
         calendar.set(Calendar.MILLISECOND, 0);
         final Time insertTime = new Time(calendar.getTimeInMillis());
 
