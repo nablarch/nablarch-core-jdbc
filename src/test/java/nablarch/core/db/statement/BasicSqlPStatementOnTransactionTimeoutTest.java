@@ -132,6 +132,14 @@ public class BasicSqlPStatementOnTransactionTimeoutTest {
         statement.retrieve();
     }
 
+    /** SQL実行時にクエリータイムアウトしていた場合 */
+    @Test(expected = TransactionTimeoutException.class)
+    public void testRetrievePreQueryTimeout() {
+        SqlPStatement statement = dbConnection.prepareStatement(
+                "SELECT MAX(RAND()) FROM SYSTEM_RANGE(1, 100000000)");
+        statement.retrieve();
+    }
+
     /** SQL実行中にタイムアウトした場合 */
     @Test(expected = TransactionTimeoutException.class)
     public void testRetrieveAfterTimeout() throws Throwable {

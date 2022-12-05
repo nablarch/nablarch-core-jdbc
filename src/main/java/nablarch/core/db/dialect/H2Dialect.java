@@ -7,7 +7,7 @@ import nablarch.core.db.statement.SelectOption;
 /**
  * H2用のSQL方言クラス。
  * 
- * このクラスは、2.1.214により動作確認を行っている。
+ * このクラスは、1.4.191 および 2.1.214 により動作確認を行っている。
  * 
  * @author Masaya Seko
  *
@@ -18,7 +18,10 @@ public class H2Dialect extends DefaultDialect {
     private static final String UNIQUE_ERROR_SQL_STATE = "23505";
 
     /** Query Timeアウト時に発生する例外のエラーコード */
-    private static final String QUERY_CANCEL_SQL_STATE = "HYT00";
+    private static final String QUERY_CANCEL_SQL_STATE = "57014";
+
+    /** 2.1.214 でロック試行タイムアウト時に発生する例外のエラーコード */
+    private static final String TIMEOUT_TRYING_TO_LOCK_TABLE = "HYT00";
 
     /**
      * {@inheritDoc}
@@ -75,13 +78,14 @@ public class H2Dialect extends DefaultDialect {
      * <p/>
      * H2の場合、以下例外の場合タイムアウト対象の例外として扱う。
      * <ul>
-     * <li>SQLState:HYT00(クエリタイムアウト時に送出される例外コード)</li>
+     * <li>SQLState:57014(クエリタイムアウト時に送出される例外コード)</li>
+     * <li>SQLState:HYT00(ロック試行タイムアウト時に送出される例外コード)</li>
      * </ul>
      */
     @Override
     public boolean isTransactionTimeoutError(SQLException sqlException) {
         final String sqlState = sqlException.getSQLState();
-        return QUERY_CANCEL_SQL_STATE.equals(sqlState);
+        return QUERY_CANCEL_SQL_STATE.equals(sqlState) || TIMEOUT_TRYING_TO_LOCK_TABLE.equals(sqlState);
     }
 
     /**
