@@ -119,6 +119,9 @@ public class H2DialectTest {
 
         assertThat("SQLStateが HYT00 なのでトランザクションタイムアウトの対象",
                 sut.isTransactionTimeoutError(new SQLException("", "HYT00")), is(true));
+
+        assertThat("SQLStateが 57014 でなく、HYT00 でもないのでトランザクションタイムアウトの対象ではない",
+                sut.isTransactionTimeoutError(new SQLException("", "HYT01")), is(false));
     }
 
     /**
