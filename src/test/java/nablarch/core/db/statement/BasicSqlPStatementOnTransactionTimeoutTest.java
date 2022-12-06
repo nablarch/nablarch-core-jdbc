@@ -134,6 +134,7 @@ public class BasicSqlPStatementOnTransactionTimeoutTest {
 
     /** SQL実行中にタイムアウトした場合(応答時間が長いクエリ) */
     @Test(expected = TransactionTimeoutException.class)
+    @TargetDb(include = TargetDb.Db.H2)
     public void testRetrieveAfterTimeoutByLongQuery() {
         SqlPStatement statement = dbConnection.prepareStatement(
                 "SELECT MAX(RAND()) FROM SYSTEM_RANGE(1, 100000000)");
