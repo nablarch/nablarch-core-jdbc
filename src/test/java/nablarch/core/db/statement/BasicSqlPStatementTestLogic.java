@@ -83,7 +83,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Table(name="statement_test_sqlserver")
     private static class SqlServerTestEntity {
         @Id
-        @Column(name = "id", columnDefinition = "bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY")
+        @Column(name = "id", columnDefinition = "bigint identity")
         public Long id;
 
         @Column(name = "name", columnDefinition = "nvarchar(100)")
@@ -4052,7 +4052,7 @@ public abstract class BasicSqlPStatementTestLogic {
      * ※SQLServerは、自動生成キーは自動生成カラムのみ対応
      */
     @Test
-    @TargetDb(include = {TargetDb.Db.SQL_SERVER, TargetDb.Db.H2})
+    @TargetDb(include = {TargetDb.Db.SQL_SERVER})
     public void getGeneratedKeys_SQLServer() throws Exception {
         VariousDbTestHelper.createTable(SqlServerTestEntity.class);
         final SqlPStatement sut = dbCon.prepareStatement(
