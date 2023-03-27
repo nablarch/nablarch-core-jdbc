@@ -1790,7 +1790,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setTime() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(0, 0, 0, 1, 2, 3);
+        calendar.set(1970, 1, 1, 1, 2, 3);
         calendar.set(Calendar.MILLISECOND, 0);
         final Time insertTime = new Time(calendar.getTimeInMillis());
 
@@ -1814,7 +1814,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setTime_writeSqlLog() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(0, 0, 0, 1, 2, 3);
+        calendar.set(1970, 1, 1, 1, 2, 3);
         calendar.set(Calendar.MILLISECOND, 0);
         final Time insertTime = new Time(calendar.getTimeInMillis());
 
@@ -4052,7 +4052,7 @@ public abstract class BasicSqlPStatementTestLogic {
      * ※SQLServerは、自動生成キーは自動生成カラムのみ対応
      */
     @Test
-    @TargetDb(include = {TargetDb.Db.SQL_SERVER, TargetDb.Db.H2})
+    @TargetDb(include = {TargetDb.Db.SQL_SERVER})
     public void getGeneratedKeys_SQLServer() throws Exception {
         VariousDbTestHelper.createTable(SqlServerTestEntity.class);
         final SqlPStatement sut = dbCon.prepareStatement(

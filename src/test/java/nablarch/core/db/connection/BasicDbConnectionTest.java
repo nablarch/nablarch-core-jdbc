@@ -295,6 +295,7 @@ public class BasicDbConnectionTest {
     public void setIsolationLevel() throws IllegalAccessException, SQLException, NoSuchFieldException {
         final Connection con = Deencapsulation.getField(sut, Connection.class);
         con.rollback();
+        final int originalTransactionIsolation = con.getTransactionIsolation();
 
         // Oracleで有効なレベルは、下記２しゅるいのみ
         // Connection.TRANSACTION_READ_COMMITTED
@@ -303,6 +304,8 @@ public class BasicDbConnectionTest {
         assertEquals(Connection.TRANSACTION_READ_COMMITTED, con.getTransactionIsolation());
         sut.setIsolationLevel(Connection.TRANSACTION_SERIALIZABLE);
         assertEquals(Connection.TRANSACTION_SERIALIZABLE, con.getTransactionIsolation());
+        // 元のレベルに戻す
+        sut.setIsolationLevel(originalTransactionIsolation);
     }
 
     @Test(expected = DbAccessException.class)
