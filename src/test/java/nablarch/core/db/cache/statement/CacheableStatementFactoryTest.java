@@ -1,26 +1,11 @@
 package nablarch.core.db.cache.statement;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
-
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-
 import nablarch.core.ThreadContext;
 import nablarch.core.cache.expirable.BasicExpirationSetting;
 import nablarch.core.db.DbExecutionContext;
@@ -41,7 +26,6 @@ import nablarch.core.util.Builder;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -49,7 +33,20 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import mockit.Mocked;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 
 /**
@@ -297,7 +294,8 @@ public class CacheableStatementFactoryTest {
 
     /** プロパティresultSetCacheが設定されていない場合、例外が発生すること。 */
     @Test(expected = IllegalStateException.class)
-    public void testResultSetCacheNotSet(@Mocked Connection mockConnection) throws SQLException {
+    public void testResultSetCacheNotSet() throws SQLException {
+        Connection mockConnection = mock(Connection.class);
         CacheableStatementFactory target = new CacheableStatementFactory();
         target.setExpirationSetting(new BasicExpirationSetting());
         target.getParameterizedSqlPStatementBySqlId("SQL", mockConnection, context);
@@ -305,7 +303,8 @@ public class CacheableStatementFactoryTest {
 
     /** プロパティexpirationSettingが設定されていない場合、例外が発生すること。 */
     @Test(expected = IllegalStateException.class)
-    public void testExpirationSettingNotSet(@Mocked Connection mockConnection) throws SQLException {
+    public void testExpirationSettingNotSet() throws SQLException {
+        Connection mockConnection = mock(Connection.class);
         CacheableStatementFactory target = new CacheableStatementFactory();
         target.setResultSetCache(new InMemoryResultSetCache());
         target.getParameterizedSqlPStatementBySqlId("SQL", mockConnection, context);

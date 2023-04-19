@@ -1,25 +1,25 @@
 package nablarch.core.db.connection;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import javax.sql.DataSource;
-
 import nablarch.core.db.DbAccessException;
 import nablarch.core.db.dialect.DefaultDialect;
 import nablarch.core.db.dialect.Dialect;
 import nablarch.core.db.statement.BasicStatementFactory;
 import nablarch.core.db.statement.SqlPStatement;
 import nablarch.core.transaction.TransactionContext;
-
 import org.junit.Test;
 
-import mockit.Expectations;
-import mockit.Mocked;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link nablarch.core.db.connection.BasicDbConnectionFactoryForDataSource}のテストクラス。
@@ -28,14 +28,11 @@ import mockit.Mocked;
  */
 public class BasicDbConnectionFactoryForDataSourceTest {
 
-    @Mocked
-    public DataSource dataSource;
+    public DataSource dataSource = mock(DataSource.class);
 
-    @Mocked
-    public Connection con;
+    public Connection con = mock(Connection.class, RETURNS_DEEP_STUBS);
 
-    @Mocked
-    public DbAccessExceptionFactory dbAccessExceptionFactory;
+    public DbAccessExceptionFactory dbAccessExceptionFactory = mock(DbAccessExceptionFactory.class);
 
     private static final String CONNECTION_NAME = TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY;
 
@@ -45,10 +42,7 @@ public class BasicDbConnectionFactoryForDataSourceTest {
      */
     @Test
     public void testGetConnection() throws Exception {
-        new Expectations() {{
-            dataSource.getConnection();
-            result = con;
-        }};
+        when(dataSource.getConnection()).thenReturn(con);
 
         BasicDbConnectionFactoryForDataSource factory = new BasicDbConnectionFactoryForDataSource();
         factory.setDataSource(dataSource);
@@ -63,10 +57,7 @@ public class BasicDbConnectionFactoryForDataSourceTest {
 
     @Test
     public void testGetDialect() throws Exception {
-        new Expectations() {{
-            dataSource.getConnection();
-            result = con;
-        }};
+        when(dataSource.getConnection()).thenReturn(con);
         Dialect dialect = new DefaultDialect();
 
         BasicDbConnectionFactoryForDataSource factory = new BasicDbConnectionFactoryForDataSource();
@@ -88,11 +79,7 @@ public class BasicDbConnectionFactoryForDataSourceTest {
      */
     @Test
     public void testStatementReuseDefault() throws Exception {
-        new Expectations() {{
-            dataSource.getConnection();
-            result = con;
-        }};
-
+        when(dataSource.getConnection()).thenReturn(con);
         BasicDbConnectionFactoryForDataSource factory = new BasicDbConnectionFactoryForDataSource();
         factory.setDataSource(dataSource);
         factory.setStatementFactory(new BasicStatementFactory());
@@ -113,11 +100,8 @@ public class BasicDbConnectionFactoryForDataSourceTest {
      */
     @Test
     public void testStatementReuseFalse() throws Exception {
-        new Expectations() {{
-            dataSource.getConnection();
-            result = con;
-        }};
-
+        when(dataSource.getConnection()).thenReturn(con);
+                
         BasicDbConnectionFactoryForDataSource factory = new BasicDbConnectionFactoryForDataSource();
         factory.setDataSource(dataSource);
         factory.setStatementFactory(new BasicStatementFactory());
@@ -143,16 +127,11 @@ public class BasicDbConnectionFactoryForDataSourceTest {
         BasicDbConnectionFactoryForDataSource factory = new BasicDbConnectionFactoryForDataSource();
         final SQLException nativeException = new SQLException("DataSourceが返却する例外");
         // datasourceの設定。connectionの取得で例外を送出する。
-        new Expectations() {{
-            dataSource.getConnection();
-            result = nativeException;
-        }};
+        when(dataSource.getConnection()).thenThrow(nativeException);
         // 例外を委譲されるクラスの振る舞い
         final DbAccessException dbAccessException = new DbAccessException("message", nativeException);
-        new Expectations() {{
-            dbAccessExceptionFactory.createDbAccessException("failed to get database connection.", nativeException, null);
-            result = dbAccessException;
-        }};
+        when(dbAccessExceptionFactory.createDbAccessException("failed to get database connection.", nativeException, null))
+                .thenReturn(dbAccessException);
 
         factory.setDataSource(dataSource);
         factory.setDbAccessExceptionFactory(dbAccessExceptionFactory);

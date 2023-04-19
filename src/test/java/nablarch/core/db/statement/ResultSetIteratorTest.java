@@ -1,8 +1,25 @@
 package nablarch.core.db.statement;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import nablarch.core.db.DbAccessException;
+import nablarch.core.db.connection.ConnectionFactory;
+import nablarch.core.db.connection.TransactionManagerConnection;
+import nablarch.core.transaction.TransactionContext;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.TargetDb;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.sql.Blob;
@@ -16,34 +33,18 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-
-import nablarch.core.db.DbAccessException;
-import nablarch.core.db.DbExecutionContext;
-import nablarch.core.db.connection.ConnectionFactory;
-import nablarch.core.db.connection.TransactionManagerConnection;
-import nablarch.core.db.dialect.DefaultDialect;
-import nablarch.core.transaction.TransactionContext;
-import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.support.db.helper.DatabaseTestRunner;
-import nablarch.test.support.db.helper.TargetDb;
-import nablarch.test.support.db.helper.VariousDbTestHelper;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import mockit.Expectations;
-import mockit.Mocked;
-import mockit.Verifications;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link ResultSetIterator}のテストクラス。
@@ -113,11 +114,10 @@ public class ResultSetIteratorTest {
      * が送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void next_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.next();
-            result = new SQLException("next error");
-        }};
+    public void next_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.next()).thenThrow(new SQLException("next error"));
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
         sut.next();
     }
@@ -217,11 +217,10 @@ public class ResultSetIteratorTest {
      * SQLException発生時は、DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void iterator_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.next();
-            result = new SQLException("error");
-        }};
+    public void iterator_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.next()).thenThrow(new SQLException("error"));
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
 
         sut.iterator();
@@ -259,12 +258,11 @@ public class ResultSetIteratorTest {
      * nextでSQLExceptionが発生した場合は、DbAccessExceptionとなること。
      */
     @Test(expected = DbAccessException.class)
-    public void iterator_next_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.next();
-            result = true;
-            result = new SQLException("error");
-        }};
+    public void iterator_next_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.next()).thenReturn(true).thenThrow(new SQLException("error"));
+        
         Iterator<SqlRow> iterator = null;
         try {
             final ResultSetIterator sut = new ResultSetIterator(
@@ -295,11 +293,10 @@ public class ResultSetIteratorTest {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void initialize_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.getMetaData();
-            result = new SQLException("getMetaData error");
-        }};
+    public void initialize_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class);
+
+        when(mockRs.getMetaData()).thenThrow(new SQLException("getMetaData error"));
         new ResultSetIterator(mockRs, null);
     }
 
@@ -309,14 +306,13 @@ public class ResultSetIteratorTest {
      * モックオブジェクトを使用して、内部の{@link ResultSet#close()}が確実に呼び出されていることを検証する。
      */
     @Test
-    public void close(@Mocked final ResultSet mockRs) throws Exception {
+    public void close() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
         sut.close();
 
-        new Verifications() {{
-            mockRs.close();
-            times = 1;
-        }};
+        verify(mockRs).close();
     }
 
     /**
@@ -324,11 +320,10 @@ public class ResultSetIteratorTest {
      * SQLExceptionが発生した場合は、DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void close_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.close();
-            result = new SQLException("close error");
-        }};
+    public void close_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        doThrow(new SQLException("close error")).when(mockRs).close();
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
         sut.close();
     }
@@ -367,11 +362,10 @@ public class ResultSetIteratorTest {
      * {@link ResultSet}アクセス時に{@link SQLException}が発生するケース。
      */
     @Test
-    public void getObject_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.getObject(anyInt);
-            result = new SQLException("getObject error");
-        }};
+    public void getObject_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.getObject(anyInt())).thenThrow(new SQLException("getObject error"));
 
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
         try {
@@ -418,11 +412,10 @@ public class ResultSetIteratorTest {
      * {@link ResultSet}アクセス時に{@link SQLException}が発生するケース。
      */
     @Test
-    public void getString_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.getString(anyInt);
-            result = new SQLException("getString error");
-        }};
+    public void getString_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.getString(anyInt())).thenThrow(new SQLException("getString error"));
 
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
         try {
@@ -593,11 +586,10 @@ public class ResultSetIteratorTest {
      * {@link ResultSet}アクセス時に{@link SQLException}が発生するケース。
      */
     @Test
-    public void getBigDecimal_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations(){{
-            mockRs.getBigDecimal(anyInt);
-            result = new SQLException("getBigdecimal error");
-        }};
+    public void getBigDecimal_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.getBigDecimal(anyInt())).thenThrow(new SQLException("getBigdecimal error"));
 
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
 
@@ -671,11 +663,10 @@ public class ResultSetIteratorTest {
      * {@link ResultSet}アクセス時に{@link SQLException}が発生するケース。
      */
     @Test
-    public void getDate_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.getDate(anyInt);
-            result = new SQLException("getDate error");
-        }};
+    public void getDate_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.getDate(anyInt())).thenThrow(new SQLException("getDate error"));
 
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
         try {
@@ -720,11 +711,10 @@ public class ResultSetIteratorTest {
      * {@link ResultSet}アクセス時に{@link SQLException}が発生するケース。
      */
     @Test
-    public void getTimestamp_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.getTimestamp(anyInt);
-            result = new SQLException("getTimestamp error");
-        }};
+    public void getTimestamp_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.getTimestamp(anyInt())).thenThrow(new SQLException("getTimestamp error"));
 
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
 
@@ -769,11 +759,10 @@ public class ResultSetIteratorTest {
      * {@link ResultSet}アクセス時に{@link SQLException}が発生するケース。
      */
     @Test
-    public void getBytes_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.getBytes(anyInt);
-            result = new SQLException("getBytes error");
-        }};
+    public void getBytes_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.getBytes(anyInt())).thenThrow(new SQLException("getBytes error"));
 
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
 
@@ -824,11 +813,10 @@ public class ResultSetIteratorTest {
      */
     @Test
     @TargetDb(exclude = TargetDb.Db.POSTGRE_SQL)
-    public void getBlob_SQLException(@Mocked final ResultSet mockRs) throws Exception {
-        new Expectations() {{
-            mockRs.getBlob(anyInt);
-            result = new SQLException("getBlob error.");
-        }};
+    public void getBlob_SQLException() throws Exception {
+        final ResultSet mockRs = mock(ResultSet.class, RETURNS_DEEP_STUBS);
+
+        when(mockRs.getBlob(anyInt())).thenThrow(new SQLException("getBlob error."));
 
         final ResultSetIterator sut = new ResultSetIterator(mockRs, null);
 
