@@ -139,6 +139,7 @@ public final class DbUtil {
             field.setAccessible(true);
             return field.get(data);
         } catch (IllegalAccessException e) {
+            // setAccessible(true) でアクセス可能にしているので、この例外がスローされることはない
             throw new RuntimeException(String.format(
                     "failed to access the filed [%s]  of the class [%s].",
                     fieldName, data.getClass().getName()) ,e);

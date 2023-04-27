@@ -1,14 +1,5 @@
 package nablarch.core.db.connection.exception;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
 import nablarch.core.db.DbAccessException;
 import nablarch.core.db.DbExecutionContext;
 import nablarch.core.db.connection.BasicDbConnection;
@@ -21,11 +12,20 @@ import nablarch.core.db.statement.SqlPStatement;
 import nablarch.core.db.statement.exception.BasicSqlStatementExceptionFactory;
 import nablarch.core.db.statement.exception.SqlStatementException;
 import nablarch.core.transaction.TransactionContext;
-
 import org.junit.Test;
 
-import mockit.Expectations;
-import mockit.Mocked;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link BasicDbAccessExceptionFactory}のテスト。
@@ -33,8 +33,7 @@ import mockit.Mocked;
  */
 public class BasicDbAccessExceptionFactoryTest {
 
-    @Mocked
-    public Connection connection;
+    public Connection connection = mock(Connection.class, RETURNS_DEEP_STUBS);
 
     /**
      * connection引数がnullの場合に{@link DbConnectionException}が生成されること。
@@ -67,11 +66,7 @@ public class BasicDbAccessExceptionFactoryTest {
         con.setContext(new DbExecutionContext(con, dialect, TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY));
         con.setFactory(statementFactory);
 
-        new Expectations() {{
-            PreparedStatement ps = connection.prepareStatement(dialect.getPingSql());
-            ps.execute();
-            result = new SQLException("failed to connect with mock.");
-        }};
+        when(connection.prepareStatement(dialect.getPingSql()).execute()).thenThrow(new SQLException("failed to connect with mock."));
 
         BasicDbAccessExceptionFactory factory = new BasicDbAccessExceptionFactory();
 
@@ -100,15 +95,14 @@ public class BasicDbAccessExceptionFactoryTest {
         };
         con.setContext(new DbExecutionContext(con, dialect, TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY));
 
-        new Expectations(){{
-            connection.prepareStatement(dialect.getPingSql()).execute();
-        }};
-
         BasicDbAccessExceptionFactory factory = new BasicDbAccessExceptionFactory();
         DbAccessException e = factory.createDbAccessException("test_sql_error", new SQLException("reason_sql_error"), con);
         assertThat(e, is(instanceOf(DbAccessException.class)));
         assertThat(e.getMessage(), is("test_sql_error"));
         assertThat(e.getCause().getMessage(), is("reason_sql_error"));
+
+        final PreparedStatement preparedStatement = connection.prepareStatement(dialect.getPingSql());
+        verify(preparedStatement).execute();
     }
 
     /**

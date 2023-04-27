@@ -1,16 +1,14 @@
 package nablarch.core.db.statement;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import nablarch.core.db.statement.sqlconvertor.VariableInSyntaxConvertor;
+import nablarch.test.support.reflection.ReflectionUtil;
+import org.junit.Test;
 
 import java.util.Collections;
 
-import nablarch.core.db.statement.sqlconvertor.VariableInSyntaxConvertor;
-
-import org.junit.Test;
-
-import mockit.Deencapsulation;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * {@link BasicSqlParameterParserFactory}のテストクラス。
@@ -35,7 +33,7 @@ public class BasicSqlParameterParserFactoryTest {
     public void createSqlParameterParserFromCustomSetting() throws Exception {
         sut.setSqlConvertors(Collections.<SqlConvertor>singletonList(new VariableInSyntaxConvertor()));
         final SqlParameterParser parser = sut.createSqlParameterParser();
-        final SqlConvertor[] convertors = Deencapsulation.getField(parser, "sqlConvertors");
+        final SqlConvertor[] convertors = ReflectionUtil.getFieldValue(parser, "sqlConvertors");
         assertThat(convertors.length, is(1));
         assertThat(convertors[0], is(instanceOf(VariableInSyntaxConvertor.class)));
     }

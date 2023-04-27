@@ -1,20 +1,9 @@
 package nablarch.core.db.statement;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashMap;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
 import nablarch.core.db.DbExecutionContext;
 import nablarch.core.db.connection.TransactionManagerConnection;
 import nablarch.core.db.dialect.DefaultDialect;
@@ -22,15 +11,23 @@ import nablarch.core.transaction.TransactionContext;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
-
+import nablarch.test.support.reflection.ReflectionUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import mockit.Deencapsulation;
-import mockit.Mocked;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 /**
  * {@link BasicStatementFactory}のテストクラス。
@@ -89,7 +86,7 @@ public abstract class BasicStatementFactoryTestLogic {
         SqlPStatement statement = sut.getSqlPStatement(
                 "SELECT * FROM STATEMENT_FACTORY_TEST", connection, createContext(), new SelectOption(10, 20));
 
-        SelectOption selectOption = (SelectOption) Deencapsulation.getField(statement, "selectOption");
+        SelectOption selectOption = ReflectionUtil.getFieldValue(statement, "selectOption");
         assertThat(selectOption.getStartPosition(), is(10));
         assertThat(selectOption.getLimit(), is(20));
     }
@@ -190,7 +187,7 @@ public abstract class BasicStatementFactoryTestLogic {
         ParameterizedSqlPStatement statement = sut.getParameterizedSqlPStatement(
                 "SELECT '1' FROM STATEMENT_FACTORY_TEST", connection, createContext(), new SelectOption(10, 20));
 
-        SelectOption selectOption = (SelectOption) Deencapsulation.getField(statement, "selectOption");
+        SelectOption selectOption = ReflectionUtil.getFieldValue(statement, "selectOption");
         assertThat(selectOption.getStartPosition(), is(10));
         assertThat(selectOption.getLimit(), is(20));
     }
@@ -356,8 +353,7 @@ public abstract class BasicStatementFactoryTestLogic {
         }
     }
 
-    @Mocked
-    private TransactionManagerConnection mockConnection;
+    private final TransactionManagerConnection mockConnection = mock(TransactionManagerConnection.class);
 
     /**
      * DBアクセス時の実行時のコンテキストを生成する。

@@ -1,17 +1,15 @@
 package nablarch.core.db;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
-
 import nablarch.core.db.connection.AppDbConnection;
 import nablarch.core.db.connection.TransactionManagerConnection;
 import nablarch.core.db.dialect.DefaultDialect;
 import nablarch.core.db.dialect.Dialect;
-
 import org.junit.Test;
 
-import mockit.Mocked;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 
 /**
@@ -20,8 +18,7 @@ import mockit.Mocked;
  * @author tani takanori
  */
 public class DbExecutionContextTest {
-    @Mocked
-    private TransactionManagerConnection connection;
+    private final TransactionManagerConnection connection = mock(TransactionManagerConnection.class);
 
     private Dialect dialect = new DefaultDialect();
 

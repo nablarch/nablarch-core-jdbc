@@ -1,8 +1,27 @@
 package nablarch.core.db.statement;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import nablarch.core.db.DbAccessException;
+import nablarch.core.db.connection.ConnectionFactory;
+import nablarch.core.db.connection.DbConnectionContext;
+import nablarch.core.db.connection.TransactionManagerConnection;
+import nablarch.core.transaction.TransactionContext;
+import nablarch.core.util.DateUtil;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.TargetDb;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
+import nablarch.test.support.log.app.OnMemoryLogWriter;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.sql.Blob;
@@ -18,33 +37,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
-import nablarch.core.db.DbAccessException;
-import nablarch.core.db.connection.ConnectionFactory;
-import nablarch.core.db.connection.DbConnectionContext;
-import nablarch.core.db.connection.TransactionManagerConnection;
-import nablarch.core.transaction.TransactionContext;
-import nablarch.core.util.DateUtil;
-import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.support.db.helper.DatabaseTestRunner;
-import nablarch.test.support.db.helper.TargetDb;
-import nablarch.test.support.db.helper.VariousDbTestHelper;
-import nablarch.test.support.log.app.OnMemoryLogWriter;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import mockit.Expectations;
-import mockit.Mocked;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 /**
@@ -146,7 +146,9 @@ public class BasicSqlCStatementTest {
      * また、ストアド・プロシージャ実行後に値が取得できることを確認する。
      */
     @Test
-    public void registerOutParameter_normal(@Mocked CallableStatement statement) {
+    public void registerOutParameter_normal() {
+        CallableStatement statement = mock(CallableStatement.class);
+        
         sut = new BasicSqlCStatement("sql", statement);
         sut.registerOutParameter(1, Types.CHAR);
         sut.registerOutParameter(2, Types.DECIMAL);
@@ -170,11 +172,10 @@ public class BasicSqlCStatementTest {
      * registerOutParameter呼び出し時にSQLExceptionが発生するケース。
      */
     @Test
-    public void registerOutParameter_exception(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.registerOutParameter(2, Types.INTEGER);
-            result = new SQLException("registerOutParameter error.");
-        }};
+    public void registerOutParameter_exception() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+        
+        doThrow(new SQLException("registerOutParameter error.")).when(statement).registerOutParameter(2, Types.INTEGER);
 
         DbAccessException exception = null;
         sut = new BasicSqlCStatement("sql", statement);
@@ -194,7 +195,9 @@ public class BasicSqlCStatementTest {
      * また、ストアド・プロシージャ実行後に値が取得できることを確認する。
      */
     @Test
-    public void registerOutParameterWithScale_normal(@Mocked CallableStatement statement) throws Exception {
+    public void registerOutParameterWithScale_normal() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+        
         sut = new BasicSqlCStatement("sql", statement);
         sut.registerOutParameter(1, Types.DECIMAL, 10);
         sut.execute();
@@ -208,11 +211,10 @@ public class BasicSqlCStatementTest {
      * registerOutParameter呼び出し時にSQLExceptionが発生するケース。
      */
     @Test
-    public void registerOutParameterWithScale_exception(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.registerOutParameter(1, Types.BIGINT, 2);
-            result = new SQLException("registerOutParameter error.");
-        }};
+    public void registerOutParameterWithScale_exception() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+        
+        doThrow(new SQLException("registerOutParameter error.")).when(statement).registerOutParameter(1, Types.BIGINT, 2);
 
         sut = new BasicSqlCStatement("sql", statement);
 
@@ -445,11 +447,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getObject_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getObject(anyInt);
-            result = new SQLException("getObject error.");
-        }};
+    public void getObject_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getObject(anyInt())).thenThrow(new SQLException("getObject error."));
 
         sut = new BasicSqlCStatement("sql", statement);
         DbAccessException exception = null;
@@ -485,11 +486,11 @@ public class BasicSqlCStatementTest {
      * SQLExceptionが発生した場合のケース
      */
     @Test
-    public void getString_error(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getString(anyInt);
-            result = new SQLException("getString error.");
-        }};
+    public void getString_error() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getString(anyInt())).thenThrow(new SQLException("getString error."));
+        
         sut = new BasicSqlCStatement("sql", statement);
 
         DbAccessException exception = null;
@@ -542,11 +543,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getInteger_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getObject(anyInt);
-            result = new SQLException("getInteger error.");
-        }};
+    public void getInteger_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getObject(anyInt())).thenThrow(new SQLException("getInteger error."));
         sut = new BasicSqlCStatement("sql", statement);
 
         DbAccessException exception = null;
@@ -600,11 +600,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getLong_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getObject(anyInt);
-            result = new SQLException("getLong error.");
-        }};
+    public void getLong_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getObject(anyInt())).thenThrow(new SQLException("getLong error."));
         sut = new BasicSqlCStatement("sql", statement);
 
         DbAccessException exception = null;
@@ -637,11 +636,10 @@ public class BasicSqlCStatementTest {
     }
 
     @Test
-    public void getShort_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getObject(anyInt);
-            result = new SQLException("getShort error.");
-        }};
+    public void getShort_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getObject(anyInt())).thenThrow(new SQLException("getShort error."));
 
         DbAccessException exception = null;
         sut = new BasicSqlCStatement("sql", statement);
@@ -702,11 +700,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getBigDecimal_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getBigDecimal(anyInt);
-            result = new SQLException("getBigDecimal error.");
-        }};
+    public void getBigDecimal_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getBigDecimal(anyInt())).thenThrow(new SQLException("getBigDecimal error."));
 
         sut = new BasicSqlCStatement("sql", statement);
 
@@ -753,11 +750,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getDate_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getDate(anyInt);
-            result = new SQLException("getDate error");
-        }};
+    public void getDate_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getDate(anyInt())).thenThrow(new SQLException("getDate error"));
 
         sut = new BasicSqlCStatement("sql", statement);
 
@@ -805,11 +801,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getTime_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getTime(anyInt);
-            result = new SQLException("getTime error.");
-        }};
+    public void getTime_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getTime(anyInt())).thenThrow(new SQLException("getTime error."));
         sut = new BasicSqlCStatement("sql", statement);
 
         DbAccessException exception = null;
@@ -855,11 +850,10 @@ public class BasicSqlCStatementTest {
      * {@link SQLException}が発生するケース。
      */
     @Test
-    public void getTimestamp_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getTimestamp(anyInt);
-            result = new SQLException("getTimestamp error.");
-        }};
+    public void getTimestamp_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getTimestamp(anyInt())).thenThrow(new SQLException("getTimestamp error."));
 
         sut = new BasicSqlCStatement("sql", statement);
         DbAccessException exception = null;
@@ -901,11 +895,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getBoolean_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getBoolean(anyInt);
-            result = new SQLException("getBoolean error.");
-        }};
+    public void getBoolean_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getBoolean(anyInt())).thenThrow(new SQLException("getBoolean error."));
 
         DbAccessException exception = null;
         sut = new BasicSqlCStatement("sql", statement);
@@ -949,11 +942,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getBytes_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getBytes(anyInt);
-            result = new SQLException("getBytes error.");
-        }};
+    public void getBytes_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getBytes(anyInt())).thenThrow(new SQLException("getBytes error."));
 
         sut = new BasicSqlCStatement("sql", statement);
         DbAccessException exception = null;
@@ -996,11 +988,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getBlob_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getBlob(anyInt);
-            result = new SQLException("getBlob error.");
-        }};
+    public void getBlob_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getBlob(anyInt())).thenThrow(new SQLException("getBlob error."));
 
         sut = new BasicSqlCStatement("sql", statement);
 
@@ -1041,11 +1032,10 @@ public class BasicSqlCStatementTest {
      * @throws Exception
      */
     @Test
-    public void getClob_SQLException(@Mocked final CallableStatement statement) throws Exception {
-        new Expectations() {{
-            statement.getClob(anyInt);
-            result = new SQLException("getClob error.");
-        }};
+    public void getClob_SQLException() throws Exception {
+        CallableStatement statement = mock(CallableStatement.class);
+
+        when(statement.getClob(anyInt())).thenThrow(new SQLException("getClob error."));
 
         DbAccessException exception = null;
 
