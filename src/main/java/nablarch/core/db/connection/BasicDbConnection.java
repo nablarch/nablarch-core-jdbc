@@ -86,7 +86,7 @@ public class BasicDbConnection implements TransactionManagerConnection {
         try {
             con.setAutoCommit(false);
         } catch (SQLException e) {
-            throw new DbAccessException("failed to initialize.", e);
+            throw dbAccessExceptionFactory.createDbAccessException("failed to initialize.", e, this);
         }
     }
 
@@ -100,7 +100,7 @@ public class BasicDbConnection implements TransactionManagerConnection {
         try {
             con.commit();
         } catch (SQLException e) {
-            throw new DbAccessException("failed to commit.", e);
+            throw dbAccessExceptionFactory.createDbAccessException("failed to commit.", e, this);
         }
     }
 
@@ -146,7 +146,7 @@ public class BasicDbConnection implements TransactionManagerConnection {
                 // rollback()/closeStatements() で実行時例外が送出された場合、
                 // 元例外が送出されなくなるが、同種の例外であるため障害解析への影響は
                 // 無いものとしてそのまま再送出する。
-                throw new DbAccessException("failed to terminate.", e);
+                LOGGER.logWarn("failed to terminate.", e);
             }
         }
     }
