@@ -1,7 +1,7 @@
 package nablarch.core.db.transaction;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.util.List;
@@ -712,11 +712,12 @@ public class SimpleDbTransactionExecutorTest {
         List<String> log = OnMemoryLogWriter.getMessages("writer.memory");
         boolean writeLog = false;
         for (String logMessage : log) {
-            String str = logMessage.replaceAll("\\r|\\n", "");
+            String str = logMessage.replaceAll("[\\r\\n]", "");
             if (str.matches(
                     "^.*WARN.*failed in the "
                             + "application process\\..*" + message + ".*$")) {
                 writeLog = true;
+                break;
             }
         }
         assertThat("元例外がWARNレベルでログに出力されていること", writeLog, is(true));
@@ -861,6 +862,7 @@ public class SimpleDbTransactionExecutorTest {
      * <br/>
      * 本クラスは、更新用SQL実行後に、RuntimeExceptionを送出する。
      */
+    @SuppressWarnings("NonExceptionNameEndsWithException")
     private static class SimpleDbTransactionExecutorRuntimeException extends SimpleDbTransactionExecutorSub {
 
         /**
