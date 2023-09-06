@@ -23,7 +23,7 @@ import nablarch.core.util.annotation.Published;
 public abstract class SimpleDbTransactionExecutor<T> {
 
     /** トランザクションマネージャ */
-    private SimpleDbTransactionManager transactionManager;
+    private final SimpleDbTransactionManager transactionManager;
 
     /** Logger */
     private static final Logger LOG = LoggerManager.get(
@@ -83,18 +83,13 @@ public abstract class SimpleDbTransactionExecutor<T> {
             throwable = e;
             throw e;
         } finally {
+            writeWarnLog(throwable);
             try {
                 transactionManager.endTransaction();
             } catch (RuntimeException e) {
-                writeWarnLog(throwable);
-                if(throwable == null) {
-                    throw e;
-                }
+                writeWarnLog(e);
             } catch (Error e) {
-                writeWarnLog(throwable);
-                if(throwable == null) {
-                    throw e;
-                }
+                writeWarnLog(e);
             }
         }
     }
