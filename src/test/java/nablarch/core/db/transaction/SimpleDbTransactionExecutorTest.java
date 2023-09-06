@@ -97,6 +97,9 @@ public class SimpleDbTransactionExecutorTest {
         }
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
+
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.RuntimeException: runtime exception");
     }
 
     /**
@@ -121,6 +124,9 @@ public class SimpleDbTransactionExecutorTest {
 
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
+
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.Error: Error");
     }
 
     /**
@@ -685,7 +691,6 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("コミットは成功しているので、更新処理が正しく行われていること", entity.col2, is(UPDATED_VALUE));
 
         // ログのアサート
-        // ログは、1件出力されていること。
         assertWarnLogCountIs(1);
         assertWarnLog("java.lang.RuntimeException: end runtime error.");
     }
@@ -712,7 +717,6 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("コミットは成功しているので、更新処理が正しく行われていること", entity.col2, is(UPDATED_VALUE));
 
         // ログのアサート
-        // ログは1件出力されていること。
         assertWarnLogCountIs(1);
         assertWarnLog("java.lang.Error: end Error.");
     }
