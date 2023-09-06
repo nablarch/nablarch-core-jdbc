@@ -7,11 +7,8 @@ import static java.sql.Statement.RETURN_GENERATED_KEYS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -67,6 +64,7 @@ import mockit.Verifications;
  *
  * @author Hisaaki Sioiri
  */
+@SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlSourceToSinkFlow", "MagicConstant"})
 @RunWith(DatabaseTestRunner.class)
 public class BasicDbConnectionTest {
 
@@ -236,7 +234,7 @@ public class BasicDbConnectionTest {
 
     /**
      * terminate時のロールバックで例外が発生する
-     * @throws Exception
+     * @throws Exception Exception
      */
     @Test
     public void terminate_rollbackFail(@Mocked final Connection mockedConnection) throws Exception {
@@ -273,7 +271,7 @@ public class BasicDbConnectionTest {
 
     /**
      * terminate時のStatement#closeでエラーが発生する
-     * @throws Exception
+     * @throws Exception Exception
      */
     @Test
     public void terminate_statementCloseError(@Mocked final Connection mockedConnection) throws Exception {
@@ -401,7 +399,7 @@ public class BasicDbConnectionTest {
         // close呼び出し後は、異なるインスタンスが返却されること
         SqlPStatement statement = sut.prepareStatement(sql);
         statement.close();
-        assertFalse(sut.prepareStatement(sql) == statement);
+        assertNotSame(sut.prepareStatement(sql), statement);
     }
 
     @Test(expected = DbAccessException.class)
@@ -796,7 +794,7 @@ public class BasicDbConnectionTest {
         // close呼び出し後は、異なるインスタンスが返却されること
         SqlPStatement statement = sut.prepareStatementBySqlId(SQL_ID_1);
         statement.close();
-        assertFalse(sut.prepareStatementBySqlId(SQL_ID_1) == statement);
+        assertNotSame(sut.prepareStatementBySqlId(SQL_ID_1), statement);
     }
 
     @Test
@@ -991,7 +989,7 @@ public class BasicDbConnectionTest {
      *  {@link nablarch.core.db.connection.BasicDbConnection#prepareParameterizedSqlStatement(String, Object)} のテスト。
      *  <p />
      *  ステートメントを再利用する場合の動作を確認。
-     * @throws Exception
+     * @throws Exception Exception
      */
     @Test
     public void testPrepareParameterizedSqlStatementReuseOn(@Mocked final Connection mockedConnection) throws Exception {
@@ -1016,7 +1014,7 @@ public class BasicDbConnectionTest {
      *  {@link nablarch.core.db.connection.BasicDbConnection#prepareParameterizedSqlStatement(String, Object)} のテスト。
      *  <p />
      *  ステートメントを再利用する場合の動作を確認。
-     * @throws Exception
+     * @throws Exception Exception
      */
     @Test
     public void testPrepareParameterizedSqlStatementReuseOnAnother(@Mocked final Connection mockedConnection) throws Exception {
@@ -1227,7 +1225,7 @@ public class BasicDbConnectionTest {
 
     /**
      * {@link BasicDbConnection#prepareCountStatementBySqlId(String)}のテスト。
-     * @throws Exception
+     * @throws Exception Exception
      */
     @Test
     public void testPrepareCountStatementBySqlIdReuseOff(@Mocked final Connection mockedConnection) throws Exception {
@@ -1399,6 +1397,7 @@ public class BasicDbConnectionTest {
     public void testPrepareCallBySqlId_H2() throws Exception {
         final Connection connection = sut.getConnection();
         final Statement statement = connection.createStatement();
+        //noinspection SqlNoDataSourceInspection
         statement.execute("create alias if not exists proc_name as $$ void procName(String a, String b) {String c = a + b;}$$");
         testPrepareCallBySqlId();
     }
@@ -1428,7 +1427,7 @@ public class BasicDbConnectionTest {
         BasicDbConnection target = createTarget(connection);
         target.setContext(new DbExecutionContext(target, new DefaultDialect(), TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY));
         SqlPStatement ps = target.prepareStatement("sql", new SelectOption(2, 2));
-        SelectOption selectOption = (SelectOption) Deencapsulation.getField(ps, "selectOption");
+        SelectOption selectOption = Deencapsulation.getField(ps, "selectOption");
         assertThat(selectOption.getOffset(), is(1));
         assertThat(selectOption.getLimit(), is(2));
     }
@@ -1494,7 +1493,7 @@ public class BasicDbConnectionTest {
         BasicDbConnection target = createTarget(connection);
         target.setContext(new DbExecutionContext(target, new DefaultDialect(), TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY));
         SqlPStatement ps = target.prepareStatementBySqlId(SQL_ID_1, new SelectOption(4, 5));
-        SelectOption selectOption = (SelectOption) Deencapsulation.getField(ps, "selectOption");
+        SelectOption selectOption = Deencapsulation.getField(ps, "selectOption");
         assertThat(selectOption.getOffset(), is(3));
         assertThat(selectOption.getLimit(), is(5));
     }
@@ -1558,7 +1557,7 @@ public class BasicDbConnectionTest {
         target.setContext(new DbExecutionContext(target, new DefaultDialect(), TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY));
         SelectOption selectOption = new SelectOption(3, 4);
         ParameterizedSqlPStatement ps = target.prepareParameterizedSqlStatement(SELECT_QUERY, selectOption);
-        SelectOption actual = (SelectOption) Deencapsulation.getField(ps, "selectOption");
+        SelectOption actual = Deencapsulation.getField(ps, "selectOption");
         assertThat(actual, is(selectOption));
     }
 
@@ -1622,7 +1621,7 @@ public class BasicDbConnectionTest {
         BasicDbConnection target = createTarget(connection);
         target.setContext(new DbExecutionContext(target, new DefaultDialect(), TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY));
         ParameterizedSqlPStatement ps = target.prepareParameterizedSqlStatementBySqlId(SQL_ID_1, new SelectOption(2, 3));
-        SelectOption selectOption = (SelectOption) Deencapsulation.getField(ps, "selectOption");
+        SelectOption selectOption = Deencapsulation.getField(ps, "selectOption");
         assertThat(selectOption.getOffset(), is(1));
         assertThat(selectOption.getLimit(), is(3));
     }
@@ -1689,7 +1688,7 @@ public class BasicDbConnectionTest {
         Object condition = new Object();
         SelectOption selectOption = new SelectOption(3, 4);
         ParameterizedSqlPStatement ps = target.prepareParameterizedSqlStatement(SELECT_QUERY, condition, selectOption);
-        SelectOption actual = (SelectOption) Deencapsulation.getField(ps, "selectOption");
+        SelectOption actual = Deencapsulation.getField(ps, "selectOption");
         assertThat(actual, is(selectOption));
     }
 
@@ -1733,7 +1732,7 @@ public class BasicDbConnectionTest {
         target.setContext(new DbExecutionContext(target, new DefaultDialect(), TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY));
         Object condition = new Object();
         ParameterizedSqlPStatement ps = target.prepareParameterizedSqlStatementBySqlId(SQL_ID_1, condition, new SelectOption(3, 4));
-        SelectOption selectOption = (SelectOption) Deencapsulation.getField(ps, "selectOption");
+        SelectOption selectOption = Deencapsulation.getField(ps, "selectOption");
         assertThat(selectOption.getOffset(), is(2));
         assertThat(selectOption.getLimit(), is(4));
     }
