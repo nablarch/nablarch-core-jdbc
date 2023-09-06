@@ -98,8 +98,7 @@ public class SimpleDbTransactionExecutorTest {
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
-        assertWarnLogCountIs(1);
-        assertWarnLog("java.lang.RuntimeException: runtime exception");
+        assertWarnLogCountIs(0);
     }
 
     /**
@@ -125,8 +124,7 @@ public class SimpleDbTransactionExecutorTest {
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
-        assertWarnLogCountIs(1);
-        assertWarnLog("java.lang.Error: Error");
+        assertWarnLogCountIs(0);
     }
 
     /**
@@ -158,9 +156,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(2);
+        assertWarnLogCountIs(1);
         assertWarnLog("java.lang.RuntimeException: runtime exception");
-        assertWarnLog("java.lang.RuntimeException: rollback runtime error");
     }
 
     /**
@@ -191,9 +188,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(2);
+        assertWarnLogCountIs(1);
         assertWarnLog("java.lang.RuntimeException: runtime exception");
-        assertWarnLog("java.lang.Error: rollback Error");
     }
 
     /**
@@ -225,9 +221,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(3);
+        assertWarnLogCountIs(2);
         assertWarnLog("java.lang.RuntimeException: runtime exception");
-        assertWarnLog("java.lang.Error: rollback Error");
         assertWarnLog("java.lang.RuntimeException: end runtime error");
     }
 
@@ -259,9 +254,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(2);
+        assertWarnLogCountIs(1);
         assertWarnLog("java.lang.Error: Error");
-        assertWarnLog("java.lang.RuntimeException: rollback runtime error");
     }
 
     /**
@@ -291,9 +285,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(2);
+        assertWarnLogCountIs(1);
         assertWarnLog("java.lang.Error: Error");
-        assertWarnLog("java.lang.Error: rollback Error");
     }
 
     /**
@@ -324,9 +317,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(3);
+        assertWarnLogCountIs(2);
         assertWarnLog("java.lang.Error: Error");
-        assertWarnLog("java.lang.Error: rollback Error");
         assertWarnLog("java.lang.RuntimeException: end runtime error");
     }
 
@@ -358,9 +350,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(3);
+        assertWarnLogCountIs(2);
         assertWarnLog("java.lang.Error: Error");
-        assertWarnLog("java.lang.Error: rollback Error");
         assertWarnLog("java.lang.Error: end Error");
     }
 
@@ -392,8 +383,7 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(2);
-        assertWarnLog("java.lang.RuntimeException: runtime exception");
+        assertWarnLogCountIs(1);
         assertWarnLog("java.lang.RuntimeException: end runtime error");
     }
 
@@ -424,8 +414,7 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(2);
-        assertWarnLog("java.lang.RuntimeException: runtime exception");
+        assertWarnLogCountIs(1);
         assertWarnLog("java.lang.Error: end Error");
     }
 
@@ -457,8 +446,7 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(2);
-        assertWarnLog("java.lang.Error: Error");
+        assertWarnLogCountIs(1);
         assertWarnLog("java.lang.RuntimeException: end runtime error");
     }
 
@@ -489,8 +477,7 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(2);
-        assertWarnLog("java.lang.Error: Error");
+        assertWarnLogCountIs(1);
         assertWarnLog("java.lang.Error: end Error");
     }
 
@@ -522,9 +509,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(3);
+        assertWarnLogCountIs(2);
         assertWarnLog("java.lang.RuntimeException: runtime exception");
-        assertWarnLog("java.lang.RuntimeException: rollback runtime error");
         assertWarnLog("java.lang.RuntimeException: end runtime error");
     }
 
@@ -556,9 +542,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(3);
+        assertWarnLogCountIs(2);
         assertWarnLog("java.lang.RuntimeException: runtime exception");
-        assertWarnLog("java.lang.RuntimeException: rollback runtime error");
         assertWarnLog("java.lang.Error: end Error");
     }
 
@@ -591,9 +576,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(3);
+        assertWarnLogCountIs(2);
         assertWarnLog("java.lang.Error: Error");
-        assertWarnLog("java.lang.RuntimeException: rollback runtime error");
         assertWarnLog("java.lang.RuntimeException: end runtime error");
     }
 
@@ -626,9 +610,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(3);
+        assertWarnLogCountIs(2);
         assertWarnLog("java.lang.Error: Error");
-        assertWarnLog("java.lang.RuntimeException: rollback runtime error");
         assertWarnLog("java.lang.Error: end Error");
     }
 
@@ -661,11 +644,9 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLogCountIs(3);
+        assertWarnLogCountIs(2);
         assertWarnLog("java.lang.RuntimeException: runtime exception");
-        assertWarnLog("java.lang.Error: rollback Error");
         assertWarnLog("java.lang.Error: end Error");
-
     }
 
     /**

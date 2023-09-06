@@ -47,7 +47,6 @@ public abstract class SimpleDbTransactionExecutor<T> {
     public T doTransaction() {
         transactionManager.beginTransaction();
 
-        Throwable throwable = null;
         try {
             T result = execute(DbConnectionContext.getConnection(
                     transactionManager.getDbTransactionName()));
@@ -59,31 +58,24 @@ public abstract class SimpleDbTransactionExecutor<T> {
                 transactionManager.rollbackTransaction();
             } catch (RuntimeException exception) {
                 writeWarnLog(e);
-                throwable = exception;
                 throw exception;
             } catch (Error error) {
                 writeWarnLog(e);
-                throwable = error;
                 throw error;
             }
-            throwable = e;
             throw e;
         } catch (Error e) {
             try {
                 transactionManager.rollbackTransaction();
             } catch (RuntimeException exception) {
                 writeWarnLog(e);
-                throwable = exception;
                 throw exception;
             } catch (Error error) {
                 writeWarnLog(e);
-                throwable = error;
                 throw error;
             }
-            throwable = e;
             throw e;
         } finally {
-            writeWarnLog(throwable);
             try {
                 transactionManager.endTransaction();
             } catch (RuntimeException e) {
