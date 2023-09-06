@@ -143,9 +143,9 @@ public class BasicDbConnection implements TransactionManagerConnection {
             try {
                 closeConnection();
             } catch (SQLException e) {
-                // rollback()/closeStatements() で実行時例外が送出された場合、
-                // 元例外が送出されなくなるが、同種の例外であるため障害解析への影響は
-                // 無いものとしてそのまま再送出する。
+                // これまでに送出されたRetryableな例外を握りつぶさないようにするため、
+                // コネクションクローズ時の例外はロク出力するのみとする。
+                // コネクションクローズに失敗したのみであれば、無視しても問題ない。
                 LOGGER.logWarn("failed to terminate.", e);
             }
         }
