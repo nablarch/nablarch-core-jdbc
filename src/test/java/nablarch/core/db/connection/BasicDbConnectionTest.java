@@ -64,7 +64,6 @@ import mockit.Verifications;
  *
  * @author Hisaaki Sioiri
  */
-@SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlSourceToSinkFlow", "MagicConstant"})
 @RunWith(DatabaseTestRunner.class)
 public class BasicDbConnectionTest {
 
@@ -277,7 +276,7 @@ public class BasicDbConnectionTest {
     public void terminate_statementCloseError(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
         new Expectations() {{
-            PreparedStatement mockStatement = mockedConnection.prepareStatement(anyString);
+            @SuppressWarnings("SqlSourceToSinkFlow") PreparedStatement mockStatement = mockedConnection.prepareStatement(anyString);
             mockStatement.close();
             result = new SQLException("statement close error");
         }};
@@ -341,6 +340,7 @@ public class BasicDbConnectionTest {
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -353,12 +353,14 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql))));
 
         new Verifications() {{
+            //noinspection JDBCResourceOpenedButNotSafelyClosed,SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 2;
         }};
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -370,12 +372,14 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareStatement(sql)));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 1;
         }};
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementReuseOnAnotherSql(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -387,6 +391,7 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 2;
         }};
@@ -402,10 +407,12 @@ public class BasicDbConnectionTest {
         assertNotSame(sut.prepareStatement(sql), statement);
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test(expected = DbAccessException.class)
     public void prepareStatementFail(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
         new Expectations() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             result = new SQLException();
         }};
@@ -415,6 +422,7 @@ public class BasicDbConnectionTest {
     /**
      * {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String, int)}のテスト。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -426,6 +434,7 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql, RETURN_GENERATED_KEYS))));
 
         new Verifications() {{
+            //noinspection MagicConstant,SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, anyInt);
             times = 2;
         }};
@@ -434,6 +443,7 @@ public class BasicDbConnectionTest {
     /**
      * {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String, int)}のテスト。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyReuseOnAnotherFlg(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -445,6 +455,7 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql, RETURN_GENERATED_KEYS))));
 
         new Verifications(){{
+            //noinspection MagicConstant,SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, anyInt);
             times = 2;
         }};
@@ -453,6 +464,7 @@ public class BasicDbConnectionTest {
     /**
      * {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String, int)}のテスト。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -464,6 +476,7 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareStatement(sql, RETURN_GENERATED_KEYS)));
 
         new Verifications(){{
+            //noinspection MagicConstant,SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, anyInt);
             times = 1;
         }};
@@ -472,6 +485,7 @@ public class BasicDbConnectionTest {
     /**
      * {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String, int)}のテスト。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyReuseOnNoGen(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -483,11 +497,13 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareStatement(sql, NO_GENERATED_KEYS)));
 
         new Verifications() {{
+            //noinspection MagicConstant,SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, anyInt);
             times = 1;
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void prepareStatementAutoGenKeyFail(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -496,6 +512,7 @@ public class BasicDbConnectionTest {
         String message = "";
 
         new Expectations() {{
+            //noinspection MagicConstant,SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, anyInt);
             result = nativeExecption;
         }};
@@ -513,6 +530,7 @@ public class BasicDbConnectionTest {
 
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String, int[])}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnIndexesReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -524,12 +542,14 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql, new int[]{1}))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new int[]{1});
             times = 2;
         }};
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String, int[])}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnIndexesReuseOffMultiIndexes(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -541,12 +561,14 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql, new int[]{1, 2}))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new int[]{1, 2});
             times = 2;
         }};
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String, int[])}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnIndexesReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -558,12 +580,14 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareStatement(sql, new int[]{1})));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new int[]{1});
             times = 1;
         }};
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String, int[])}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnIndexesReuseOnMultiIndexes(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -575,12 +599,15 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql, new int[]{1}))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new int[]{2});
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new int[]{1});
         }};
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareStatement(String, int[])}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnIndexesReuseOnAnotherIndexes(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -593,11 +620,13 @@ public class BasicDbConnectionTest {
         );
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new int[]{1, 2});
             times = 1;
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnIndexesFail(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -605,6 +634,7 @@ public class BasicDbConnectionTest {
         String message = "";
         final Throwable nativeException = new SQLException("statementの生成に失敗");
         new Expectations() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new int[0]);
             result = nativeException;
         }};
@@ -621,6 +651,7 @@ public class BasicDbConnectionTest {
                         sql, Arrays.toString(new int[0]))));
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnNamesReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -633,11 +664,13 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql, new String[]{col1}))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new String[]{col1});
             times = 2;
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnNamesReuseOffManyCols(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -652,11 +685,13 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql, new String[]{col1, col2}))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new String[]{col1, col2});
             times = 2;
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnNamesReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -670,11 +705,13 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareStatement(sql, new String[]{col1})));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new String[]{col1});
             times = 1;
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnNamesReuseOnMultiCol(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -689,11 +726,13 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareStatement(sql, new String[]{col1, col2})));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new String[]{col1, col2});
             times = 1;
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementAutoGenKeyByColumnNamesReuseOnAnotherCol(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -708,16 +747,20 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatement(sql, new String[]{col1}))));
 
         new Verifications(){{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new String[]{col1, col2});
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new String[]{col1});
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void prepareStatementAutoGenKeyByColumnNamesFail(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
         final Throwable nativeException = new SQLException("statement生成で失敗");
         new Expectations() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString, new String[]{"col3"});
             result = nativeException;
         }};
@@ -737,6 +780,7 @@ public class BasicDbConnectionTest {
     }
 
     /** {@link BasicDbConnection#prepareStatementBySqlId(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementBySqlIdReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -749,12 +793,14 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatementBySqlId(sqlId))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 2;
         }};
     }
 
     /** {@link BasicDbConnection#prepareStatementBySqlId(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementBySqlIdReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -767,12 +813,14 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareStatementBySqlId(sqlId)));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 1;
         }};
     }
 
     /** {@link BasicDbConnection#prepareStatementBySqlId(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementBySqlIdReuseOnAnotherSql(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -783,6 +831,7 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareStatementBySqlId(SQL_ID_1))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 2;
         }};
@@ -797,11 +846,13 @@ public class BasicDbConnectionTest {
         assertNotSame(sut.prepareStatementBySqlId(SQL_ID_1), statement);
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementBGySqlIdFailedToCreateStatement(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
         final Throwable nativeException = new SQLException("statement生成時にエラー");
         new Expectations() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             result = nativeException;
         }};
@@ -818,6 +869,7 @@ public class BasicDbConnectionTest {
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareParameterizedSqlStatement(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void prepareParameterizedSqlStatementOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -829,12 +881,14 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareParameterizedSqlStatement(sql))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 2;
         }};
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareParameterizedSqlStatement(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void prepareParameterizedSqlStatementOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -846,12 +900,14 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareParameterizedSqlStatement(sql)));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 1;
         }};
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareParameterizedSqlStatement(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void prepareParameterizedSqlStatementOnAnotherSql(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -863,17 +919,20 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareParameterizedSqlStatement(sql))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 2;
         }};
     }
 
     /** {@link nablarch.core.db.connection.BasicDbConnection#prepareParameterizedSqlStatement(String)} のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void prepareParameterizedSqlStatementFailedToCreateStatement(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
         final Throwable nativeException = new SQLException("statement作成時に失敗");
         new Expectations() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             result = nativeException;
         }};
@@ -892,6 +951,7 @@ public class BasicDbConnectionTest {
      * {@link nablarch.core.db.connection.BasicDbConnection#prepareParameterizedSqlStatementBySqlId(String)}のテスト。
      * @throws Exception テスト実行時の例外
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void prepareParameterizedSqlStatementBySqlIdReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -903,6 +963,7 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareParameterizedSqlStatementBySqlId(sqlId))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=2;
         }};
@@ -912,6 +973,7 @@ public class BasicDbConnectionTest {
      * {@link nablarch.core.db.connection.BasicDbConnection#prepareParameterizedSqlStatementBySqlId(String)}のテスト。
      * @throws Exception テスト実行時の例外
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementBySqlIdReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -923,11 +985,13 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareParameterizedSqlStatementBySqlId(sqlId)));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 1;
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementBySqlIdReuseOnAnother(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -938,6 +1002,7 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareParameterizedSqlStatementBySqlId(SQL_ID_1))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 2;
         }};
@@ -966,6 +1031,7 @@ public class BasicDbConnectionTest {
      *  {@link nablarch.core.db.connection.BasicDbConnection#prepareParameterizedSqlStatement(String, Object)} のテスト。
      * @throws Exception テスト実行時に例外が発生した場合
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void prepareParameterizedSqlStatementReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -980,6 +1046,7 @@ public class BasicDbConnectionTest {
 
         // キャッシュ無効なので、同一のクエリでも、複数回statementを作成する。
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=2;
         }};
@@ -991,6 +1058,7 @@ public class BasicDbConnectionTest {
      *  ステートメントを再利用する場合の動作を確認。
      * @throws Exception Exception
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1005,6 +1073,7 @@ public class BasicDbConnectionTest {
 
         // 再利用を行うのでConnectionへのアクセスは1回
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=1;
         }};
@@ -1016,6 +1085,7 @@ public class BasicDbConnectionTest {
      *  ステートメントを再利用する場合の動作を確認。
      * @throws Exception Exception
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementReuseOnAnother(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1030,6 +1100,7 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareParameterizedSqlStatement(sql, entity))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=2;
         }};
@@ -1041,6 +1112,7 @@ public class BasicDbConnectionTest {
      *
      * @throws Exception テスト実行時に例外が発生した場合
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementFailedCreateStatement(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1049,6 +1121,7 @@ public class BasicDbConnectionTest {
         entity.userId = "userId";
 
         new Expectations() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             result = nativeException;
         }};
@@ -1063,6 +1136,7 @@ public class BasicDbConnectionTest {
     }
 
     /** {@link BasicDbConnection#prepareParameterizedSqlStatementBySqlId(String, Object)}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementBySqlIdReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1076,12 +1150,14 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareParameterizedSqlStatementBySqlId(sql, entity))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=2;
         }};
     }
 
     /** {@link BasicDbConnection#prepareParameterizedSqlStatementBySqlId(String, Object)}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementBySqlIdWithObjectReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1094,12 +1170,14 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareParameterizedSqlStatementBySqlId(SQL_ID_1, entity)));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=1;
         }};
     }
 
     /** {@link BasicDbConnection#prepareParameterizedSqlStatementBySqlId(String, Object)}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementBySqlIdWithObjectReuseOnAnotherSql(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1112,6 +1190,7 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareParameterizedSqlStatementBySqlId(SQL_ID_1, entity))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=2;
         }};
@@ -1123,12 +1202,14 @@ public class BasicDbConnectionTest {
      *
      * @throws Exception テスト実行時に例外が発生した場合。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementBySqlIdWithObjectFailedToCreateStatement(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
         String sqlId = SQL_ID_1;
         final Throwable nativeException = new SQLException("statement生成時のエラー");
         new Expectations() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             result = nativeException;
         }};
@@ -1144,6 +1225,7 @@ public class BasicDbConnectionTest {
     }
 
     /** {@link BasicDbConnection#prepareParameterizedCountSqlStatementBySqlId(String, Object)}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedCountSqlStatementBySqlIdReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1159,12 +1241,14 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareParameterizedCountSqlStatementBySqlId(sqlId, entity))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=2;
         }};
     }
 
     /** {@link BasicDbConnection#prepareParameterizedCountSqlStatementBySqlId(String, Object)}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedCountSqlStatementBySqlIdReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1179,12 +1263,14 @@ public class BasicDbConnectionTest {
                 sameInstance(target.prepareParameterizedCountSqlStatementBySqlId(sqlId, entity)));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 1;
         }};
     }
 
     /** {@link BasicDbConnection#prepareParameterizedCountSqlStatementBySqlId(String, Object)}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedCountSqlStatementBySqlIdReuseOnAnother(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1197,18 +1283,21 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareParameterizedCountSqlStatementBySqlId(SQL_ID_3, entity))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 2;
         }};
     }
 
     /** {@link BasicDbConnection#prepareParameterizedCountSqlStatementBySqlId(String, Object)}のテスト。 */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedCountSqlStatementBySqlIdFailedToCreateStatement(
             @Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
         final Throwable nativeException = new SQLException("statementの生成に失敗。");
         new Expectations() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             result = nativeException;
         }};
@@ -1227,6 +1316,7 @@ public class BasicDbConnectionTest {
      * {@link BasicDbConnection#prepareCountStatementBySqlId(String)}のテスト。
      * @throws Exception Exception
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareCountStatementBySqlIdReuseOff(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1240,11 +1330,13 @@ public class BasicDbConnectionTest {
                 not(sameInstance(target.prepareCountStatementBySqlId(sqlId))));
 
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=2;
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareCountStatementBySqlIdReuseOn(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
@@ -1255,6 +1347,7 @@ public class BasicDbConnectionTest {
                 target.prepareCountStatementBySqlId(sqlId),
                 sameInstance(target.prepareCountStatementBySqlId(sqlId)));
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times=1;
         }};
@@ -1263,16 +1356,19 @@ public class BasicDbConnectionTest {
                 target.prepareCountStatementBySqlId(SQL_ID_4),
                 not(sameInstance(target.prepareCountStatementBySqlId(sqlId))));
         new Verifications() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             times = 2 ;
         }};
     }
 
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareCountStatementBySqlIdFailedToCreateStatement(@Mocked final Connection mockedConnection) throws Exception {
         BasicDbConnection target = createTarget(mockedConnection);
         final Throwable nativeException = new SQLException("statement作成時にエラー");
         new Expectations() {{
+            //noinspection SqlSourceToSinkFlow
             mockedConnection.prepareStatement(anyString);
             result = nativeException;
         }};
@@ -1392,6 +1488,7 @@ public class BasicDbConnectionTest {
         }
     }
     
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     @TargetDb(include = TargetDb.Db.H2)
     public void testPrepareCallBySqlId_H2() throws Exception {
@@ -1464,6 +1561,7 @@ public class BasicDbConnectionTest {
     /**
      * ステートメントの生成に失敗したときの確認。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementWithOptionFail(@Mocked final Connection connection) throws Exception {
             BasicDbConnection target = createTarget(connection);
@@ -1472,6 +1570,7 @@ public class BasicDbConnectionTest {
             String message = "";
             SelectOption selectOption = new SelectOption(3, 5);
             new Expectations() {{
+                //noinspection SqlSourceToSinkFlow
                 connection.prepareStatement(anyString);
                 result = nativeException;
             }};
@@ -1528,6 +1627,7 @@ public class BasicDbConnectionTest {
     /**
      * ステートメントの生成に失敗したときの確認。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareStatementSqlIdWithOptionFail(@Mocked final Connection connection) throws Exception {
             BasicDbConnection target = createTarget(connection);
@@ -1535,6 +1635,7 @@ public class BasicDbConnectionTest {
             String message = "";
             SelectOption selectOption = new SelectOption(4, 5);
             new Expectations() {{
+                //noinspection SqlSourceToSinkFlow
                 connection.prepareStatement(anyString);
                 result = nativeExecption;
             }};
@@ -1593,6 +1694,7 @@ public class BasicDbConnectionTest {
     /**
      * ステートメントの生成に失敗した場合のテスト。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testParameterizedSqlPStatementWithOptionFail(@Mocked final Connection connection) throws Exception {
             BasicDbConnection target = createTarget(connection);
@@ -1600,6 +1702,7 @@ public class BasicDbConnectionTest {
             String message = "";
             SelectOption selectOption = new SelectOption(4, 5);
             new Expectations() {{
+                //noinspection SqlSourceToSinkFlow
                 connection.prepareStatement(anyString);
                 result = nativeExecption;
             }};
@@ -1658,6 +1761,7 @@ public class BasicDbConnectionTest {
     /**
      * ステートメントの生成に失敗した場合のテスト。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testPrepareParameterizedSqlStatementBySqlIdWithOptionFail(@Mocked final Connection connection) throws Exception {
             BasicDbConnection target = createTarget(connection);
@@ -1665,6 +1769,7 @@ public class BasicDbConnectionTest {
             String message = "";
             SelectOption selectOption = new SelectOption(4, 5);
             new Expectations() {{
+                //noinspection SqlSourceToSinkFlow
                 connection.prepareStatement(anyString);
                 result = nativeExecption;
             }};
@@ -1771,6 +1876,7 @@ public class BasicDbConnectionTest {
     /**
      * ステートメントの生成に失敗した場合のテスト。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void testParameterizedSqlPStatementWithConditionBySqlIdWithOptionFail(@Mocked final Connection connection) throws Exception {
             BasicDbConnection target = createTarget(connection);
@@ -1779,6 +1885,7 @@ public class BasicDbConnectionTest {
             SelectOption selectOption = new SelectOption(4, 5);
             Object condition = new Object();
             new Expectations() {{
+                //noinspection SqlSourceToSinkFlow
                 connection.prepareStatement(anyString);
                 result = nativeExecption;
             }};
