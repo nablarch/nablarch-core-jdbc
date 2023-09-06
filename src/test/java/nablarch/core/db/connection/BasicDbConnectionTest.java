@@ -4,16 +4,15 @@ import static java.lang.Integer.MIN_VALUE;
 import static java.lang.String.format;
 import static java.sql.Statement.NO_GENERATED_KEYS;
 import static java.sql.Statement.RETURN_GENERATED_KEYS;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -48,6 +47,7 @@ import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
+import nablarch.test.support.log.app.OnMemoryLogWriter;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -108,6 +108,7 @@ public class BasicDbConnectionTest {
 
         sut.setFactory(statementFactory);
 
+        OnMemoryLogWriter.clear();
     }
 
     @After
@@ -266,17 +267,8 @@ public class BasicDbConnectionTest {
             result = new SQLException("close error");
         }};
 
-        PrintStream originalStdOut = System.out;
-        try {
-            ByteArrayOutputStream onMemoryOut = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(onMemoryOut, true, "UTF-8"));
-
-            target.terminate();
-            String logText = new String(onMemoryOut.toByteArray(), Charset.forName("UTF-8"));
-            assertThat(logText, containsString("failed to terminate."));
-        } finally {
-            System.setOut(originalStdOut);
-        }
+        target.terminate();
+        assertLog("failed to terminate.");
     }
 
     /**
@@ -1309,25 +1301,15 @@ public class BasicDbConnectionTest {
     /** terminateでコネクションクローズできなかった場合、例外が発生しないこと。。 */
     @Test
     public void testCloseConnectionFail() throws Exception {
-        PrintStream originalStdOut = System.out;
-        try {
-            ByteArrayOutputStream onMemoryOut = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(onMemoryOut, true, "UTF-8"));
+        new BasicDbConnection(jdbcConnection) {
+            @Override
+            protected void closeConnection() throws SQLException {
+                throw new SQLException("for test");
+            }
+        }.terminate();
 
-            new BasicDbConnection(jdbcConnection) {
-                @Override
-                protected void closeConnection() throws SQLException {
-                    throw new SQLException("for test");
-                }
-            }.terminate();
-
-            String logText = new String(onMemoryOut.toByteArray(), Charset.forName("UTF-8"));
-            assertThat(logText, containsString("failed to terminate."));
-            assertThat(logText, containsString("java.sql.SQLException: for test"));
-
-        } finally {
-            System.setOut(originalStdOut);
-        }
+        assertLog("failed to terminate.");
+        assertLog("java.sql.SQLException: for test");
     }
 
     /**
@@ -1908,5 +1890,25 @@ public class BasicDbConnectionTest {
         public String getTel() {
             return tel;
         }
+    }
+
+    /**
+     * ワーニングログをアサートする。
+     *
+     * @param regex ログのメッセージのパターン
+     */
+    private static void assertLog(String regex) {
+        List<String> log = OnMemoryLogWriter.getMessages("writer.memory");
+        boolean writeLog = false;
+        for (String logMessage : log) {
+            System.out.println("====================================================");
+            System.out.println(logMessage);
+            String str = logMessage.replaceAll("[\\r\\n]", "");
+            if (str.matches("^.*" + regex + ".*$")) {
+                writeLog = true;
+                break;
+            }
+        }
+        assertTrue("\"" + regex + "\"を含むログが出力されていること", writeLog);
     }
 }
