@@ -11,6 +11,9 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -27,6 +30,7 @@ import javax.persistence.Table;
 import nablarch.core.db.DbAccessException;
 import nablarch.core.db.DbExecutionContext;
 import nablarch.core.db.connection.exception.BasicDbAccessExceptionFactory;
+import nablarch.core.db.connection.exception.DbConnectionException;
 import nablarch.core.db.dialect.DefaultDialect;
 import nablarch.core.db.dialect.Dialect;
 import nablarch.core.db.statement.BasicSqlLoader;
@@ -162,15 +166,42 @@ public class BasicDbConnectionTest {
         sut.terminate();
     }
 
+    /**
+     * コミット失敗時は{@link DbAccessException}が送出されること。
+     * @param mockedConnection モックコネクション
+     * @throws Exception 例外
+     */
     @Test(expected = DbAccessException.class)
     public void commitFail(@Mocked final Connection mockedConnection) throws Exception {
-        BasicDbConnection target = new BasicDbConnection(mockedConnection);
-        target.setDbAccessExceptionFactory(new BasicDbAccessExceptionFactory());
+        BasicDbConnection target = createTarget(mockedConnection);
         new Expectations() {{
             mockedConnection.commit();
             result = new SQLException("commit error");
         }};
         target.commit();
+    }
+
+    /**
+     * コミット失敗時には{@link DbAccessExceptionFactory}が生成する例外が送出されること。
+     * @param mockedConnection モックコネクション
+     * @throws Exception 例外
+     */
+    @Test(expected = DbConnectionException.class)
+    public void commitFailWithDbConnectionException(@Mocked final Connection mockedConnection) throws Exception {
+        BasicDbConnection target = createTarget(mockedConnection);
+        target.setDbAccessExceptionFactory(new MockDbAccessExceptionFactory());
+        new Expectations() {{
+            mockedConnection.commit();
+            result = new SQLException("commit error");
+        }};
+        target.commit();
+    }
+
+    private static class MockDbAccessExceptionFactory implements DbAccessExceptionFactory {
+        @Override
+        public DbAccessException createDbAccessException(String message, SQLException cause, TransactionManagerConnection connection) {
+            return new DbConnectionException("connection error", cause);
+        }
     }
 
     /**
@@ -224,8 +255,8 @@ public class BasicDbConnectionTest {
     }
 
     /**
-     * terminate時のclose処理で例外が発生する
-     * @throws Exception
+     * terminate時のclose処理で例外が発生しても、例外が発生しないこと。
+     *
      */
     @Test
     public void terminate_closeError(@Mocked final Connection mockedConnection) throws Exception {
@@ -235,11 +266,16 @@ public class BasicDbConnectionTest {
             result = new SQLException("close error");
         }};
 
+        PrintStream originalStdOut = System.out;
         try {
+            ByteArrayOutputStream onMemoryOut = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(onMemoryOut, true, "UTF-8"));
+
             target.terminate();
-            fail("ここはとおならい。");
-        } catch (DbAccessException e) {
-            assertEquals("failed to terminate.", e.getMessage());
+            String logText = new String(onMemoryOut.toByteArray(), Charset.forName("UTF-8"));
+            assertThat(logText, containsString("failed to terminate."));
+        } finally {
+            System.setOut(originalStdOut);
         }
     }
 
@@ -1270,20 +1306,27 @@ public class BasicDbConnectionTest {
                 sameInstance(jdbcConnection));
     }
 
-    /** terminateでコネクションクローズできなかった場合、例外が発生すること。 */
+    /** terminateでコネクションクローズできなかった場合、例外が発生しないこと。。 */
     @Test
-    public void testCloseConnectionFail() {
+    public void testCloseConnectionFail() throws Exception {
+        PrintStream originalStdOut = System.out;
         try {
+            ByteArrayOutputStream onMemoryOut = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(onMemoryOut, true, "UTF-8"));
+
             new BasicDbConnection(jdbcConnection) {
                 @Override
                 protected void closeConnection() throws SQLException {
                     throw new SQLException("for test");
                 }
             }.terminate();
-            fail();
-        } catch (DbAccessException e) {
-            assertThat(e.getMessage(), is("failed to terminate."));
-            assertThat(e.getCause(), instanceOf(SQLException.class));
+
+            String logText = new String(onMemoryOut.toByteArray(), Charset.forName("UTF-8"));
+            assertThat(logText, containsString("failed to terminate."));
+            assertThat(logText, containsString("java.sql.SQLException: for test"));
+
+        } finally {
+            System.setOut(originalStdOut);
         }
     }
 
