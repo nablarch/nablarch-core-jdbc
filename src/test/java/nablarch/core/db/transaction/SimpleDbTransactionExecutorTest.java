@@ -199,7 +199,7 @@ public class SimpleDbTransactionExecutorTest {
      * <ul>
      * <li>SQL実行時にRuntimeExceptionが発生し、ロールバック時にはErrorが発生し、トランザクション終了時にはRuntimeExceptionが発生する場合</li>
      * <li>呼び出し元には、ロールバック時に発生した例外が送出されること。</li>
-     * <li>SQL実行時に発生したRuntimeExceptionは、ワーニングレベルでログ出y力されること。</li>
+     * <li>SQL実行時に発生したRuntimeExceptionは、ワーニングレベルでログ出力されること。</li>
      * </ul>
      */
     @Test
