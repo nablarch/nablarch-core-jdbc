@@ -26,7 +26,6 @@ import nablarch.core.beans.BeanUtil;
 import nablarch.core.db.DbAccessException;
 import nablarch.core.db.DbExecutionContext;
 import nablarch.core.db.connection.AppDbConnection;
-import nablarch.core.db.dialect.Dialect;
 import nablarch.core.db.statement.ParameterHolder.NopParameterHolder;
 import nablarch.core.db.statement.ParameterHolder.ParamValue;
 import nablarch.core.db.statement.exception.SqlStatementException;

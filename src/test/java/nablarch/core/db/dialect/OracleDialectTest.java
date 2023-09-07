@@ -1,11 +1,9 @@
 package nablarch.core.db.dialect;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.text.IsEmptyString.isEmptyString;
 import static org.junit.Assert.assertThat;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,7 +11,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -22,7 +19,6 @@ import org.hamcrest.Matchers;
 
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
-import nablarch.core.db.util.DbUtil;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.DbTestRule;
 import nablarch.test.support.db.helper.TargetDb;
