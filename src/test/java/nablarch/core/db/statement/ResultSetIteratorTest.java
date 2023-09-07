@@ -24,10 +24,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import nablarch.core.db.DbAccessException;
-import nablarch.core.db.DbExecutionContext;
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.TransactionManagerConnection;
-import nablarch.core.db.dialect.DefaultDialect;
 import nablarch.core.transaction.TransactionContext;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;

@@ -2,7 +2,6 @@ package nablarch.core.db;
 
 import nablarch.core.db.DbAccessIntegrationTest.DbAccessJndiTest;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
-import nablarch.test.support.db.helper.TargetDb;
 
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
