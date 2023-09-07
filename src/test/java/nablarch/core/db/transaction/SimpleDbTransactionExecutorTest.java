@@ -1,7 +1,7 @@
 package nablarch.core.db.transaction;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.util.List;
@@ -97,6 +97,8 @@ public class SimpleDbTransactionExecutorTest {
         }
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
+
+        assertWarnLogCountIs(0);
     }
 
     /**
@@ -121,6 +123,8 @@ public class SimpleDbTransactionExecutorTest {
 
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
+
+        assertWarnLogCountIs(0);
     }
 
     /**
@@ -152,7 +156,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.RuntimeException.*runtime exception");
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.RuntimeException: runtime exception");
     }
 
     /**
@@ -183,7 +188,42 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.RuntimeException.*runtime exception");
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.RuntimeException: runtime exception");
+    }
+
+    /**
+     * {@link SimpleDbTransactionExecutor#doTransaction()}のテスト。
+     * <br/>
+     * <h2>テスト内容</h2>
+     * <ul>
+     * <li>SQL実行時にRuntimeExceptionが発生し、ロールバック時にはErrorが発生し、トランザクション終了時にはRuntimeExceptionが発生する場合</li>
+     * <li>呼び出し元には、ロールバック時に発生した例外が送出されること。</li>
+     * <li>SQL実行時に発生したRuntimeExceptionは、ワーニングレベルでログ出力されること。</li>
+     * </ul>
+     */
+    @Test
+    public void testDoTransaction_ExceptionAtExecute_ErrorAtRollback_ExceptionAtEnd() {
+        // ターゲットの呼び出し
+        try {
+            new SimpleDbTransactionExecutorRuntimeException(
+                    new SimpleDbTransactionManagerError(
+                            transaction,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.ROLLBACK_ERROR,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.END_RUNTIME))
+                    .doTransaction();
+            fail("does not run.");
+        } catch (Error e) {
+            assertThat(e.getMessage(), is("rollback Error."));
+        }
+
+        TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
+        assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
+
+        // ログのアサート
+        assertWarnLogCountIs(2);
+        assertWarnLog("java.lang.RuntimeException: runtime exception");
+        assertWarnLog("java.lang.RuntimeException: end runtime error");
     }
 
     /**
@@ -214,7 +254,8 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.Error.*Error");
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.Error: Error");
     }
 
     /**
@@ -244,7 +285,74 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.Error.*Error");
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.Error: Error");
+    }
+
+    /**
+     * {@link SimpleDbTransactionExecutor#doTransaction()}のテスト。
+     * <br/>
+     * <h2>テスト内容</h2>
+     * <ul>
+     * <li>SQL実行時にErrorが発生し、ロールバック時にはErrorが発生し、トランザクション終了時にはRuntimeExceptionが発生する場合</li>
+     * <li>呼び出し元には、ロールバック時に発生した例外が送出されること。</li>
+     * <li>SQL実行時のErrorは、ワーニングレベルでログ出力されること。</li>
+     * </ul>
+     */
+    @Test
+    public void testDoTransaction_ErrorAtExecuteAndRollback_ExceptionAtEnd() {
+        try {
+            new SimpleDbTransactionExecutorError(
+                    new SimpleDbTransactionManagerError(
+                            transaction,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.ROLLBACK_ERROR,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.END_RUNTIME))
+                    .doTransaction();
+            fail("does not run.");
+        } catch (Error e) {
+            assertThat(e.getMessage(), is("rollback Error."));
+        }
+
+        TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
+        assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
+
+        // ログのアサート
+        assertWarnLogCountIs(2);
+        assertWarnLog("java.lang.Error: Error");
+        assertWarnLog("java.lang.RuntimeException: end runtime error");
+    }
+
+    /**
+     * {@link SimpleDbTransactionExecutor#doTransaction()}のテスト。
+     * <br/>
+     * <h2>テスト内容</h2>
+     * <ul>
+     * <li>SQL実行時にErrorが発生し、ロールバック時とトランザクション終了時にはErrorが発生する場合</li>
+     * <li>呼び出し元には、ロールバック時に発生した例外が送出されること。</li>
+     * <li>SQL実行時のErrorは、ワーニングレベルでログ出力されること。</li>
+     * </ul>
+     */
+    @Test
+    public void testDoTransaction_ErrorAtExecuteAndRollbackAndEnd() {
+        try {
+            new SimpleDbTransactionExecutorError(
+                    new SimpleDbTransactionManagerError(
+                            transaction,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.ROLLBACK_ERROR,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.END_ERROR))
+                    .doTransaction();
+            fail("does not run.");
+        } catch (Error e) {
+            assertThat(e.getMessage(), is("rollback Error."));
+        }
+
+        TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
+        assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
+
+        // ログのアサート
+        assertWarnLogCountIs(2);
+        assertWarnLog("java.lang.Error: Error");
+        assertWarnLog("java.lang.Error: end Error");
     }
 
     /**
@@ -253,7 +361,7 @@ public class SimpleDbTransactionExecutorTest {
      * <h2>テスト内容</h2>
      * <ul>
      * <li>SQL実行時にRuntimeExceptionが発生し、トランザクションの終了時にはRuntimeExceptionが発生する場合</li>
-     * <li>呼び出し元には、トランザクション終了時に発生した例外が送出されること。</li>
+     * <li>呼び出し元には、SQL実行時に発生した例外が送出されること。</li>
      * <li>SQL実行時のRuntimeExceptionは、ワーニングレベルでログ出力されること。</li>
      * </ul>
      */
@@ -268,14 +376,15 @@ public class SimpleDbTransactionExecutorTest {
                     .doTransaction();
             fail("does not run.");
         } catch (RuntimeException e) {
-            assertThat(e.getMessage(), is("end runtime error."));
+            assertThat(e.getMessage(), is("runtime exception."));
         }
 
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.RuntimeException.*runtime exception");
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.RuntimeException: end runtime error");
     }
 
     /**
@@ -284,7 +393,7 @@ public class SimpleDbTransactionExecutorTest {
      * <h2>テスト内容</h2>
      * <ul>
      * <li>SQL実行時にRuntimeExceptionが発生し、トランザクションの終了時にはErrorが発生する場合</li>
-     * <li>呼び出し元には、トランザクション終了時に発生した例外が送出されること。</li>
+     * <li>呼び出し元には、SQL実行時に発生した例外が送出されること。</li>
      * <li>SQL実行時のRuntimeExceptionは、ワーニングレベルでログ出力されること。</li>
      * </ul>
      */
@@ -297,15 +406,16 @@ public class SimpleDbTransactionExecutorTest {
                             SimpleDbTransactionManagerError.ERROR_STATEMENT.END_ERROR))
                     .doTransaction();
             fail("does not run.");
-        } catch (Error e) {
-            assertThat(e.getMessage(), is("end Error."));
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage(), is("runtime exception."));
         }
 
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.RuntimeException.*runtime exception");
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.Error: end Error");
     }
 
     /**
@@ -314,7 +424,7 @@ public class SimpleDbTransactionExecutorTest {
      * <h2>テスト内容</h2>
      * <ul>
      * <li>SQL実行時にErrorが発生し、トランザクションの終了時にはRuntimeExceptionが発生する場合</li>
-     * <li>呼び出し元には、トランザクション終了時に発生した例外が送出されること。</li>
+     * <li>呼び出し元には、SQL実行時に発生した例外が送出されること。</li>
      * <li>SQL実行時のErrorは、ワーニングレベルでログ出力されること。</li>
      * </ul>
      */
@@ -328,15 +438,16 @@ public class SimpleDbTransactionExecutorTest {
                             SimpleDbTransactionManagerError.ERROR_STATEMENT.END_RUNTIME))
                     .doTransaction();
             fail("does not run.");
-        } catch (RuntimeException e) {
-            assertThat(e.getMessage(), is("end runtime error."));
+        } catch (Error e) {
+            assertThat(e.getMessage(), is("Error."));
         }
 
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.Error.*Error");
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.RuntimeException: end runtime error");
     }
 
     /**
@@ -345,7 +456,7 @@ public class SimpleDbTransactionExecutorTest {
      * <h2>テスト内容</h2>
      * <ul>
      * <li>SQL実行時にErrorが発生し、トランザクションの終了時にはErrorが発生する場合</li>
-     * <li>呼び出し元には、トランザクション終了時に発生した例外が送出されること。</li>
+     * <li>呼び出し元には、SQL実行時に発生した例外が送出されること。</li>
      * <li>SQL実行時のErrorは、ワーニングレベルでログ出力されること。</li>
      * </ul>
      */
@@ -359,14 +470,15 @@ public class SimpleDbTransactionExecutorTest {
                     .doTransaction();
             fail("does not run.");
         } catch (Error e) {
-            assertThat(e.getMessage(), is("end Error."));
+            assertThat(e.getMessage(), is("Error."));
         }
 
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.Error.*Error");
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.Error: end Error");
     }
 
     /**
@@ -375,7 +487,7 @@ public class SimpleDbTransactionExecutorTest {
      * <h2>テスト内容</h2>
      * <ul>
      * <li>SQL実行時にRuntimeExceptionが発生し、ロールバックとトランザクションの終了時にはRuntimeExceptionが発生する場合</li>
-     * <li>呼び出し元には、トランザクション終了時に発生した例外が送出されること。</li>
+     * <li>呼び出し元には、ロールバック時に発生した例外が送出されること。</li>
      * <li>SQL実行時とロールバック時のRuntimeExceptionは、ワーニングレベルでログ出力されること。</li>
      * </ul>
      */
@@ -390,15 +502,49 @@ public class SimpleDbTransactionExecutorTest {
                     .doTransaction();
             fail("does not run.");
         } catch (RuntimeException e) {
-            assertThat(e.getMessage(), is("end runtime error."));
+            assertThat(e.getMessage(), is("rollback runtime error."));
         }
 
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.RuntimeException.*runtime exception");
-        assertWarnLog("rollback runtime error");
+        assertWarnLogCountIs(2);
+        assertWarnLog("java.lang.RuntimeException: runtime exception");
+        assertWarnLog("java.lang.RuntimeException: end runtime error");
+    }
+
+    /**
+     * {@link SimpleDbTransactionExecutor#doTransaction()}のテスト。
+     * <br/>
+     * <h2>テスト内容</h2>
+     * <ul>
+     * <li>SQL実行時にRuntimeExceptionが発生し、ロールバック時にはRuntimeExceptionが発生し、トランザクション終了時にはErrorがする場合</li>
+     * <li>呼び出し元には、ロールバック時に発生した例外が送出されること。</li>
+     * <li>SQL実行時とロールバック時のRuntimeExceptionは、ワーニングレベルでログ出力されること。</li>
+     * </ul>
+     */
+    @Test
+    public void testDoTransaction_ExceptionAtExecuteAndRollback_ErrorAtEnd() {
+        try {
+            new SimpleDbTransactionExecutorRuntimeException(
+                    new SimpleDbTransactionManagerError(
+                            transaction,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.ROLLBACK_RUNTIME,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.END_ERROR))
+                    .doTransaction();
+            fail("does not run.");
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage(), is("rollback runtime error."));
+        }
+
+        TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
+        assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
+
+        // ログのアサート
+        assertWarnLogCountIs(2);
+        assertWarnLog("java.lang.RuntimeException: runtime exception");
+        assertWarnLog("java.lang.Error: end Error");
     }
 
     /**
@@ -407,7 +553,7 @@ public class SimpleDbTransactionExecutorTest {
      * <h2>テスト内容</h2>
      * <ul>
      * <li>SQL実行時にErrorが発生し、ロールバックとトランザクションの終了時にはRuntimeExceptionが発生する場合</li>
-     * <li>呼び出し元には、トランザクション終了時に発生した例外が送出されること。</li>
+     * <li>呼び出し元には、ロールバック時に発生した例外が送出されること。</li>
      * <li>SQL実行時とロールバック時のRuntimeExceptionは、ワーニングレベルでログ出力されること。</li>
      * </ul>
      */
@@ -422,7 +568,7 @@ public class SimpleDbTransactionExecutorTest {
                     .doTransaction();
             fail("does not run.");
         } catch (RuntimeException e) {
-            assertThat(e.getMessage(), is("end runtime error."));
+            assertThat(e.getMessage(), is("rollback runtime error."));
         }
 
 
@@ -430,8 +576,43 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.Error.*Error");
-        assertWarnLog("rollback runtime error");
+        assertWarnLogCountIs(2);
+        assertWarnLog("java.lang.Error: Error");
+        assertWarnLog("java.lang.RuntimeException: end runtime error");
+    }
+
+    /**
+     * {@link SimpleDbTransactionExecutor#doTransaction()}のテスト。
+     * <br/>
+     * <h2>テスト内容</h2>
+     * <ul>
+     * <li>SQL実行時にErrorが発生し、ロールバック時にはRuntimeExceptionが発生し、トランザクションの終了時にはErrorが発生する場合</li>
+     * <li>呼び出し元には、ロールバック時に発生した例外が送出されること。</li>
+     * <li>SQL実行時とロールバック時のRuntimeExceptionは、ワーニングレベルでログ出力されること。</li>
+     * </ul>
+     */
+    @Test
+    public void testDoTransaction_ErrorAtExecute_ExceptionAtRollback_ErrorAndEnd() {
+        try {
+            new SimpleDbTransactionExecutorError(
+                    new SimpleDbTransactionManagerError(
+                            transaction,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.ROLLBACK_RUNTIME,
+                            SimpleDbTransactionManagerError.ERROR_STATEMENT.END_ERROR))
+                    .doTransaction();
+            fail("does not run.");
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage(), is("rollback runtime error."));
+        }
+
+
+        TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
+        assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
+
+        // ログのアサート
+        assertWarnLogCountIs(2);
+        assertWarnLog("java.lang.Error: Error");
+        assertWarnLog("java.lang.Error: end Error");
     }
 
     /**
@@ -440,7 +621,7 @@ public class SimpleDbTransactionExecutorTest {
      * <h2>テスト内容</h2>
      * <ul>
      * <li>SQL実行時にRuntimeExceptionが発生し、ロールバックとトランザクションの終了時にはErrorが発生する場合</li>
-     * <li>呼び出し元には、トランザクション終了時に発生した例外が送出されること。</li>
+     * <li>呼び出し元には、ロールバック時に発生した例外が送出されること。</li>
      * <li>SQL実行時とロールバック時のRuntimeExceptionは、ワーニングレベルでログ出力されること。</li>
      * </ul>
      */
@@ -455,7 +636,7 @@ public class SimpleDbTransactionExecutorTest {
                     .doTransaction();
             fail("does not run.");
         } catch (Error e) {
-            assertThat(e.getMessage(), is("end Error."));
+            assertThat(e.getMessage(), is("rollback Error."));
         }
 
 
@@ -463,8 +644,9 @@ public class SimpleDbTransactionExecutorTest {
         assertThat("更新されていないこと", entity.col2, is(INIT_VALUE));
 
         // ログのアサート
-        assertWarnLog("java.lang.RuntimeException.*runtime exception");
-        assertWarnLog("rollback Error");
+        assertWarnLogCountIs(2);
+        assertWarnLog("java.lang.RuntimeException: runtime exception");
+        assertWarnLog("java.lang.Error: end Error");
     }
 
     /**
@@ -473,37 +655,25 @@ public class SimpleDbTransactionExecutorTest {
      * <h2>テスト内容</h2>
      * <ul>
      * <li>トランザクションの終了時にはRuntimeExceptionが発生する場合</li>
-     * <li>呼び出し元には、トランザクション終了時に発生した例外が送出されること。</li>
+     * <li>呼び出し元には、例外が送出されないこと。</li>
      * <li>コミットは成功しているので、更新処理が反映されていること。</li>
      * </ul>
      */
     @Test
     public void testDoTransaction_ExceptionAtEnd() {
-        try {
-            new SimpleDbTransactionExecutorSub(
-                    new SimpleDbTransactionManagerError(
-                            transaction,
-                            SimpleDbTransactionManagerError.ERROR_STATEMENT.END_RUNTIME))
-                    .doTransaction();
-            fail("does not run.");
-        } catch (RuntimeException e) {
-            assertThat(e.getMessage(), is("end runtime error."));
-        }
+        new SimpleDbTransactionExecutorSub(
+                new SimpleDbTransactionManagerError(
+                        transaction,
+                        SimpleDbTransactionManagerError.ERROR_STATEMENT.END_RUNTIME))
+                .doTransaction();
 
 
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("コミットは成功しているので、更新処理が正しく行われていること", entity.col2, is(UPDATED_VALUE));
 
         // ログのアサート
-        // ログは、出力されていないこと。
-        final List<String> messages = OnMemoryLogWriter.getMessages("writer.memory");
-        int warnCount = 0;
-        for (String message : messages) {
-            if (message.contains("WARN")) {
-                warnCount++;
-            }
-        }
-        assertThat(warnCount, is(0));
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.RuntimeException: end runtime error.");
     }
 
     /**
@@ -512,36 +682,24 @@ public class SimpleDbTransactionExecutorTest {
      * <h2>テスト内容</h2>
      * <ul>
      * <li>トランザクションの終了時にはErrorが発生する場合</li>
-     * <li>呼び出し元には、トランザクション終了時に発生した例外が送出されること。</li>
+     * <li>呼び出し元には、例外が送出されないこと。</li>
      * <li>コミットは成功しているので、更新処理が反映されていること。</li>
      * </ul>
      */
     @Test
     public void testDoTransaction_ErrorAtEnd() {
-        try {
-            new SimpleDbTransactionExecutorSub(
-                    new SimpleDbTransactionManagerError(
-                            transaction,
-                            SimpleDbTransactionManagerError.ERROR_STATEMENT.END_ERROR))
-                    .doTransaction();
-            fail("does not run.");
-        } catch (Error e) {
-            assertThat(e.getMessage(), is("end Error."));
-        }
+        new SimpleDbTransactionExecutorSub(
+                new SimpleDbTransactionManagerError(
+                        transaction,
+                        SimpleDbTransactionManagerError.ERROR_STATEMENT.END_ERROR))
+                .doTransaction();
 
         TestEntity entity = VariousDbTestHelper.findById(TestEntity.class, ID);
         assertThat("コミットは成功しているので、更新処理が正しく行われていること", entity.col2, is(UPDATED_VALUE));
 
         // ログのアサート
-        // ログは、出力されていないこと。
-        final List<String> messages = OnMemoryLogWriter.getMessages("writer.memory");
-        int warnCount = 0;
-        for (String message : messages) {
-            if (message.contains("WARN")) {
-                warnCount++;
-            }
-        }
-        assertThat(warnCount, is(0));
+        assertWarnLogCountIs(1);
+        assertWarnLog("java.lang.Error: end Error.");
     }
 
     /**
@@ -553,14 +711,34 @@ public class SimpleDbTransactionExecutorTest {
         List<String> log = OnMemoryLogWriter.getMessages("writer.memory");
         boolean writeLog = false;
         for (String logMessage : log) {
-            String str = logMessage.replaceAll("\\r|\\n", "");
+            String str = logMessage.replaceAll("[\\r\\n]", "");
             if (str.matches(
                     "^.*WARN.*failed in the "
                             + "application process\\..*" + message + ".*$")) {
                 writeLog = true;
+                break;
             }
         }
         assertThat("元例外がWARNレベルでログに出力されていること", writeLog, is(true));
+    }
+
+    /**
+     * ワーニングログの件数をアサートする。
+     *
+     * @param count ログのカウント
+     */
+    private static void assertWarnLogCountIs(int count){
+        List<String> log = OnMemoryLogWriter.getMessages("writer.memory");
+        int warnCount = 0;
+        for (String logMessage : log) {
+            String str = logMessage.replaceAll("[\\r\\n]", "");
+            if (str.matches(
+                    "^.*WARN.*failed in the "
+                            + "application process\\..*$")) {
+                warnCount++;
+            }
+        }
+        assertThat(warnCount, is(count));
     }
 
     /**
@@ -702,6 +880,7 @@ public class SimpleDbTransactionExecutorTest {
      * <br/>
      * 本クラスは、更新用SQL実行後に、RuntimeExceptionを送出する。
      */
+    @SuppressWarnings("NonExceptionNameEndsWithException")
     private static class SimpleDbTransactionExecutorRuntimeException extends SimpleDbTransactionExecutorSub {
 
         /**
