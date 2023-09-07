@@ -1957,8 +1957,6 @@ public class BasicDbConnectionTest {
         List<String> log = OnMemoryLogWriter.getMessages("writer.memory");
         boolean writeLog = false;
         for (String logMessage : log) {
-            System.out.println("====================================================");
-            System.out.println(logMessage);
             String str = logMessage.replaceAll("[\\r\\n]", "");
             if (str.matches("^.*" + regex + ".*$")) {
                 writeLog = true;
