@@ -255,6 +255,7 @@ public class BasicDbConnectionTest {
     /**
      * terminate時のclose処理で例外が発生しても、例外が発生しないこと。
      *
+     * @throws Exception Exception
      */
     @Test
     public void terminate_closeError(@Mocked final Connection mockedConnection) throws Exception {
