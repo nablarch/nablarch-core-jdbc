@@ -47,6 +47,7 @@ public abstract class SimpleDbTransactionExecutor<T> {
     public T doTransaction() {
         transactionManager.beginTransaction();
 
+        Throwable throwable = null;
         try {
             T result = execute(DbConnectionContext.getConnection(
                     transactionManager.getDbTransactionName()));
@@ -58,22 +59,27 @@ public abstract class SimpleDbTransactionExecutor<T> {
                 transactionManager.rollbackTransaction();
             } catch (RuntimeException exception) {
                 writeWarnLog(e);
+                throwable = exception;
                 throw exception;
             } catch (Error error) {
                 writeWarnLog(e);
+                throwable = error;
                 throw error;
             }
+            throwable = e;
             throw e;
         } catch (Error e) {
             try {
                 transactionManager.rollbackTransaction();
             } catch (RuntimeException exception) {
-                writeWarnLog(e);
-                throw exception;
+                // execute/commitでErrorが発生している場合はrollbackのRuntimeExceptionよりErrorを優先する
+                writeWarnLog(exception);
             } catch (Error error) {
                 writeWarnLog(e);
+                throwable = error;
                 throw error;
             }
+            throwable = e;
             throw e;
         } finally {
             try {
@@ -81,7 +87,16 @@ public abstract class SimpleDbTransactionExecutor<T> {
             } catch (RuntimeException e) {
                 writeWarnLog(e);
             } catch (Error e) {
-                writeWarnLog(e);
+                // endTransactionではコネクションの後処理しかしていないため
+                // 業務処理で既にErrorが発生している場合、業務処理のErrorを優先する
+                if (throwable instanceof Error) {
+                    writeWarnLog(e);
+                    throw (Error) throwable;
+                }
+                if (throwable != null) {
+                    writeWarnLog(throwable);
+                }
+                throw e;
             }
         }
     }
