@@ -700,7 +700,7 @@ public class SimpleDbTransactionExecutorTest {
                             transaction,
                             SimpleDbTransactionManagerError.ERROR_STATEMENT.END_ERROR))
                     .doTransaction();
-        } catch (Error e){
+        } catch (Error e) {
             assertThat(e.getMessage(), is(END_ERROR_MESSAGE));
         }
 
@@ -736,7 +736,7 @@ public class SimpleDbTransactionExecutorTest {
      *
      * @param count ログのカウント
      */
-    private static void assertWarnLogCountIs(int count){
+    private static void assertWarnLogCountIs(int count) {
         List<String> log = OnMemoryLogWriter.getMessages("writer.memory");
         int warnCount = 0;
         for (String logMessage : log) {
@@ -758,13 +758,13 @@ public class SimpleDbTransactionExecutorTest {
      *
      */
     @Entity
-    @Table(name="SBT_TEST_TABLE")
+    @Table(name = "SBT_TEST_TABLE")
     public static class TestEntity {
         @Id
-        @Column(name="col1", length=5, nullable = false)
+        @Column(name = "col1", length = 5, nullable = false)
         public String col1;
 
-        @Column(name="col2", length=100)
+        @Column(name = "col2", length = 100)
         public String col2;
 
         private static TestEntity create(String col1, String col2) {

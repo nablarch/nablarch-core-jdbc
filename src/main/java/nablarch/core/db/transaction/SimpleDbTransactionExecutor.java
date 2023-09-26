@@ -89,11 +89,11 @@ public abstract class SimpleDbTransactionExecutor<T> {
             } catch (Error e) {
                 // endTransactionではコネクションの後処理しかしていないため
                 // 業務処理で既にErrorが発生している場合、業務処理のErrorを優先する
-                if(throwable instanceof Error){
+                if (throwable instanceof Error) {
                     writeWarnLog(e);
-                    throw (Error)throwable;
+                    throw (Error) throwable;
                 }
-                if(throwable != null) {
+                if (throwable != null) {
                     writeWarnLog(throwable);
                 }
                 throw e;
