@@ -2,9 +2,7 @@ package nablarch.core.db.util;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;

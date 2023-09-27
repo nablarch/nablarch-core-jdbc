@@ -23,7 +23,7 @@ import nablarch.core.util.annotation.Published;
 public abstract class SimpleDbTransactionExecutor<T> {
 
     /** トランザクションマネージャ */
-    private SimpleDbTransactionManager transactionManager;
+    private final SimpleDbTransactionManager transactionManager;
 
     /** Logger */
     private static final Logger LOG = LoggerManager.get(
@@ -72,9 +72,8 @@ public abstract class SimpleDbTransactionExecutor<T> {
             try {
                 transactionManager.rollbackTransaction();
             } catch (RuntimeException exception) {
-                writeWarnLog(e);
-                throwable = exception;
-                throw exception;
+                // execute/commitでErrorが発生している場合はrollbackのRuntimeExceptionよりErrorを優先する
+                writeWarnLog(exception);
             } catch (Error error) {
                 writeWarnLog(e);
                 throwable = error;
@@ -86,10 +85,17 @@ public abstract class SimpleDbTransactionExecutor<T> {
             try {
                 transactionManager.endTransaction();
             } catch (RuntimeException e) {
-                writeWarnLog(throwable);
-                throw e;
+                writeWarnLog(e);
             } catch (Error e) {
-                writeWarnLog(throwable);
+                // endTransactionではコネクションの後処理しかしていないため
+                // 業務処理で既にErrorが発生している場合、業務処理のErrorを優先する
+                if (throwable instanceof Error) {
+                    writeWarnLog(e);
+                    throw (Error) throwable;
+                }
+                if (throwable != null) {
+                    writeWarnLog(throwable);
+                }
                 throw e;
             }
         }
