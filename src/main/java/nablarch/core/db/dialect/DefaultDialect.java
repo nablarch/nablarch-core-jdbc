@@ -1,13 +1,8 @@
 package nablarch.core.db.dialect;
 
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
