@@ -442,8 +442,7 @@ public class BasicDbConnection implements TransactionManagerConnection {
     public ParameterizedSqlPStatement prepareParameterizedCountSqlStatementBySqlId(
             final String sqlId, Object condition) {
 
-        String variableConditionSql = context.getDialect()
-                .convertCountSql(factory.getVariableConditionSqlBySqlId(sqlId, condition));
+        String variableConditionSql = context.getDialect().convertCountSql(sqlId, condition, factory);
         return (ParameterizedSqlPStatement) new BasicDbConnection.StatementCreator() {
             @Override
             SqlStatement createSqlStatement(String sql) throws SQLException {

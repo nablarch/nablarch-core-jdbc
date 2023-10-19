@@ -1,0 +1,6 @@
+-- SQLID:SQL001
+SQL001 =
+SELECT USER_NAME,
+        TEL,
+  FROM USER_MTR
+  WHERE $if(userName) {USER_NAME = :userName}

@@ -1,7 +1,7 @@
 package nablarch.core.db.dialect;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -11,6 +11,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
+import nablarch.core.db.statement.BasicSqlLoader;
+import nablarch.core.db.statement.BasicSqlParameterParserFactory;
+import nablarch.core.db.statement.BasicStatementFactory;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 
@@ -33,8 +36,9 @@ import org.junit.runner.RunWith;
 @RunWith(DatabaseTestRunner.class)
 public class DefaultDialectTest {
 
-    private DefaultDialect sut = new DefaultDialect();
+    private final DefaultDialect sut = new DefaultDialect();
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
@@ -102,6 +106,7 @@ public class DefaultDialectTest {
      * {@link java.sql.ResultSet}から値を取得するための変換クラスのデフォルトを確認する。
      * メタ情報を使わず{@link java.sql.ResultSet}からカラム番号で取得する。
      */
+    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     @TargetDb(include = TargetDb.Db.ORACLE)
     public void testGetResultSetConvertor() throws Exception {
@@ -145,8 +150,30 @@ public class DefaultDialectTest {
      * レコード数取得用のSQL文に変換する。
      */
     @Test
-    public void testConvertCountSql() {
+    public void testConvertCountSqlFromSqlString() {
         assertThat(sut.convertCountSql("sql"), is("SELECT COUNT(*) COUNT_ FROM (sql) SUB_"));
+    }
+
+    /**
+     * SQLIDから、レコード数取得用のSQL文を取得する。
+     */
+    @Test
+    public void testConvertCountSqlFromSqlId() {
+        // setup
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        TestEntity params = new TestEntity();
+
+        // execute
+        String actual = sut.convertCountSql("nablarch.core.db.dialect.DefaultDialectTest#SQL001", params, statementFactory);
+
+        assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (SELECT USER_NAME, TEL, FROM USER_MTR WHERE (0 = 1 or (USER_NAME = :userName))) SUB_"));
+    }
+
+    public static class TestEntity {
+        public String getUserName() {return "testUser";}
     }
 
     /**

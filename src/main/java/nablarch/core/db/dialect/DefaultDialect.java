@@ -6,6 +6,7 @@ import java.sql.SQLException;
 
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
+import nablarch.core.db.statement.StatementFactory;
 import nablarch.core.util.annotation.Published;
 
 /**
@@ -70,9 +71,9 @@ public class DefaultDialect implements Dialect {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * 全てのカラムを{@link ResultSet#getObject(int)}で取得するコンバータを返す。
-     *
-     * @return {@inheritDoc}
      */
     @Override
     public ResultSetConvertor getResultSetConvertor() {
@@ -110,6 +111,11 @@ public class DefaultDialect implements Dialect {
         return "SELECT COUNT(*) COUNT_ FROM (" + sql + ") SUB_";
     }
 
+    @Override
+    public String convertCountSql(String sqlId, Object params, StatementFactory statementFactory) {
+        return convertCountSql(statementFactory.getVariableConditionSqlBySqlId(sqlId, params));
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -131,7 +137,7 @@ public class DefaultDialect implements Dialect {
         }
 
         @Override
-        public boolean isConvertible(ResultSetMetaData rsmd, int columnIndex) throws SQLException {
+        public boolean isConvertible(ResultSetMetaData rsmd, int columnIndex) {
             return true;
         }
     }
