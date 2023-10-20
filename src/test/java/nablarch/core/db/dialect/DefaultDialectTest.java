@@ -171,7 +171,7 @@ public class DefaultDialectTest {
         assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (SELECT USER_NAME, TEL, FROM USER_MTR WHERE (0 = 1 or (USER_NAME = :userName))) SUB_"));
     }
 
-    static class DialectForm {
+    public static class DialectForm {
         public String getUserName() {return "test";}
     }
     /**
