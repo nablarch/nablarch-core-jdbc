@@ -164,18 +164,16 @@ public class DefaultDialectTest {
         statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
         statementFactory.setSqlLoader(new BasicSqlLoader());
 
-        TestEntity params = new TestEntity();
-
         // execute
-        String actual = sut.convertCountSql("nablarch.core.db.dialect.DefaultDialectTest#SQL001", params, statementFactory);
+        String actual = sut.convertCountSql("nablarch.core.db.dialect.DefaultDialectTest#SQL001", new DialectForm(), statementFactory);
 
+        // verify
         assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (SELECT USER_NAME, TEL, FROM USER_MTR WHERE (0 = 1 or (USER_NAME = :userName))) SUB_"));
     }
 
-    public static class TestEntity {
-        public String getUserName() {return "testUser";}
+    static class DialectForm {
+        public String getUserName() {return "test";}
     }
-
     /**
      * ping用のSQL文はサポートしない。
      */

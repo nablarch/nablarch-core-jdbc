@@ -2,7 +2,7 @@ package nablarch.core.db.dialect;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -14,8 +14,12 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 
+import nablarch.core.db.statement.BasicSqlLoader;
+import nablarch.core.db.statement.BasicSqlParameterParserFactory;
+import nablarch.core.db.statement.BasicStatementFactory;
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
+import nablarch.core.db.statement.StatementFactory;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.DbTestRule;
 import nablarch.test.support.db.helper.TargetDb;
@@ -41,7 +45,7 @@ public class PostgreSQLDialectTest {
     public DbTestRule dbTestRule = new DbTestRule();
 
     /** テスト対象 */
-    private PostgreSQLDialect sut = new PostgreSQLDialect();
+    private final PostgreSQLDialect sut = new PostgreSQLDialect();
 
     /** Native Connection */
     private Connection connection;
@@ -131,10 +135,11 @@ public class PostgreSQLDialectTest {
      * {@link PostgreSQLDialect#getResultSetConvertor()} のテスト。
      * 取得したConvertorを使って、値の取得ができること。
      */
+    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     public void getResultSetConvertor() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, 2, 9, 0, 0, 0);
+        calendar.set(2015, Calendar.MARCH, 9, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -200,6 +205,7 @@ public class PostgreSQLDialectTest {
      * <p/>
      * offsetのみを指定した場合
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -227,6 +233,7 @@ public class PostgreSQLDialectTest {
      * <p/>
      * limitのみを指定した場合
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeLimitOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -254,6 +261,7 @@ public class PostgreSQLDialectTest {
      * <p/>
      * offsetとlimitの両方を指定
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetAndLimit() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -296,6 +304,7 @@ public class PostgreSQLDialectTest {
     /**
      * {@link PostgreSQLDialect#convertCountSql(String)}で変換したSQL文が実行可能であることを確認する。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertCountSql_execute() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -305,6 +314,43 @@ public class PostgreSQLDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
         final PreparedStatement statement = connection.prepareStatement(sut.convertCountSql(sql));
+        statement.setString(1, "name_3%");
+        final ResultSet rs = statement.executeQuery();
+
+        assertThat(rs.next(), is(true));
+        assertThat(rs.getInt(1), is(11));       // name_3とname_3x
+    }
+
+    /**
+     * {@link PostgreSQLDialect#convertCountSql(String, Object, StatementFactory)}のテスト。
+     */
+    @Test
+    public void convertCountSqlFromSqlId() throws Exception {
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        String actual = sut.convertCountSql("nablarch.core.db.dialect.PostgreSQLDialectTest#SQL001", null, statementFactory);
+        assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (select * from hog_table order by id, name) SUB_"));
+    }
+
+    /**
+     * {@link PostgreSQLDialect#convertCountSql(String, Object, StatementFactory)}で変換したSQL文が実行可能であることを確認する。
+     */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
+    @Test
+    public void convertCountSqlFromSqlId_execute() throws Exception {
+        VariousDbTestHelper.delete(DialectEntity.class);
+        for (int i = 0; i < 100; i++) {
+            VariousDbTestHelper.insert(new DialectEntity((long) i + 1, "name_" + i));
+        }
+        connection = VariousDbTestHelper.getNativeConnection();
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        final PreparedStatement statement =
+                connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.PostgreSQLDialectTest#SQL002", null, statementFactory));
         statement.setString(1, "name_3%");
         final ResultSet rs = statement.executeQuery();
 

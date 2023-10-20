@@ -1,7 +1,8 @@
 package nablarch.core.db.dialect;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.math.BigDecimal;
 import java.sql.Blob;
@@ -14,11 +15,15 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 
+import nablarch.core.db.statement.BasicSqlLoader;
+import nablarch.core.db.statement.BasicSqlParameterParserFactory;
+import nablarch.core.db.statement.BasicStatementFactory;
+import nablarch.core.db.statement.ResultSetConvertor;
+import nablarch.core.db.statement.SelectOption;
+import nablarch.core.db.statement.StatementFactory;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 
-import nablarch.core.db.statement.ResultSetConvertor;
-import nablarch.core.db.statement.SelectOption;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.DbTestRule;
 import nablarch.test.support.db.helper.TargetDb;
@@ -44,11 +49,12 @@ public class OracleDialectTest {
     @Rule
     public DbTestRule dbTestRule = new DbTestRule();
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     /** テスト対象 */
-    private OracleDialect sut = new OracleDialect();
+    private final OracleDialect sut = new OracleDialect();
 
     /** Native Connection */
     private Connection connection;
@@ -67,7 +73,7 @@ public class OracleDialectTest {
 
     /**
      * {@link OracleDialect#supportsIdentity()}のテスト。
-     *
+     * <p>
      * falseがかえされること
      */
     @Test
@@ -83,7 +89,7 @@ public class OracleDialectTest {
 
     /**
      * {@link OracleDialect#supportsSequence()}のテスト。
-     *
+     * <p>
      * trueがかえされること。
      */
     @Test
@@ -135,7 +141,7 @@ public class OracleDialectTest {
 
     /**
      * {@link OracleDialect#buildSequenceGeneratorSql(String)}のテスト。
-     *
+     * <p>
      * Oracleのシーケンスオブジェクトの次の値を取得する、以下形式のSQL文が生成されること。
      * {@code SELECT $sequence_name$.NEXTVAL FROM DUAL}
      */
@@ -151,10 +157,11 @@ public class OracleDialectTest {
      * <p/>
      * Convertorが狙った通りの型で値を取得できることの確認を行う。
      */
+    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     public void getResultSetConvertor() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, 2, 9, 0, 0, 0);
+        calendar.set(2015, Calendar.MARCH, 9, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
         Timestamp timestamp = Timestamp.valueOf("2015-03-16 01:02:03.123456");
@@ -196,6 +203,7 @@ public class OracleDialectTest {
      * {@link OracleDialect#getResultSetConvertor()}のテスト。
      * データベースから返却される値がnullの場合でも問題ないこと。
      */
+    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     public void getResultSetConvertor_DB_null() throws Exception {
         VariousDbTestHelper.setUpTable(
@@ -259,9 +267,10 @@ public class OracleDialectTest {
 
     /**
      * {@link OracleDialect#convertPaginationSql(String, SelectOption)}で生成したSQL文が実行できること。
-     *
+     * <p>
      * offsetのみを指定した場合
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -285,9 +294,10 @@ public class OracleDialectTest {
 
     /**
      * {@link OracleDialect#convertPaginationSql(String, SelectOption)}で生成したSQL文が実行できること。
-     *
+     * <p>
      * limitのみを指定した場合
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeLimitOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -312,9 +322,10 @@ public class OracleDialectTest {
 
     /**
      * {@link OracleDialect#convertPaginationSql(String, SelectOption)}で生成したSQL文が実行できること。
-     *
+     * <p>
      * offsetとlimitの両方を指定
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetAndLimit() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -349,6 +360,7 @@ public class OracleDialectTest {
     /**
      * {@link OracleDialect#convertCountSql(String)}で変換したSQL文が実行可能であることを確認する。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertCountSql_execute() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -358,6 +370,43 @@ public class OracleDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
         final PreparedStatement statement = connection.prepareStatement(sut.convertCountSql(sql));
+        statement.setString(1, "name_3%");
+        final ResultSet rs = statement.executeQuery();
+
+        assertThat(rs.next(), is(true));
+        assertThat(rs.getInt(1), is(11));       // name_3とname_3x
+    }
+
+    /**
+     * {@link OracleDialect#convertCountSql(String, Object, StatementFactory)}のテスト。
+     */
+    @Test
+    public void convertCountSqlFromSqlId() throws Exception {
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        String actual = sut.convertCountSql("nablarch.core.db.dialect.OracleDialectTest#SQL001", null, statementFactory);
+        assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (select * from hog_table order by id, name) SUB_"));
+    }
+
+    /**
+     * {@link OracleDialect#convertCountSql(String, Object, StatementFactory)}で変換したSQL文が実行可能であることを確認する。
+     */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
+    @Test
+    public void convertCountSqlFromSqlId_execute() throws Exception {
+        VariousDbTestHelper.delete(DialectEntity.class);
+        for (int i = 0; i < 100; i++) {
+            VariousDbTestHelper.insert(new DialectEntity((long) i + 1, "name_" + i));
+        }
+        connection = VariousDbTestHelper.getNativeConnection();
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        final PreparedStatement statement =
+                connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.OracleDialectTest#SQL002", null, statementFactory));
         statement.setString(1, "name_3%");
         final ResultSet rs = statement.executeQuery();
 

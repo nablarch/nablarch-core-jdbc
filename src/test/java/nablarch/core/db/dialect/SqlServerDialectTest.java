@@ -2,7 +2,7 @@ package nablarch.core.db.dialect;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -23,8 +23,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import nablarch.core.db.statement.ResultSetConvertor;
-import nablarch.core.db.statement.SelectOption;
+import nablarch.core.db.statement.*;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.DbTestRule;
 import nablarch.test.support.db.helper.TargetDb;
@@ -48,7 +47,7 @@ public class SqlServerDialectTest {
     public DbTestRule dbTestRule = new DbTestRule();
 
     /** テスト対象 */
-    private SqlServerDialect sut = new SqlServerDialect();
+    private final SqlServerDialect sut = new SqlServerDialect();
 
     /** Native Connection */
     private Connection connection;
@@ -132,10 +131,11 @@ public class SqlServerDialectTest {
      * {@link SqlServerDialect#getResultSetConvertor()} のテスト。
      * 取得したConvertorを使って、値の取得ができること。
      */
+    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     public void getResultSetConvertor() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, 2, 9, 0, 0, 0);
+        calendar.set(2015, Calendar.MARCH, 9, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -220,6 +220,7 @@ public class SqlServerDialectTest {
     /**
      * {@link SqlServerDialect#convertCountSql(String)}で変換したSQL文が実行可能であることを確認する。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertCountSql_execute() throws Exception {
         VariousDbTestHelper.delete(SqlServerDialectEntity.class);
@@ -229,6 +230,43 @@ public class SqlServerDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
         String sql = "select entity_id, str from sql_server_dialect where str like ? order by entity_id";
         final PreparedStatement statement = connection.prepareStatement(sut.convertCountSql(sql));
+        statement.setString(1, "name_3%");
+        final ResultSet rs = statement.executeQuery();
+
+        assertThat(rs.next(), is(true));
+        assertThat(rs.getInt(1), is(11));       // name_3とname_3x
+    }
+
+    /**
+     * {@link SqlServerDialect#convertCountSql(String, Object, StatementFactory)}のテスト。
+     */
+    @Test
+    public void convertCountSqlFromSqlId() throws Exception {
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        String actual = sut.convertCountSql("nablarch.core.db.dialect.SqlServerDialectTest#SQL001", null, statementFactory);
+        assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (select * from hog_table) SUB_"));
+    }
+
+    /**
+     * {@link SqlServerDialect#convertCountSql(String, Object, StatementFactory)}で変換したSQL文が実行可能であることを確認する。
+     */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
+    @Test
+    public void convertCountSqlFromSqlId_execute() throws Exception {
+        VariousDbTestHelper.delete(DialectEntity.class);
+        for (int i = 0; i < 100; i++) {
+            VariousDbTestHelper.insert(new DialectEntity((long) i + 1, "name_" + i));
+        }
+        connection = VariousDbTestHelper.getNativeConnection();
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        final PreparedStatement statement =
+                connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.SqlServerDialectTest#SQL002", null, statementFactory));
         statement.setString(1, "name_3%");
         final ResultSet rs = statement.executeQuery();
 

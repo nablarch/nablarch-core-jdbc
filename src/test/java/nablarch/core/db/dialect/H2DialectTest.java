@@ -1,7 +1,11 @@
 package nablarch.core.db.dialect;
 
+import nablarch.core.db.statement.BasicSqlLoader;
+import nablarch.core.db.statement.BasicSqlParameterParserFactory;
+import nablarch.core.db.statement.BasicStatementFactory;
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
+import nablarch.core.db.statement.StatementFactory;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -24,7 +28,7 @@ import java.util.Date;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * {@link H2Dialect}のテストクラス。
@@ -37,7 +41,7 @@ public class H2DialectTest {
     public DbTestRule dbTestRule = new DbTestRule();
 
     /** テスト対象 */
-    private H2Dialect sut = new H2Dialect();
+    private final H2Dialect sut = new H2Dialect();
 
     /** Native Connection */
     private Connection connection;
@@ -128,10 +132,11 @@ public class H2DialectTest {
      * {@link H2Dialect#getResultSetConvertor()} のテスト。
      * 取得したConvertorを使って、値の取得ができること。
      */
+    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     public void getResultSetConvertor() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, 2, 9, 0, 0, 0);
+        calendar.set(2015, Calendar.MARCH, 9, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
         Timestamp timestamp = new Timestamp(System.nanoTime());
@@ -197,6 +202,7 @@ public class H2DialectTest {
      * <p/>
      * offsetのみを指定した場合
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -224,6 +230,7 @@ public class H2DialectTest {
      * <p/>
      * limitのみを指定した場合
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeLimitOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -251,6 +258,7 @@ public class H2DialectTest {
      * <p/>
      * offsetとlimitの両方を指定
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetAndLimit() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -293,6 +301,7 @@ public class H2DialectTest {
     /**
      * {@link H2Dialect#convertCountSql(String)}で変換したSQL文が実行可能であることを確認する。
      */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertCountSql_execute() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -302,6 +311,43 @@ public class H2DialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
         final PreparedStatement statement = connection.prepareStatement(sut.convertCountSql(sql));
+        statement.setString(1, "name_3%");
+        final ResultSet rs = statement.executeQuery();
+
+        assertThat(rs.next(), is(true));
+        assertThat(rs.getInt(1), is(11));       // name_3とname_3x
+    }
+
+    /**
+     * {@link H2Dialect#convertCountSql(String, Object, StatementFactory)}のテスト。
+     */
+    @Test
+    public void convertCountSqlFromSqlId() throws Exception {
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        String actual = sut.convertCountSql("nablarch.core.db.dialect.H2DialectTest#SQL001", null, statementFactory);
+        assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (select * from hog_table order by id, name) SUB_"));
+    }
+
+    /**
+     * {@link H2Dialect#convertCountSql(String, Object, StatementFactory)}で変換したSQL文が実行可能であることを確認する。
+     */
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
+    @Test
+    public void convertCountSqlFromSqlId_execute() throws Exception {
+        VariousDbTestHelper.delete(DialectEntity.class);
+        for (int i = 0; i < 100; i++) {
+            VariousDbTestHelper.insert(new DialectEntity((long) i + 1, "name_" + i));
+        }
+        connection = VariousDbTestHelper.getNativeConnection();
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        final PreparedStatement statement =
+                connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.H2DialectTest#SQL002", null, statementFactory));
         statement.setString(1, "name_3%");
         final ResultSet rs = statement.executeQuery();
 
