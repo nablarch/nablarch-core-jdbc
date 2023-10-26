@@ -111,6 +111,12 @@ public class DefaultDialect implements Dialect {
         return "SELECT COUNT(*) COUNT_ FROM (" + sql + ") SUB_";
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * デフォルトでは、{@link this#convertCountSql(String)}を使用して、
+     * {@link StatementFactory}から取得したSQLをレコード数取得用SQLに変換する。
+     */
     @Override
     public String convertCountSql(String sqlId, Object condition, StatementFactory statementFactory) {
         return convertCountSql(statementFactory.getVariableConditionSqlBySqlId(sqlId, condition));
