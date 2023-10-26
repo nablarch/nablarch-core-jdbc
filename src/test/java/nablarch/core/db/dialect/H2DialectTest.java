@@ -315,7 +315,7 @@ public class H2DialectTest {
         final ResultSet rs = statement.executeQuery();
 
         assertThat(rs.next(), is(true));
-        assertThat(rs.getInt(1), is(11));       // name_3とname_3x
+        assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
     }
 
     /**
@@ -352,7 +352,7 @@ public class H2DialectTest {
         ResultSet rs = statement.executeQuery();
 
         assertThat(rs.next(), is(true));
-        assertThat(rs.getInt(1), is(11));       // name_3とname_3x
+        assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
     }
 
     /**
