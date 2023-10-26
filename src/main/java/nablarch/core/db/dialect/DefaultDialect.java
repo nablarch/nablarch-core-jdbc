@@ -112,8 +112,8 @@ public class DefaultDialect implements Dialect {
     }
 
     @Override
-    public String convertCountSql(String sqlId, Object params, StatementFactory statementFactory) {
-        return convertCountSql(statementFactory.getVariableConditionSqlBySqlId(sqlId, params));
+    public String convertCountSql(String sqlId, Object condition, StatementFactory statementFactory) {
+        return convertCountSql(statementFactory.getVariableConditionSqlBySqlId(sqlId, condition));
     }
 
     /**
