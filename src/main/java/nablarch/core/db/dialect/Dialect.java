@@ -96,16 +96,14 @@ public interface Dialect {
     String convertCountSql(String sql);
 
     /**
-     * SQLIDから件数取得用のSQL文を取得する。
-     * <p>
-     *
+     * SQLIDからレコード数取得用のSQL文を取得する。
      *
      * @param sqlId SQLID
-     * @param params パラメータ
+     * @param condition 可変条件に設定される条件をもつオブジェクト
      * @param statementFactory ステートメントファクトリ
-     * @return 件数取得用のSQL文
+     * @return レコード数取得用のSQL文
      */
-    String convertCountSql(String sqlId, Object params, StatementFactory statementFactory);
+    String convertCountSql(String sqlId, Object condition, StatementFactory statementFactory);
 
     /**
      * ping用のSQL文を返す。
