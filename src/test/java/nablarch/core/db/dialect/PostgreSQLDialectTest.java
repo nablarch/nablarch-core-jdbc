@@ -349,10 +349,10 @@ public class PostgreSQLDialectTest {
         statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
         statementFactory.setSqlLoader(new BasicSqlLoader());
 
-        final PreparedStatement statement =
+        PreparedStatement statement =
                 connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.PostgreSQLDialectTest#SQL002", null, statementFactory));
         statement.setString(1, "name_3%");
-        final ResultSet rs = statement.executeQuery();
+        ResultSet rs = statement.executeQuery();
 
         assertThat(rs.next(), is(true));
         assertThat(rs.getInt(1), is(11));       // name_3とname_3x
