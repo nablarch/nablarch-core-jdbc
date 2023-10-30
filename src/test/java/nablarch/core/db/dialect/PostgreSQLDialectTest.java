@@ -135,7 +135,6 @@ public class PostgreSQLDialectTest {
      * {@link PostgreSQLDialect#getResultSetConvertor()} のテスト。
      * 取得したConvertorを使って、値の取得ができること。
      */
-    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     public void getResultSetConvertor() throws Exception {
         Calendar calendar = Calendar.getInstance();
@@ -147,33 +146,44 @@ public class PostgreSQLDialectTest {
                 new DialectEntity(1L, "12345", 100, 1234554321L, date, new BigDecimal("12345.54321"), timestamp,
                         new byte[] {0x00, 0x50, (byte) 0xFF}));
         connection = VariousDbTestHelper.getNativeConnection();
-        final PreparedStatement statement = connection.prepareStatement(
-                "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
-        statement.setLong(1, 1L);
-        final ResultSet rs = statement.executeQuery();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
+            statement.setLong(1, 1L);
+            rs = statement.executeQuery();
 
-        assertThat("1レコードは取得できているはず", rs.next(), is(true));
+            assertThat("1レコードは取得できているはず", rs.next(), is(true));
 
-        final ResultSetConvertor convertor = sut.getResultSetConvertor();
+            final ResultSetConvertor convertor = sut.getResultSetConvertor();
 
-        final ResultSetMetaData meta = rs.getMetaData();
-        final int columnCount = meta.getColumnCount();
+            final ResultSetMetaData meta = rs.getMetaData();
+            final int columnCount = meta.getColumnCount();
 
-        for (int i = 1; i <= columnCount; i++) {
-            assertThat("変換するか否かの結果は全てtrue", convertor.isConvertible(meta, i), is(true));
+            for (int i = 1; i <= columnCount; i++) {
+                assertThat("変換するか否かの結果は全てtrue", convertor.isConvertible(meta, i), is(true));
+            }
+
+            assertThat("文字列はStringで取得できる", (String) convertor.convert(rs, meta, 2), is("12345"));
+            assertThat("数値型はIntegerで取得できる", (Integer) convertor.convert(rs, meta, 3), is(Integer.valueOf("100")));
+            assertThat("10桁以上の数値型はLongで取得できる", (Long) convertor.convert(rs, meta, 4), is(Long.valueOf("1234554321")));
+            assertThat("小数部ありはBigDecimalで取得できる", (BigDecimal) convertor.convert(rs, meta, 5), is(new BigDecimal(
+                    "12345.54321")));
+            assertThat("DATE型はDateで取得できる", (Date) convertor.convert(rs, meta, 6), is(date));
+            assertThat("TIMESTAMP型はTimestampで取得できる", (Timestamp) convertor.convert(rs, meta, 7), is(timestamp));
+
+            // binaryはbyte[]で取得される
+            final byte[] bytes = (byte[]) convertor.convert(rs, meta, 8);
+            assertThat("値が取得出来ていること", bytes, is(new byte[] {0x00, 0x50, (byte) 0xFF}));
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
         }
-
-        assertThat("文字列はStringで取得できる", (String) convertor.convert(rs, meta, 2), is("12345"));
-        assertThat("数値型はIntegerで取得できる", (Integer) convertor.convert(rs, meta, 3), is(Integer.valueOf("100")));
-        assertThat("10桁以上の数値型はLongで取得できる", (Long) convertor.convert(rs, meta, 4), is(Long.valueOf("1234554321")));
-        assertThat("小数部ありはBigDecimalで取得できる", (BigDecimal) convertor.convert(rs, meta, 5), is(new BigDecimal(
-                "12345.54321")));
-        assertThat("DATE型はDateで取得できる", (Date) convertor.convert(rs, meta, 6), is(date));
-        assertThat("TIMESTAMP型はTimestampで取得できる", (Timestamp) convertor.convert(rs, meta, 7), is(timestamp));
-
-        // binaryはbyte[]で取得される
-        final byte[] bytes = (byte[]) convertor.convert(rs, meta, 8);
-        assertThat("値が取得出来ていること", bytes, is(new byte[] {0x00, 0x50, (byte) 0xFF}));
     }
 
     /**
@@ -205,7 +215,6 @@ public class PostgreSQLDialectTest {
      * <p/>
      * offsetのみを指定した場合
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -215,17 +224,28 @@ public class PostgreSQLDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
 
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
-        final PreparedStatement statement = connection.prepareStatement(
-                sut.convertPaginationSql(sql, new SelectOption(50, 0)));
-        statement.setString(1, "name%");
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    sut.convertPaginationSql(sql, new SelectOption(50, 0)));
+            statement.setString(1, "name%");
 
-        final ResultSet rs = statement.executeQuery();
-        int index = 49;
-        while (rs.next()) {
-            index++;
-            assertThat(rs.getLong(1), is((long) index));
+            rs = statement.executeQuery();
+            int index = 49;
+            while (rs.next()) {
+                index++;
+                assertThat(rs.getLong(1), is((long) index));
+            }
+            assertThat("最後のレコード番号", index, is(100));
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
         }
-        assertThat("最後のレコード番号", index, is(100));
     }
 
     /**
@@ -233,7 +253,6 @@ public class PostgreSQLDialectTest {
      * <p/>
      * limitのみを指定した場合
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeLimitOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -243,17 +262,28 @@ public class PostgreSQLDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
 
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
-        final PreparedStatement statement = connection.prepareStatement(
-                sut.convertPaginationSql(sql, new SelectOption(0, 25)));
-        statement.setString(1, "name%");
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    sut.convertPaginationSql(sql, new SelectOption(0, 25)));
+            statement.setString(1, "name%");
 
-        final ResultSet rs = statement.executeQuery();
-        int index = 0;
-        while (rs.next()) {
-            index++;
-            assertThat(rs.getLong(1), is((long) index));
+            rs = statement.executeQuery();
+            int index = 0;
+            while (rs.next()) {
+                index++;
+                assertThat(rs.getLong(1), is((long) index));
+            }
+            assertThat("取得件数は25であること", index, is(25));
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
         }
-        assertThat("取得件数は25であること", index, is(25));
     }
 
     /**
@@ -261,7 +291,6 @@ public class PostgreSQLDialectTest {
      * <p/>
      * offsetとlimitの両方を指定
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetAndLimit() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -271,17 +300,28 @@ public class PostgreSQLDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
 
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
-        final PreparedStatement statement = connection.prepareStatement(
-                sut.convertPaginationSql(sql, new SelectOption(31, 15)));
-        statement.setString(1, "name%");
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    sut.convertPaginationSql(sql, new SelectOption(31, 15)));
+            statement.setString(1, "name%");
 
-        final ResultSet rs = statement.executeQuery();
-        int index = 30;
-        while (rs.next()) {
-            index++;
-            assertThat(rs.getLong(1), is((long) index));
+            rs = statement.executeQuery();
+            int index = 30;
+            while (rs.next()) {
+                index++;
+                assertThat(rs.getLong(1), is((long) index));
+            }
+            assertThat("最後に取得されたレコードの番号は45であること", index, is(45));
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
         }
-        assertThat("最後に取得されたレコードの番号は45であること", index, is(45));
     }
 
     /**
@@ -304,7 +344,6 @@ public class PostgreSQLDialectTest {
     /**
      * {@link PostgreSQLDialect#convertCountSql(String)}で変換したSQL文が実行可能であることを確認する。
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertCountSql_execute() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -313,12 +352,23 @@ public class PostgreSQLDialectTest {
         }
         connection = VariousDbTestHelper.getNativeConnection();
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
-        final PreparedStatement statement = connection.prepareStatement(sut.convertCountSql(sql));
-        statement.setString(1, "name_3%");
-        final ResultSet rs = statement.executeQuery();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(sut.convertCountSql(sql));
+            statement.setString(1, "name_3%");
+            rs = statement.executeQuery();
 
-        assertThat(rs.next(), is(true));
-        assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+            assertThat(rs.next(), is(true));
+            assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
     }
 
     /**
@@ -337,7 +387,6 @@ public class PostgreSQLDialectTest {
     /**
      * {@link PostgreSQLDialect#convertCountSql(String, Object, StatementFactory)}で変換したSQL文が実行可能であることを確認する。
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertCountSqlFromSqlId_execute() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -349,13 +398,24 @@ public class PostgreSQLDialectTest {
         statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
         statementFactory.setSqlLoader(new BasicSqlLoader());
 
-        PreparedStatement statement =
-                connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.PostgreSQLDialectTest#SQL002", null, statementFactory));
-        statement.setString(1, "name_3%");
-        ResultSet rs = statement.executeQuery();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement =
+                    connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.PostgreSQLDialectTest#SQL002", null, statementFactory));
+            statement.setString(1, "name_3%");
+            rs = statement.executeQuery();
 
-        assertThat(rs.next(), is(true));
-        assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+            assertThat(rs.next(), is(true));
+            assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
     }
 
     /**

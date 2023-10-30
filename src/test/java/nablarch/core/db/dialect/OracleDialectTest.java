@@ -157,7 +157,6 @@ public class OracleDialectTest {
      * <p/>
      * Convertorが狙った通りの型で値を取得できることの確認を行う。
      */
-    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     public void getResultSetConvertor() throws Exception {
         Calendar calendar = Calendar.getInstance();
@@ -169,70 +168,93 @@ public class OracleDialectTest {
                 new DialectEntity(1L, "12345", 100, 1234554321L, date, new BigDecimal("12345.54321"), timestamp,
                         new byte[] {0x00, 0x50, (byte) 0xFF}));
         connection = VariousDbTestHelper.getNativeConnection();
-        final PreparedStatement statement = connection.prepareStatement(
-                "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
-        statement.setLong(1, 1L);
-        final ResultSet rs = statement.executeQuery();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
+            statement.setLong(1, 1L);
+            rs = statement.executeQuery();
 
-        assertThat("1レコードは取得できているはず", rs.next(), is(true));
+            assertThat("1レコードは取得できているはず", rs.next(), is(true));
 
-        final ResultSetConvertor convertor = sut.getResultSetConvertor();
+            final ResultSetConvertor convertor = sut.getResultSetConvertor();
 
-        final ResultSetMetaData meta = rs.getMetaData();
-        final int columnCount = meta.getColumnCount();
+            final ResultSetMetaData meta = rs.getMetaData();
+            final int columnCount = meta.getColumnCount();
 
-        for (int i = 1; i <= columnCount; i++) {
-            assertThat("変換するか否かの結果は全てtrue", convertor.isConvertible(meta, i), is(true));
+            for (int i = 1; i <= columnCount; i++) {
+                assertThat("変換するか否かの結果は全てtrue", convertor.isConvertible(meta, i), is(true));
+            }
+
+            assertThat("文字列はStringで取得できる", (String) convertor.convert(rs, meta, 2), is("12345"));
+            assertThat("数値型はgetObjectで取得する(9桁)", convertor.convert(rs, meta, 3), is(rs.getObject(3)));
+            assertThat("数値型はgetObjectで取得する(10桁)", convertor.convert(rs, meta, 4), is(rs.getObject(4)));
+            assertThat("数値型はgetObjectで取得する(小数)", convertor.convert(rs, meta, 5), is(rs.getObject(5)));
+            assertThat("DATE型はTimestampで取得できる", (Timestamp) convertor.convert(rs, meta, 6), is(new Timestamp(
+                    date.getTime())));
+            assertThat("TIMESTAMP型はTimestampで取得できる", (Timestamp) convertor.convert(rs, meta, 7), is(timestamp));
+
+            // binaryはblobで取得される
+            final Blob blob = (Blob) convertor.convert(rs, meta, 8);
+            assertThat("長さは3", blob.length(), is(3L));
+            assertThat("値が取得出来ていること", blob.getBytes(1, 3), is(new byte[] {0x00, 0x50, (byte) 0xFF}));
+
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
         }
-
-        assertThat("文字列はStringで取得できる", (String) convertor.convert(rs, meta, 2), is("12345"));
-        assertThat("数値型はgetObjectで取得する(9桁)", convertor.convert(rs, meta, 3), is(rs.getObject(3)));
-        assertThat("数値型はgetObjectで取得する(10桁)", convertor.convert(rs, meta, 4), is(rs.getObject(4)));
-        assertThat("数値型はgetObjectで取得する(小数)", convertor.convert(rs, meta, 5), is(rs.getObject(5)));
-        assertThat("DATE型はTimestampで取得できる", (Timestamp) convertor.convert(rs, meta, 6), is(new Timestamp(
-                date.getTime())));
-        assertThat("TIMESTAMP型はTimestampで取得できる", (Timestamp) convertor.convert(rs, meta, 7), is(timestamp));
-
-        // binaryはblobで取得される
-        final Blob blob = (Blob) convertor.convert(rs, meta, 8);
-        assertThat("長さは3", blob.length(), is(3L));
-        assertThat("値が取得出来ていること", blob.getBytes(1, 3), is(new byte[] {0x00, 0x50, (byte) 0xFF}));
     }
 
     /**
      * {@link OracleDialect#getResultSetConvertor()}のテスト。
      * データベースから返却される値がnullの場合でも問題ないこと。
      */
-    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     public void getResultSetConvertor_DB_null() throws Exception {
         VariousDbTestHelper.setUpTable(
                 new DialectEntity(2L, null, null, null, null, null, null, null)
         );
         connection = VariousDbTestHelper.getNativeConnection();
-        final PreparedStatement statement = connection.prepareStatement(
-                "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
-        statement.setLong(1, 2L);
-        final ResultSet rs = statement.executeQuery();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
+            statement.setLong(1, 2L);
+            rs = statement.executeQuery();
 
-        assertThat("1レコードは取得できているはず", rs.next(), is(true));
+            assertThat("1レコードは取得できているはず", rs.next(), is(true));
 
-        final ResultSetConvertor convertor = sut.getResultSetConvertor();
+            final ResultSetConvertor convertor = sut.getResultSetConvertor();
 
-        final ResultSetMetaData meta = rs.getMetaData();
-        final int columnCount = meta.getColumnCount();
+            final ResultSetMetaData meta = rs.getMetaData();
+            final int columnCount = meta.getColumnCount();
 
-        for (int i = 1; i <= columnCount; i++) {
-            assertThat("変換するか否かの結果は全てtrue", convertor.isConvertible(meta, i), is(true));
+            for (int i = 1; i <= columnCount; i++) {
+                assertThat("変換するか否かの結果は全てtrue", convertor.isConvertible(meta, i), is(true));
+            }
+
+            assertThat(convertor.convert(rs, meta, 2), nullValue());
+            assertThat(convertor.convert(rs, meta, 3), nullValue());
+            assertThat(convertor.convert(rs, meta, 4), nullValue());
+            assertThat(convertor.convert(rs, meta, 5), nullValue());
+            assertThat(convertor.convert(rs, meta, 6), nullValue());
+            assertThat(convertor.convert(rs, meta, 7), nullValue());
+            assertThat(convertor.convert(rs, meta, 8), nullValue());
+
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
         }
-
-        assertThat(convertor.convert(rs, meta, 2), nullValue());
-        assertThat(convertor.convert(rs, meta, 3), nullValue());
-        assertThat(convertor.convert(rs, meta, 4), nullValue());
-        assertThat(convertor.convert(rs, meta, 5), nullValue());
-        assertThat(convertor.convert(rs, meta, 6), nullValue());
-        assertThat(convertor.convert(rs, meta, 7), nullValue());
-        assertThat(convertor.convert(rs, meta, 8), nullValue());
     }
 
     /**
@@ -270,7 +292,6 @@ public class OracleDialectTest {
      * <p>
      * offsetのみを指定した場合
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -280,15 +301,26 @@ public class OracleDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
 
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
-        final PreparedStatement statement = connection.prepareStatement(
-                sut.convertPaginationSql(sql, new SelectOption(50, 0)));
-        statement.setString(1, "name%");
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    sut.convertPaginationSql(sql, new SelectOption(50, 0)));
+            statement.setString(1, "name%");
 
-        final ResultSet rs = statement.executeQuery();
-        int index = 50;
-        while (rs.next()) {
-            assertThat(rs.getLong(1), is((long) index));
-            index++;
+            rs = statement.executeQuery();
+            int index = 50;
+            while (rs.next()) {
+                assertThat(rs.getLong(1), is((long) index));
+                index++;
+            }
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
         }
     }
 
@@ -297,7 +329,6 @@ public class OracleDialectTest {
      * <p>
      * limitのみを指定した場合
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeLimitOnly() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -307,17 +338,29 @@ public class OracleDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
 
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
-        final PreparedStatement statement = connection.prepareStatement(
-                sut.convertPaginationSql(sql, new SelectOption(0, 25)));
-        statement.setString(1, "name%");
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    sut.convertPaginationSql(sql, new SelectOption(0, 25)));
+            statement.setString(1, "name%");
 
-        final ResultSet rs = statement.executeQuery();
-        int index = 0;
-        while (rs.next()) {
-            index++;
-            assertThat(rs.getLong(1), is((long) index));
+            rs = statement.executeQuery();
+            int index = 0;
+            while (rs.next()) {
+                index++;
+                assertThat(rs.getLong(1), is((long) index));
+            }
+            assertThat("取得件数は25であること", index, is(25));
+
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
         }
-        assertThat("取得件数は25であること", index, is(25));
     }
 
     /**
@@ -325,7 +368,6 @@ public class OracleDialectTest {
      * <p>
      * offsetとlimitの両方を指定
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertPaginationSql_executeOffsetAndLimit() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -335,17 +377,28 @@ public class OracleDialectTest {
         connection = VariousDbTestHelper.getNativeConnection();
 
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
-        final PreparedStatement statement = connection.prepareStatement(
-                sut.convertPaginationSql(sql, new SelectOption(31, 15)));
-        statement.setString(1, "name%");
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    sut.convertPaginationSql(sql, new SelectOption(31, 15)));
+            statement.setString(1, "name%");
 
-        final ResultSet rs = statement.executeQuery();
-        int index = 30;
-        while (rs.next()) {
-            index++;
-            assertThat(rs.getLong(1), is((long) index));
+            rs = statement.executeQuery();
+            int index = 30;
+            while (rs.next()) {
+                index++;
+                assertThat(rs.getLong(1), is((long) index));
+            }
+            assertThat("最後に取得されたレコードの番号は45であること", index, is(45));
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
         }
-        assertThat("最後に取得されたレコードの番号は45であること", index, is(45));
     }
 
     /**
@@ -360,7 +413,6 @@ public class OracleDialectTest {
     /**
      * {@link OracleDialect#convertCountSql(String)}で変換したSQL文が実行可能であることを確認する。
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertCountSql_execute() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -369,12 +421,23 @@ public class OracleDialectTest {
         }
         connection = VariousDbTestHelper.getNativeConnection();
         String sql = "select entity_id, str from dialect where str like ? order by entity_id";
-        final PreparedStatement statement = connection.prepareStatement(sut.convertCountSql(sql));
-        statement.setString(1, "name_3%");
-        final ResultSet rs = statement.executeQuery();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(sut.convertCountSql(sql));
+            statement.setString(1, "name_3%");
+            rs = statement.executeQuery();
 
-        assertThat(rs.next(), is(true));
-        assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+            assertThat(rs.next(), is(true));
+            assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
     }
 
     /**
@@ -393,7 +456,6 @@ public class OracleDialectTest {
     /**
      * {@link OracleDialect#convertCountSql(String, Object, StatementFactory)}で変換したSQL文が実行可能であることを確認する。
      */
-    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
     @Test
     public void convertCountSqlFromSqlId_execute() throws Exception {
         VariousDbTestHelper.delete(DialectEntity.class);
@@ -405,13 +467,24 @@ public class OracleDialectTest {
         statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
         statementFactory.setSqlLoader(new BasicSqlLoader());
 
-        PreparedStatement statement =
-                connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.OracleDialectTest#SQL002", null, statementFactory));
-        statement.setString(1, "name_3%");
-        ResultSet rs = statement.executeQuery();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement =
+                    connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.OracleDialectTest#SQL002", null, statementFactory));
+            statement.setString(1, "name_3%");
+            rs = statement.executeQuery();
 
-        assertThat(rs.next(), is(true));
-        assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+            assertThat(rs.next(), is(true));
+            assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
     }
 
     /**

@@ -106,7 +106,6 @@ public class DefaultDialectTest {
      * {@link java.sql.ResultSet}から値を取得するための変換クラスのデフォルトを確認する。
      * メタ情報を使わず{@link java.sql.ResultSet}からカラム番号で取得する。
      */
-    @SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed", "SqlDialectInspection", "SqlNoDataSourceInspection"})
     @Test
     @TargetDb(include = TargetDb.Db.ORACLE)
     public void testGetResultSetConvertor() throws Exception {
@@ -116,15 +115,27 @@ public class DefaultDialectTest {
                 new DialectEntity(1L, "12345", 100, 1234554321L, date, new BigDecimal("12345.54321"), timestamp,
                         new byte[] {0x00, 0x50, (byte) 0xFF}));
         connection = VariousDbTestHelper.getNativeConnection();
-        final PreparedStatement statement = connection.prepareStatement(
-                "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
-        statement.setLong(1, 1L);
-        final ResultSet rs = statement.executeQuery();
-        assertThat("1レコードは取得できているはず", rs.next(), is(true));
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
+            statement.setLong(1, 1L);
+            rs = statement.executeQuery();
+            assertThat("1レコードは取得できているはず", rs.next(), is(true));
 
-        ResultSetConvertor resultSetConvertor = sut.getResultSetConvertor();
-        assertThat(resultSetConvertor.isConvertible(null, 0), is(true));
-        assertThat((String)resultSetConvertor.convert(rs, null, 2), is("12345"));
+            ResultSetConvertor resultSetConvertor = sut.getResultSetConvertor();
+            assertThat(resultSetConvertor.isConvertible(null, 0), is(true));
+            assertThat((String)resultSetConvertor.convert(rs, null, 2), is("12345"));
+
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
     }
 
     /**
