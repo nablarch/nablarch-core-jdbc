@@ -2,7 +2,7 @@ package nablarch.core.db.dialect;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -23,8 +23,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import nablarch.core.db.statement.ResultSetConvertor;
-import nablarch.core.db.statement.SelectOption;
+import nablarch.core.db.statement.*;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.DbTestRule;
 import nablarch.test.support.db.helper.TargetDb;
@@ -48,7 +47,7 @@ public class SqlServerDialectTest {
     public DbTestRule dbTestRule = new DbTestRule();
 
     /** テスト対象 */
-    private SqlServerDialect sut = new SqlServerDialect();
+    private final SqlServerDialect sut = new SqlServerDialect();
 
     /** Native Connection */
     private Connection connection;
@@ -135,7 +134,7 @@ public class SqlServerDialectTest {
     @Test
     public void getResultSetConvertor() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, 2, 9, 0, 0, 0);
+        calendar.set(2015, Calendar.MARCH, 9, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -144,43 +143,54 @@ public class SqlServerDialectTest {
                         timestamp,
                         new byte[] {0x00, 0x50, (byte) 0xFF}));
         connection = VariousDbTestHelper.getNativeConnection();
-        final PreparedStatement statement = connection.prepareStatement(
-                "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL, LONG_VAR_BINARY"
-                        + " FROM SQL_SERVER_DIALECT WHERE ENTITY_ID = ?");
-        statement.setLong(1, 1L);
-        final ResultSet rs = statement.executeQuery();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL, LONG_VAR_BINARY"
+                            + " FROM SQL_SERVER_DIALECT WHERE ENTITY_ID = ?");
+            statement.setLong(1, 1L);
+            rs = statement.executeQuery();
 
-        assertThat("1レコードは取得できているはず", rs.next(), is(true));
+            assertThat("1レコードは取得できているはず", rs.next(), is(true));
 
-        final ResultSetConvertor convertor = sut.getResultSetConvertor();
+            final ResultSetConvertor convertor = sut.getResultSetConvertor();
 
-        final ResultSetMetaData meta = rs.getMetaData();
-        final int columnCount = meta.getColumnCount();
+            final ResultSetMetaData meta = rs.getMetaData();
+            final int columnCount = meta.getColumnCount();
 
-        for (int i = 1; i <= columnCount; i++) {
-            assertThat("変換するか否かの結果は全てtrue", convertor.isConvertible(meta, i), is(true));
+            for (int i = 1; i <= columnCount; i++) {
+                assertThat("変換するか否かの結果は全てtrue", convertor.isConvertible(meta, i), is(true));
+            }
+
+            assertThat("文字列はStringで取得できる", (String) convertor.convert(rs, meta, 2), is("12345"));
+            assertThat("数値型はIntegerで取得できる", (Integer) convertor.convert(rs, meta, 3), is(Integer.valueOf("100")));
+            assertThat("10桁以上の数値型はLongで取得できる", (Long) convertor.convert(rs, meta, 4), is(Long.valueOf("1234554321")));
+            assertThat("小数部ありはBigDecimalで取得できる", (BigDecimal) convertor.convert(rs, meta, 5), is(new BigDecimal(
+                    "12345.54321")));
+            assertThat("DATE型はjava.sql.Dateで取得できる", (java.sql.Date) convertor.convert(rs, meta, 6), is(new java.sql.Date(date.getTime())));
+            assertThat("TIMESTAMP型はTimestampで取得できる", (Timestamp) convertor.convert(rs, meta, 7), is(timestamp));
+
+            // binaryはbyte[]で取得される
+            final byte[] bytes = (byte[]) convertor.convert(rs, meta, 8);
+            assertThat("値が取得出来ていること", bytes, is(new byte[] {0x00, 0x50, (byte) 0xFF}));
+
+            // long_var_binaryはBinaryInputStreamで取得できること
+            final InputStream stream = (InputStream) convertor.convert(rs, meta, 9);
+
+            byte[] b = new byte[1024];
+            final int readed = stream.read(b);
+            assertThat("3バイトリードできる", readed, is(3));
+
+            assertThat(Arrays.copyOf(b, 3), is(new byte[] {0x00, 0x50, (byte) 0xFF}));
+        } finally {
+            if(rs != null) {
+                rs.close();
+            }
+            if(statement != null) {
+                statement.close();
+            }
         }
-
-        assertThat("文字列はStringで取得できる", (String) convertor.convert(rs, meta, 2), is("12345"));
-        assertThat("数値型はIntegerで取得できる", (Integer) convertor.convert(rs, meta, 3), is(Integer.valueOf("100")));
-        assertThat("10桁以上の数値型はLongで取得できる", (Long) convertor.convert(rs, meta, 4), is(Long.valueOf("1234554321")));
-        assertThat("小数部ありはBigDecimalで取得できる", (BigDecimal) convertor.convert(rs, meta, 5), is(new BigDecimal(
-                "12345.54321")));
-        assertThat("DATE型はjava.sql.Dateで取得できる", (java.sql.Date) convertor.convert(rs, meta, 6), is(new java.sql.Date(date.getTime())));
-        assertThat("TIMESTAMP型はTimestampで取得できる", (Timestamp) convertor.convert(rs, meta, 7), is(timestamp));
-
-        // binaryはbyte[]で取得される
-        final byte[] bytes = (byte[]) convertor.convert(rs, meta, 8);
-        assertThat("値が取得出来ていること", bytes, is(new byte[] {0x00, 0x50, (byte) 0xFF}));
-
-        // long_var_binaryはBinaryInputStreamで取得できること
-        final InputStream stream = (InputStream) convertor.convert(rs, meta, 9);
-
-        byte[] b = new byte[1024];
-        final int readed = stream.read(b);
-        assertThat("3バイトリードできる", readed, is(3));
-
-        assertThat(Arrays.copyOf(b, 3), is(new byte[] {0x00, 0x50, (byte) 0xFF}));
 
     }
 
@@ -228,12 +238,70 @@ public class SqlServerDialectTest {
         }
         connection = VariousDbTestHelper.getNativeConnection();
         String sql = "select entity_id, str from sql_server_dialect where str like ? order by entity_id";
-        final PreparedStatement statement = connection.prepareStatement(sut.convertCountSql(sql));
-        statement.setString(1, "name_3%");
-        final ResultSet rs = statement.executeQuery();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(sut.convertCountSql(sql));
+            statement.setString(1, "name_3%");
+            rs = statement.executeQuery();
 
-        assertThat(rs.next(), is(true));
-        assertThat(rs.getInt(1), is(11));       // name_3とname_3x
+            assertThat(rs.next(), is(true));
+            assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+        } finally {
+            if(rs != null) {
+                rs.close();
+            }
+            if(statement != null) {
+                statement.close();
+            }
+        }
+    }
+
+    /**
+     * {@link SqlServerDialect#convertCountSql(String, Object, StatementFactory)}のテスト。
+     */
+    @Test
+    public void convertCountSqlFromSqlId() throws Exception {
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        String actual = sut.convertCountSql("nablarch.core.db.dialect.SqlServerDialectTest#SQL001", null, statementFactory);
+        assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (select * from hog_table) SUB_"));
+    }
+
+    /**
+     * {@link SqlServerDialect#convertCountSql(String, Object, StatementFactory)}で変換したSQL文が実行可能であることを確認する。
+     */
+    @Test
+    public void convertCountSqlFromSqlId_execute() throws Exception {
+        VariousDbTestHelper.delete(DialectEntity.class);
+        for (int i = 0; i < 100; i++) {
+            VariousDbTestHelper.insert(new DialectEntity((long) i + 1, "name_" + i));
+        }
+        connection = VariousDbTestHelper.getNativeConnection();
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement =
+                    connection.prepareStatement(sut.convertCountSql("nablarch.core.db.dialect.SqlServerDialectTest#SQL002", null, statementFactory));
+            statement.setString(1, "name_3%");
+            rs = statement.executeQuery();
+
+            assertThat(rs.next(), is(true));
+            assertThat(rs.getInt(1), is(11));       // name_3とname_30〜name_39の11件が取得されるはず
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
     }
 
     /**

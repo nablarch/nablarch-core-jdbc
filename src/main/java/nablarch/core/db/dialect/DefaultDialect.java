@@ -6,6 +6,7 @@ import java.sql.SQLException;
 
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
+import nablarch.core.db.statement.StatementFactory;
 import nablarch.core.util.annotation.Published;
 
 /**
@@ -70,9 +71,9 @@ public class DefaultDialect implements Dialect {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * 全てのカラムを{@link ResultSet#getObject(int)}で取得するコンバータを返す。
-     *
-     * @return {@inheritDoc}
      */
     @Override
     public ResultSetConvertor getResultSetConvertor() {
@@ -113,6 +114,17 @@ public class DefaultDialect implements Dialect {
     /**
      * {@inheritDoc}
      *
+     * デフォルトでは、{@link this#convertCountSql(String)}を使用して、
+     * {@link StatementFactory}から取得したSQLをレコード数取得用SQLに変換する。
+     */
+    @Override
+    public String convertCountSql(String sqlId, Object condition, StatementFactory statementFactory) {
+        return convertCountSql(statementFactory.getVariableConditionSqlBySqlId(sqlId, condition));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * デフォルト実装では、本メソッドはサポートしない。
      */
     @Override
@@ -131,7 +143,7 @@ public class DefaultDialect implements Dialect {
         }
 
         @Override
-        public boolean isConvertible(ResultSetMetaData rsmd, int columnIndex) throws SQLException {
+        public boolean isConvertible(ResultSetMetaData rsmd, int columnIndex) {
             return true;
         }
     }

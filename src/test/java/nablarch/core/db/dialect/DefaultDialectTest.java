@@ -1,7 +1,7 @@
 package nablarch.core.db.dialect;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -11,6 +11,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
+import nablarch.core.db.statement.BasicSqlLoader;
+import nablarch.core.db.statement.BasicSqlParameterParserFactory;
+import nablarch.core.db.statement.BasicStatementFactory;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 
@@ -33,8 +36,9 @@ import org.junit.runner.RunWith;
 @RunWith(DatabaseTestRunner.class)
 public class DefaultDialectTest {
 
-    private DefaultDialect sut = new DefaultDialect();
+    private final DefaultDialect sut = new DefaultDialect();
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
@@ -111,15 +115,27 @@ public class DefaultDialectTest {
                 new DialectEntity(1L, "12345", 100, 1234554321L, date, new BigDecimal("12345.54321"), timestamp,
                         new byte[] {0x00, 0x50, (byte) 0xFF}));
         connection = VariousDbTestHelper.getNativeConnection();
-        final PreparedStatement statement = connection.prepareStatement(
-                "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
-        statement.setLong(1, 1L);
-        final ResultSet rs = statement.executeQuery();
-        assertThat("1レコードは取得できているはず", rs.next(), is(true));
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = connection.prepareStatement(
+                    "SELECT ENTITY_ID, STR, NUM, BIG_INT, DECIMAL_COL, DATE_COL, TIMESTAMP_COL, BINARY_COL FROM DIALECT WHERE ENTITY_ID = ?");
+            statement.setLong(1, 1L);
+            rs = statement.executeQuery();
+            assertThat("1レコードは取得できているはず", rs.next(), is(true));
 
-        ResultSetConvertor resultSetConvertor = sut.getResultSetConvertor();
-        assertThat(resultSetConvertor.isConvertible(null, 0), is(true));
-        assertThat((String)resultSetConvertor.convert(rs, null, 2), is("12345"));
+            ResultSetConvertor resultSetConvertor = sut.getResultSetConvertor();
+            assertThat(resultSetConvertor.isConvertible(null, 0), is(true));
+            assertThat((String)resultSetConvertor.convert(rs, null, 2), is("12345"));
+
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
     }
 
     /**
@@ -145,10 +161,30 @@ public class DefaultDialectTest {
      * レコード数取得用のSQL文に変換する。
      */
     @Test
-    public void testConvertCountSql() {
+    public void testConvertCountSqlFromSqlString() {
         assertThat(sut.convertCountSql("sql"), is("SELECT COUNT(*) COUNT_ FROM (sql) SUB_"));
     }
 
+    /**
+     * SQLIDから、レコード数取得用のSQL文を取得する。
+     */
+    @Test
+    public void testConvertCountSqlFromSqlId() {
+        // setup
+        BasicStatementFactory statementFactory = new BasicStatementFactory();
+        statementFactory.setSqlParameterParserFactory(new BasicSqlParameterParserFactory());
+        statementFactory.setSqlLoader(new BasicSqlLoader());
+
+        // execute
+        String actual = sut.convertCountSql("nablarch.core.db.dialect.DefaultDialectTest#SQL001", new DialectForm(), statementFactory);
+
+        // verify
+        assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (SELECT USER_NAME, TEL, FROM USER_MTR WHERE (0 = 1 or (USER_NAME = :userName))) SUB_"));
+    }
+
+    public static class DialectForm {
+        public String getUserName() {return "test";}
+    }
     /**
      * ping用のSQL文はサポートしない。
      */
