@@ -275,9 +275,9 @@ public class SqlServerDialectTest {
      */
     @Test
     public void convertCountSqlFromSqlId_execute() throws Exception {
-        VariousDbTestHelper.delete(DialectEntity.class);
+        VariousDbTestHelper.delete(SqlServerDialectEntity.class);
         for (int i = 0; i < 100; i++) {
-            VariousDbTestHelper.insert(new DialectEntity((long) i + 1, "name_" + i));
+            VariousDbTestHelper.insert(new SqlServerDialectEntity((long) i + 1, "name_" + i));
         }
         connection = VariousDbTestHelper.getNativeConnection();
         BasicStatementFactory statementFactory = new BasicStatementFactory();
