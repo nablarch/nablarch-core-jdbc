@@ -267,7 +267,7 @@ public class SqlServerDialectTest {
         statementFactory.setSqlLoader(new BasicSqlLoader());
 
         String actual = sut.convertCountSql("nablarch.core.db.dialect.SqlServerDialectTest#SQL001", null, statementFactory);
-        assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (select * from hog_table) SUB_"));
+        assertThat(actual, is("SELECT COUNT(*) COUNT_ FROM (select * from hog_table ) SUB_"));
     }
 
     /**
