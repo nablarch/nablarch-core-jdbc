@@ -1,9 +1,36 @@
 package nablarch.core.db.statement;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import nablarch.core.db.DbAccessException;
+import nablarch.core.db.DbExecutionContext;
+import nablarch.core.db.connection.BasicDbConnection;
+import nablarch.core.db.connection.ConnectionFactory;
+import nablarch.core.db.connection.TransactionManagerConnection;
+import nablarch.core.db.dialect.DefaultDialect;
+import nablarch.core.db.dialect.Dialect;
+import nablarch.core.db.statement.entity.ClobColumn;
+import nablarch.core.db.statement.entity.TextColumn;
+import nablarch.core.db.statement.exception.SqlStatementException;
+import nablarch.core.db.util.DbUtil;
+import nablarch.core.exception.IllegalOperationException;
+import nablarch.core.log.Logger;
+import nablarch.core.repository.ObjectLoader;
+import nablarch.core.repository.SystemRepository;
+import nablarch.core.transaction.TransactionContext;
+import nablarch.test.support.db.helper.TargetDb;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
+import nablarch.test.support.log.app.OnMemoryLogWriter;
+import nablarch.test.support.reflection.ReflectionUtil;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -29,43 +56,33 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-
-import nablarch.core.db.DbAccessException;
-import nablarch.core.db.DbExecutionContext;
-import nablarch.core.db.connection.BasicDbConnection;
-import nablarch.core.db.connection.ConnectionFactory;
-import nablarch.core.db.connection.TransactionManagerConnection;
-import nablarch.core.db.dialect.DefaultDialect;
-import nablarch.core.db.dialect.Dialect;
-import nablarch.core.db.statement.entity.ClobColumn;
-import nablarch.core.db.statement.entity.TextColumn;
-import nablarch.core.db.statement.exception.SqlStatementException;
-import nablarch.core.db.util.DbUtil;
-import nablarch.core.exception.IllegalOperationException;
-import nablarch.core.log.Logger;
-import nablarch.core.repository.ObjectLoader;
-import nablarch.core.repository.SystemRepository;
-import nablarch.core.transaction.TransactionContext;
-import nablarch.test.support.db.helper.TargetDb;
-import nablarch.test.support.db.helper.VariousDbTestHelper;
-import nablarch.test.support.log.app.OnMemoryLogWriter;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import mockit.Deencapsulation;
-import mockit.Expectations;
-import mockit.Mocked;
-import mockit.Verifications;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyByte;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyShort;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link BasicSqlPStatement}のテストクラス。
@@ -423,15 +440,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#executeQuery()}でSQLExceptionが発生するケース。
      */
     @Test(expected = SqlStatementException.class)
-    public void executeQuery_SQLException(@Mocked final PreparedStatement mock) throws Exception {
-        new Expectations() {
-            {
-                mock.executeQuery();
-                result = new SQLException("executeQuery error.", "code", 100);
-            }
-        };
+    public void executeQuery_SQLException() throws Exception {
+        final PreparedStatement mock = mock(PreparedStatement.class);
+        
+        when(mock.executeQuery()).thenThrow(new SQLException("executeQuery error.", "code", 100));
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mock);
+        ReflectionUtil.setFieldValue(sut, "statement", mock);
         sut.executeQuery();
     }
 
@@ -439,14 +453,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#executeUpdate()}のログ出力のテスト。
      */
     @Test
-    public void executeUpdate_writeSqlLog(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.executeUpdate();
-            result = 5;
-        }};
+    public void executeUpdate_writeSqlLog() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.executeUpdate()).thenReturn(5);
         final SqlPStatement sut = dbCon.prepareStatement(
                 "UPDATE STATEMENT_TEST_TABLE SET VARCHAR_COL = ? WHERE ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setString(1, "あいうえお\uD840\uDC0B");
         sut.setString(2, "10001");
         sut.executeUpdate();
@@ -518,15 +531,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#executeUpdate()}でSQLExceptionが発生するケース。
      */
     @Test(expected = SqlStatementException.class)
-    public void executeUpdate_SQLException(@Mocked final PreparedStatement mock) throws Exception {
-        new Expectations() {
-            {
-                mock.executeUpdate();
-                result = new SQLException("executeUpdate error.", "code", 101);
-            }
-        };
+    public void executeUpdate_SQLException() throws Exception {
+        final PreparedStatement mock = mock(PreparedStatement.class);
+
+        when(mock.executeUpdate()).thenThrow(new SQLException("executeUpdate error.", "code", 101));
         final SqlPStatement sut = dbCon.prepareStatement("UPDATE STATEMENT_TEST_TABLE SET LONG_COL = 1");
-        Deencapsulation.setField(sut, mock);
+        ReflectionUtil.setFieldValue(sut, "statement", mock);
         sut.executeUpdate();
     }
 
@@ -597,14 +607,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void execute_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.execute();
-            result = new SQLException("execute error");
-        }};
+    public void execute_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.execute()).thenThrow(new SQLException("execute error"));
         final SqlPStatement sut = dbCon.prepareStatement(
                 "select * from STATEMENT_TEST_TABLE where ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setString(1, "10001");
         sut.execute();
     }
@@ -865,15 +874,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * @throws Exception
      */
     @Test(expected = SqlStatementException.class)
-    public void retrieve_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.executeQuery();
-            result = new SQLException("retrieve error", "", 999);
-        }};
+    public void retrieve_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.executeQuery()).thenThrow(new SQLException("retrieve error", "", 999));
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.retrieve();
     }
 
@@ -884,17 +892,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * @throws Exception
      */
     @Test(expected = IllegalStateException.class)
-    public void retrieve_RuntimeException(
-            @Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            ResultSet rs = mockStatement.executeQuery();
-            rs.getMetaData();
-            result = new IllegalStateException("error");
-        }};
+    public void retrieve_RuntimeException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class, RETURNS_DEEP_STUBS);
+
+        when(mockStatement.executeQuery().getMetaData()).thenThrow(new IllegalStateException("error"));
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.retrieve();
     }
 
@@ -905,17 +910,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * @throws Exception
      */
     @Test(expected = StackOverflowError.class)
-    public void retrieve_Error(
-            @Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            ResultSet rs = mockStatement.executeQuery();
-            rs.getMetaData();
-            result = new StackOverflowError("error");
-        }};
+    public void retrieve_Error() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class, RETURNS_DEEP_STUBS);
+
+        when(mockStatement.executeQuery().getMetaData()).thenThrow(new StackOverflowError("error"));
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.retrieve();
     }
 
@@ -926,21 +928,17 @@ public abstract class BasicSqlPStatementTestLogic {
      * @throws Exception
      */
     @Test
-    public void retrieve_finallyError(
-            @Mocked final PreparedStatement mockStatement) throws Exception {
+    public void retrieve_finallyError() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class, RETURNS_DEEP_STUBS);
 
-        new Expectations() {{
-            ResultSet rs = mockStatement.executeQuery();
-            final ResultSetMetaData rsm = rs.getMetaData();
-            rsm.getColumnCount();
-            result = 0;
-            rs.close();
-            result = new NullPointerException("null");
-        }};
+        ResultSet rs = mockStatement.executeQuery();
+        ResultSetMetaData rsm = mockStatement.executeQuery().getMetaData();
+        when(rsm.getColumnCount()).thenReturn(0);
+        doThrow(new NullPointerException("null")).when(rs).close(); 
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         try {
             sut.retrieve();
             fail("");
@@ -958,20 +956,17 @@ public abstract class BasicSqlPStatementTestLogic {
      * @throws Exception
      */
     @Test
-    public void retrieve_tryAndFinallyError(
-            @Mocked final PreparedStatement mockStatement) throws Exception {
+    public void retrieve_tryAndFinallyError() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class, RETURNS_DEEP_STUBS);
 
-        new Expectations() {{
-            ResultSet rs = mockStatement.executeQuery();
-            rs.close();
-            result = new NullPointerException("null error");
-            rs.getMetaData();
-            result = new IllegalStateException("error");
-        }};
+        ResultSet rs = mockStatement.executeQuery();
 
+        doThrow(new NullPointerException("null error")).when(rs).close();
+        when(rs.getMetaData()).thenThrow(new IllegalStateException("error"));
+        
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         try {
             sut.retrieve();
             fail("");
@@ -1010,15 +1005,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * @throws Exception
      */
     @Test(expected = DbAccessException.class)
-    public void addBatch_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.addBatch();
-            result = new SQLException("addBatch error", "", 999);
-        }};
+    public void addBatch_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("addBatch error", "", 999)).when(mockStatement).addBatch();
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID) VALUES (?)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setString(1, "1");
         sut.addBatch();
     }
@@ -1082,18 +1076,16 @@ public abstract class BasicSqlPStatementTestLogic {
      * SqlStatementExceptionが送出されること。
      */
     @Test(expected = SqlStatementException.class)
-    public void executeBatch_SQLException(
-            @Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.executeBatch();
-            result = new SQLException("executeBatch error", "", 999);
-        }};
+    public void executeBatch_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.executeBatch()).thenThrow(new SQLException("executeBatch error", "", 999));
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID) VALUES (?)");
         sut.setString(1, "99999");
         sut.addBatch();
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.executeBatch();
     }
 
@@ -1147,16 +1139,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void clearBatch_SQLException(
-            @Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.clearBatch();
-            result = new SQLException("clear batch error");
-        }};
+    public void clearBatch_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("clear batch error")).when(mockStatement).clearBatch();
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID) VALUES (?)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.clearBatch();
     }
 
@@ -1216,17 +1206,16 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void setNull_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setNull(anyInt, anyInt);
-            result = new SQLException("setNull error");
-        }};
+    public void setNull_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setNull error")).when(mockStatement).setNull(anyInt(), anyInt());
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, VARCHAR_COL) "
                         + "VALUES (?, ?)");
 
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setString(1, "99999");
         sut.setNull(2, Types.VARCHAR);
     }
@@ -1273,14 +1262,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void setBoolean_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setBoolean(anyInt, anyBoolean);
-            result = new SQLException("setBoolean error");
-        }};
+    public void setBoolean_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setBoolean error")).when(mockStatement).setBoolean(anyInt(), anyBoolean());
         final SqlPStatement sut = dbCon.prepareStatement(
                 "UPDATE STATEMENT_TEST_TABLE SET VARCHAR_COL = ?, LONG_COL = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setBoolean(2, false);
     }
 
@@ -1329,14 +1317,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void setByte_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setByte(anyInt, anyByte);
-            result = new SQLException("setByte error.");
-        }};
+    public void setByte_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setByte error.")).when(mockStatement).setByte(anyInt(), anyByte());
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT '1' FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setByte(1, (byte) 0x00);
     }
 
@@ -1373,13 +1360,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void setShort_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setShort(anyInt, anyShort);
-            result = new SQLException("setShort error");
-        }};
+    public void setShort_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setShort error")).when(mockStatement).setShort(anyInt(), anyShort());
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE LONG_COL = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setShort(1, (short) 1);
     }
 
@@ -1418,14 +1404,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void setInt_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setInt(anyInt, anyInt);
-            result = new SQLException("setInt error");
-        }};
+    public void setInt_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setInt error")).when(mockStatement).setInt(anyInt(), anyInt());
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE INTEGER_COL IN (?, ?)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setInt(1, 2);
     }
 
@@ -1464,14 +1449,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void setLong_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setLong(anyInt, anyLong);
-            result = new SQLException("setLong error");
-        }};
+    public void setLong_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setLong error")).when(mockStatement).setLong(anyInt(), anyLong());
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE INTEGER_COL IN (?, ?)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setLong(1, 2);
     }
 
@@ -1511,14 +1495,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void setFloat_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setFloat(anyInt, anyFloat);
-            result = new SQLException("setFloat error");
-        }};
+    public void setFloat_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setFloat error")).when(mockStatement).setFloat(anyInt(), anyFloat());
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE INTEGER_COL IN (?, ?)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setFloat(1, 2.2f);
     }
 
@@ -1559,14 +1542,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void setDouble_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setDouble(anyInt, anyDouble);
-            result = new SQLException("setDouble error");
-        }};
+    public void setDouble_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setDouble error")).when(mockStatement).setDouble(anyInt(), anyDouble());
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE INTEGER_COL IN (?, ?)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setDouble(1, 2.2);
     }
 
@@ -1606,13 +1588,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void setBigDecimal_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setBigDecimal(anyInt, BigDecimal.ONE);
-            result = new SQLException("setBigDecimal error");
-        }};
+    public void setBigDecimal_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setBigDecimal error")).when(mockStatement).setBigDecimal(anyInt(), eq(BigDecimal.ONE));
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setBigDecimal(1, BigDecimal.ONE);
     }
 
@@ -1655,13 +1636,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void setString_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setString(anyInt, anyString);
-            result = new SQLException("setString error");
-        }};
+    public void setString_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setString error")).when(mockStatement).setString(anyInt(), anyString());
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setString(1, "1");
     }
 
@@ -1706,15 +1686,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void setBytes_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setBytes(anyInt, (byte[]) withNotNull());
-            result = new SQLException("setBytes error");
-        }};
+    public void setBytes_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
 
+        doThrow(new SQLException("setBytes error")).when(mockStatement).setBytes(anyInt(), notNull());
+        
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, BINARY_COL) VALUES (?, ?)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setBytes(2, new byte[] {0x00, 0x01});
     }
 
@@ -1771,16 +1750,15 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void setDate_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations(){{
-            mockStatement.setDate(anyInt, withAny(new java.sql.Date(0)));
-            result = new SQLException("setDate error");
-        }};
+    public void setDate_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setDate error")).when(mockStatement).setDate(anyInt(), any(java.sql.Date.class));
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, DATE_COL) VALUES  (?, ?)");
 
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setDate(2, new java.sql.Date(0));
     }
 
@@ -1835,16 +1813,15 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void setTime_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations(){{
-            mockStatement.setTime(anyInt, withAny(new Time(0)));
-            result = new SQLException("setTime error");
-        }};
+    public void setTime_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setTime error")).when(mockStatement).setTime(anyInt(), any(Time.class));
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, TIME_COL) VALUES  (?, ?)");
 
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setTime(2, new Time(0));
     }
 
@@ -1896,16 +1873,15 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void setTimestamp_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations(){{
-            mockStatement.setTimestamp(anyInt, withAny(new Timestamp(0)));
-            result = new SQLException("setTimestamp error");
-        }};
+    public void setTimestamp_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setTimestamp error")).when(mockStatement).setTimestamp(anyInt(), any(Timestamp.class));
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, TIMESTAMP_COL) VALUES  (?, ?)");
 
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setTimestamp(2, new Timestamp(0));
     }
 
@@ -1979,15 +1955,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void setAsciiStream_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations(){{
-            mockStatement.setAsciiStream(anyInt, withAny(new ByteArrayInputStream(new byte[0])), anyInt);
-            result = new SQLException("setAsciiStream error");
-        }};
+    public void setAsciiStream_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setAsciiStream error")).when(mockStatement).setAsciiStream(anyInt(), any(ByteArrayInputStream.class), anyInt());
 
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, VARCHAR_COL) VALUES  (?, ?)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setAsciiStream(2, new ByteArrayInputStream(new byte[0]), 0);
     }
 
@@ -2041,13 +2016,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出される。
      */
     @Test(expected = DbAccessException.class)
-    public void setObject_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any);
-            result = new SQLException("setObject error");
-        }};
+    public void setObject_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setObject error")).when(mockStatement).setObject(anyInt(), any());
+        
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setObject(1, "12345");
     }
 
@@ -2101,13 +2076,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出される。
      */
     @Test(expected = DbAccessException.class)
-    public void setObjectWithType_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any, anyInt);
-            result = new SQLException("setObjectWithType error");
-        }};
+    public void setObjectWithType_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setObjectWithType error")).when(mockStatement).setObject(anyInt(), any(), anyInt());
+        
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setObject(1, "12345", Types.CHAR);
     }
 
@@ -2136,13 +2111,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void getResultSet_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.getResultSet();
-            result = new SQLException("getResultSet error");
-        }};
+    public void getResultSet_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("getResultSet error")).when(mockStatement).getResultSet();
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.getResultSet();
     }
 
@@ -2188,13 +2162,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void getUpdateCount_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.getUpdateCount();
-            result = new SQLException("getUpdateCount error");
-        }};
+    public void getUpdateCount_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.getUpdateCount()).thenThrow(new SQLException("getUpdateCount error"));
+        
         final SqlPStatement sut = dbCon.prepareStatement("UPDATE STATEMENT_TEST_TABLE SET ENTITY_ID = ENTITY_ID");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.getUpdateCount();
     }
 
@@ -2213,14 +2187,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void getMetaData_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.getMetaData();
-            result = new SQLException("getMetaData error");
-        }};
+    public void getMetaData_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.getMetaData()).thenThrow(new SQLException("getMetaData error"));
         SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT ENTITY_ID, LONG_COL from STATEMENT_TEST_TABLE where ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.getMetaData();
     }
 
@@ -2262,14 +2235,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void setMaxRows_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setMaxRows(anyInt);
-            result = new SQLException("setMaxRows error");
-        }};
+    public void setMaxRows_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setMaxRows error")).when(mockStatement).setMaxRows(anyInt());
 
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setMaxRows(2);
     }
 
@@ -2278,13 +2250,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void getMaxRows_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.getMaxRows();
-            result = new SQLException("getMaxRows error");
-        }};
+    public void getMaxRows_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.getMaxRows()).thenThrow(new SQLException("getMaxRows error"));
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.getMaxRows();
     }
 
@@ -2316,14 +2287,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void setFetchSize_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setFetchSize(anyInt);
-            result = new SQLException("setFetchSize error");
-        }};
+    public void setFetchSize_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setFetchSize error")).when(mockStatement).setFetchSize(anyInt());
 
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setFetchSize(10);
     }
 
@@ -2332,14 +2302,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void getFetchSize_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.getFetchSize();
-            result = new SQLException("getFetchSize error");
-        }};
+    public void getFetchSize_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.getFetchSize()).thenThrow(new SQLException("getFetchSize error"));
 
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setFetchSize(10);
         sut.getFetchSize();
     }
@@ -2370,14 +2339,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void setQueryTimeout_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setQueryTimeout(anyInt);
-            result = new SQLException("setQueryTimeout error");
-        }};
+    public void setQueryTimeout_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setQueryTimeout error")).when(mockStatement).setQueryTimeout(anyInt());
 
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setQueryTimeout(10);
     }
 
@@ -2386,14 +2354,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void getQueryTimeout_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.getQueryTimeout();
-            result = new SQLException("getQueryTimeout error");
-        }};
+    public void getQueryTimeout_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.getQueryTimeout()).thenThrow(new SQLException("getQueryTimeout error"));
 
         final SqlPStatement sut = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.getQueryTimeout();
     }
 
@@ -2440,15 +2407,15 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが発生する。
      */
     @Test(expected = DbAccessException.class)
-    public void setBinaryStream_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setBinaryStream(anyInt, withAny(new ByteArrayInputStream(new byte[0])), anyInt);
-            result = new SQLException("setBinaryStream error");
-        }};
+    public void setBinaryStream_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setBinaryStream error")).when(mockStatement).setBinaryStream(anyInt(), any(ByteArrayInputStream.class), anyInt());
+        
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, BINARY_COL) VALUES (?, ?)");
 
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setBinaryStream(2, new ByteArrayInputStream(new byte[] {0x31, 0x32, 0x33}), 2);
     }
 
@@ -2473,15 +2440,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#setCharacterStream(int, Reader, int)}のテスト。
      */
     @Test(expected = DbAccessException.class)
-    public void setCharacterStream_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setCharacterStream(anyInt, (Reader) any, anyInt);
-            result = new SQLException("setCharacterStream error");
-        }};
+    public void setCharacterStream_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("setCharacterStream error")).when(mockStatement).setCharacterStream(anyInt(), any(Reader.class), anyInt());
         
         final SqlPStatement sut = dbCon.prepareStatement(
                 "insert into STATEMENT_TEST_TABLE (entity_id, varchar_col) values (?, ?)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setCharacterStream(2, new StringReader("1234554321"), 10);
     }
 
@@ -2490,7 +2456,7 @@ public abstract class BasicSqlPStatementTestLogic {
      */
     @Test
     public void close() {
-        final List<SqlStatement> statements = Deencapsulation.getField(dbCon, "statements");
+        final List<SqlStatement> statements = ReflectionUtil.getFieldValue(dbCon, "statements");
         assertThat("ステートメントリストは空であること", statements.isEmpty(), is(true));
 
         final SqlPStatement sut = dbCon.prepareStatement("select * from STATEMENT_TEST_TABLE");
@@ -2515,14 +2481,18 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void close_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.close();
-            result = new SQLException("close error");
-        }};
+    public void close_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("close error")).when(mockStatement).close();
         final SqlPStatement sut = dbCon.prepareStatement("select * from STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
-        sut.close();
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
+        try {
+            sut.close();
+        } finally {
+            // @After で dbCon が close されるときにモックが例外をスローしたままだとテストが落ちるのでリセットしておく
+            reset(mockStatement);
+        }
     }
 
     /**
@@ -2531,13 +2501,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * Mockを使ってテストを行う。
      */
     @Test
-    public void getMoreResults(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.getMoreResults();
-            returns(true, false);
-        }};
+    public void getMoreResults() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.getMoreResults()).thenReturn(true, false);
         final SqlPStatement sut = dbCon.prepareStatement("select * from STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
 
         assertThat("初回はtrue", sut.getMoreResults(), is(true));
         assertThat("2回目はfalse", sut.getMoreResults(), is(false));
@@ -2548,13 +2517,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void getMoreResults_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.getMoreResults();
-            result = new SQLException("getMoreResults error");
-        }};
+    public void getMoreResults_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.getMoreResults()).thenThrow(new SQLException("getMoreResults error"));
         final SqlPStatement sut = dbCon.prepareStatement("select * from STATEMENT_TEST_TABLE");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.getMoreResults();
     }
 
@@ -2811,14 +2779,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * 例外が送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void retrieve_map_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any);
-            result = new SQLException("retrieve map error");
-        }};
+    public void retrieve_map_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("retrieve map error")).when(mockStatement).setObject(anyInt(), any());
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = :id AND VARCHAR_COL = :varcharCol ORDER BY ENTITY_ID");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
 
         Map<String, String> condition = new HashMap<String, String>();
         condition.put("id", "10002");
@@ -3290,7 +3257,9 @@ public abstract class BasicSqlPStatementTestLogic {
      * 例外が送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void retrieve_object_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
+    public void retrieve_object_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
         doRetrieve_object_SQLException(mockStatement, false);
     }
 
@@ -3299,19 +3268,17 @@ public abstract class BasicSqlPStatementTestLogic {
      * 例外が送出されること。(Fieldアクセステスト用)
      */
     @Test(expected = DbAccessException.class)
-    public void retrieve_object_SQLExceptionViaFieldAccess(@Mocked final PreparedStatement mockStatement) throws Exception {
+    public void retrieve_object_SQLExceptionViaFieldAccess() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
         doRetrieve_object_SQLException(mockStatement, true);
     }
 
-    private void doRetrieve_object_SQLException(@Mocked final PreparedStatement mockStatement, final boolean isFieldAccess) throws
-            SQLException {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any);
-            result = new SQLException("retrieve map error");
-        }};
+    private void doRetrieve_object_SQLException(final PreparedStatement mockStatement, final boolean isFieldAccess) throws SQLException {
+        doThrow(new SQLException("retrieve map error")).when(mockStatement).setObject(anyInt(), any());
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = :id AND VARCHAR_COL = :varcharCol ORDER BY ENTITY_ID");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         final Object condition;
         if (!isFieldAccess) {
             final TestEntity entity = new TestEntity();
@@ -3350,15 +3317,14 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#executeQueryByMap(Map)}のSQLExceptionのテスト。
      */
     @Test(expected = DbAccessException.class)
-    public void executeQueryByMap_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any);
-            result = new SQLException("executeQuery map error");
-        }};
+    public void executeQueryByMap_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("executeQuery map error")).when(mockStatement).setObject(anyInt(), any());
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = :id");
 
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         Map<String, String> condition = new HashMap<String, String>();
         condition.put("id", "10002");
         sut.executeQueryByMap(condition);
@@ -3406,7 +3372,9 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#executeQueryByObject(Object)}のSQLExceptionのテスト。
      */
     @Test(expected = SqlStatementException.class)
-    public void executeQueryByObject_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
+    public void executeQueryByObject_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
         doExecuteQueryByObject_SQLException(mockStatement, false);
     }
 
@@ -3414,19 +3382,18 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#executeQueryByObject(Object)}のSQLExceptionのテスト。(Fieldアクセステスト用)
      */
     @Test(expected = SqlStatementException.class)
-    public void executeQueryByObject_SQLExceptionViaFieldAccess(@Mocked final PreparedStatement mockStatement) throws Exception {
+    public void executeQueryByObject_SQLExceptionViaFieldAccess() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
         doExecuteQueryByObject_SQLException(mockStatement, true);
     }
 
     private void doExecuteQueryByObject_SQLException(final PreparedStatement mockStatement, final boolean isFieldAccess) throws
             SQLException {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any);
-            result = new SQLException("executeQuery object error");
-        }};
+        doThrow(new SQLException("executeQuery object error")).when(mockStatement).setObject(anyInt(), any());
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = :id");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
 
         final Object data;
         if(!isFieldAccess){
@@ -3470,14 +3437,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * SqlStatementExceptionが送出されること。
      */
     @Test(expected = SqlStatementException.class)
-    public void executeUpdateByMap_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any);
-            result = new SQLException("executeUpdate map error");
-        }};
+    public void executeUpdateByMap_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("executeUpdate map error")).when(mockStatement).setObject(anyInt(), any());
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL) VALUES (:id, :long, :binary)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         Map<String, Object> insertData = new HashMap<String, Object>();
         insertData.put("id", "44444");
         insertData.put("long", 100L);
@@ -3532,7 +3498,9 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#executeUpdateByObject(Object)}のテスト。
      */
     @Test(expected = SqlStatementException.class)
-    public void executeUpdateByObject_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
+    public void executeUpdateByObject_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
         doExecuteUpdateByObject_SQLException(mockStatement, false);
     }
 
@@ -3540,19 +3508,18 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#executeUpdateByObject(Object)}のテスト。(Fieldアクセステスト用)
      */
     @Test(expected = SqlStatementException.class)
-    public void executeUpdateByObject_SQLExceptionViaFieldAccess(@Mocked final PreparedStatement mockStatement) throws Exception {
+    public void executeUpdateByObject_SQLExceptionViaFieldAccess() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
         doExecuteUpdateByObject_SQLException(mockStatement, true);
     }
 
     private void doExecuteUpdateByObject_SQLException(final PreparedStatement mockStatement, final boolean isFieldAccess) throws
             SQLException {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any);
-            result = new SQLException("executeUpdate object error");
-        }};
+        doThrow(new SQLException("executeUpdate object error")).when(mockStatement).setObject(anyInt(), any());
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL) VALUES (:id, :long, :binary)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         final Object data;
         if(!isFieldAccess){
             final TestEntity entity = new TestEntity();
@@ -3608,14 +3575,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void addBatchMap_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any);
-            result = new SQLException("addBatch map error");
-        }};
+    public void addBatchMap_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("addBatch map error")).when(mockStatement).setObject(anyInt(), any());
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL) VALUES (:id, :long, :binary)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         Map<String, Object> insertData = new HashMap<String, Object>();
         insertData.put("id", "44444");
         insertData.put("long", 100L);
@@ -3687,7 +3653,9 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void addBatchObject_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
+    public void addBatchObject_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
         doAddBatchObject_SQLException(mockStatement, false);
     }
 
@@ -3696,19 +3664,18 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。(Fieldアクセステスト用)
      */
     @Test(expected = DbAccessException.class)
-    public void addBatchObject_SQLExceptionViaFieldAccess(@Mocked final PreparedStatement mockStatement) throws Exception {
+    public void addBatchObject_SQLExceptionViaFieldAccess() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
         doAddBatchObject_SQLException(mockStatement, true);
     }
 
     private void doAddBatchObject_SQLException(final PreparedStatement mockStatement, final boolean isFieldAccess) throws
             SQLException {
-        new Expectations() {{
-            mockStatement.setObject(anyInt, any);
-            result = new SQLException("addBatch object error");
-        }};
+        doThrow(new SQLException("addBatch object error")).when(mockStatement).setObject(anyInt(), any());
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL) VALUES (:id, :long, :binary)");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         final Object data;
         if(!isFieldAccess){
             final TestEntity entity = new TestEntity();
@@ -4005,13 +3972,12 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること。
      */
     @Test(expected = DbAccessException.class)
-    public void getGeneratedKeys_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.getGeneratedKeys();
-            result = new SQLException("getGeneratedKeys error");
-        }};
+    public void getGeneratedKeys_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(mockStatement.getGeneratedKeys()).thenThrow(new SQLException("getGeneratedKeys error"));
         SqlPStatement sut = dbCon.prepareStatement("INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID) VALUES ('12345')");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.getGeneratedKeys();
     }
 
@@ -4074,17 +4040,16 @@ public abstract class BasicSqlPStatementTestLogic {
      * {@link BasicSqlPStatement#clearParameters()} のテスト。
      */
     @Test
-    public void clearParameters(@Mocked final PreparedStatement mockStatement) throws Exception {
+    public void clearParameters() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.setString(1, "10001");
         sut.clearParameters();
 
-        new Verifications(){{
-            mockStatement.clearParameters();
-            times = 1;
-        }};
+        verify(mockStatement).clearParameters();
     }
 
     /**
@@ -4092,14 +4057,13 @@ public abstract class BasicSqlPStatementTestLogic {
      * DbAccessExceptionが送出されること
      */
     @Test(expected = DbAccessException.class)
-    public void clearParameters_SQLException(@Mocked final PreparedStatement mockStatement) throws Exception {
-        new Expectations() {{
-            mockStatement.clearParameters();
-            result = new SQLException("clearParameters error");
-        }};
+    public void clearParameters_SQLException() throws Exception {
+        final PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        doThrow(new SQLException("clearParameters error")).when(mockStatement).clearParameters();
         final SqlPStatement sut = dbCon.prepareStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = ?");
-        Deencapsulation.setField(sut, mockStatement);
+        ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
         sut.clearParameters();
     }
 

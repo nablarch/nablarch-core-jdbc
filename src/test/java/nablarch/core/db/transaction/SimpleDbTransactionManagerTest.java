@@ -1,19 +1,9 @@
 package nablarch.core.db.transaction;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import nablarch.core.db.connection.AppDbConnection;
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.DbConnectionContext;
@@ -21,7 +11,6 @@ import nablarch.core.db.statement.SqlPStatement;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -29,8 +18,20 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import mockit.Expectations;
-import mockit.Verifications;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * {@link SimpleDbTransactionManager}のテストクラス。
@@ -267,12 +268,8 @@ public class SimpleDbTransactionManagerTest {
      */
     @Test
     public void connectionNameAlreadyUsed() throws Exception {
-        final ConnectionFactory connectionFactory = container.getComponent("connectionFactory");
-
-        new Expectations(connectionFactory) {{
-            connectionFactory.getConnection("test");
-            minTimes = 0;
-        }};
+        final ConnectionFactory connectionFactory = spy((ConnectionFactory)container.getComponent("connectionFactory"));
+        container.addComponent("connectionFactory", connectionFactory);
 
         try {
             final SimpleDbTransactionManager transactionManager = container.getComponent(START_TRANSACTION_BEFORE_TEST);
@@ -283,11 +280,8 @@ public class SimpleDbTransactionManagerTest {
                     containsString("The specified database connection name is already used. connection name=[test]"));
         }
 
-        new Verifications() {{
-            // コネクション名が既に使用済みなので、新たな接続を取得しないことを検証する。
-            connectionFactory.getConnection(anyString);
-            times = 0;
-        }};
+        // コネクション名が既に使用済みなので、新たな接続を取得しないことを検証する。
+        verify(connectionFactory, never()).getConnection(anyString());
     }
 
     /**

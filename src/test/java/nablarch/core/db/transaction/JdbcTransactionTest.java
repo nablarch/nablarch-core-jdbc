@@ -1,19 +1,20 @@
 package nablarch.core.db.transaction;
 
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Collections;
-
 import nablarch.core.db.connection.DbConnectionContext;
 import nablarch.core.db.connection.TransactionManagerConnection;
 import nablarch.test.support.log.app.OnMemoryLogWriter;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import mockit.Mocked;
-import mockit.Verifications;
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * {@link JdbcTransaction}のテスト。
@@ -26,11 +27,9 @@ public class JdbcTransactionTest {
     /** テスト対象 */
     private JdbcTransaction sut;
 
-    @Mocked
-    private TransactionManagerConnection mockConnection;
+    private final TransactionManagerConnection mockConnection = mock(TransactionManagerConnection.class, RETURNS_DEEP_STUBS);
 
-    @Mocked
-    private JdbcTransactionTimeoutHandler mockTimeoutHandler;
+    private final JdbcTransactionTimeoutHandler mockTimeoutHandler = mock(JdbcTransactionTimeoutHandler.class);
 
     @Before
     public void setUp() throws Exception {
@@ -53,11 +52,8 @@ public class JdbcTransactionTest {
         sut.setIsolationLevel(Connection.TRANSACTION_SERIALIZABLE);
         sut.begin();
 
-        new Verifications() {{
-            // コネクションに対してトランザクション分離レベルが設定されたことを検証する。
-            mockConnection.setIsolationLevel(Connection.TRANSACTION_SERIALIZABLE);
-            times = 1;
-        }};
+        // コネクションに対してトランザクション分離レベルが設定されたことを検証する。
+        verify(mockConnection).setIsolationLevel(Connection.TRANSACTION_SERIALIZABLE);
     }
 
     /**
@@ -71,12 +67,8 @@ public class JdbcTransactionTest {
         }});
         sut.begin();
 
-        new Verifications() {{
-            mockConnection.prepareStatement("select 1 from table_name");
-            times = 1;
-            mockConnection.prepareStatement("select 2 from table_name2");
-            times = 1;
-        }};
+        verify(mockConnection).prepareStatement("select 1 from table_name");
+        verify(mockConnection).prepareStatement("select 2 from table_name2");
     }
 
     /**
@@ -87,10 +79,7 @@ public class JdbcTransactionTest {
         sut.begin();
         sut.commit();
 
-        new Verifications() {{
-            mockConnection.commit();
-            times = 1;
-        }};
+        verify(mockConnection).commit();
         OnMemoryLogWriter.assertLogContains("writer.memory", "transaction commit. resource=[connection name]");
     }
 
@@ -103,10 +92,7 @@ public class JdbcTransactionTest {
         sut.rollback();
 
         // ロールバックは、トランザクション開始時にも実行されるので、2回実行される。
-        new Verifications() {{
-            mockConnection.rollback();
-            times = 2;
-        }};
+        verify(mockConnection, times(2)).rollback();
         OnMemoryLogWriter.assertLogContains("writer.memory", "transaction rollback. resource=[connection name]");
     }
 
@@ -120,12 +106,8 @@ public class JdbcTransactionTest {
         sut.setTransactionTimeoutHandler(mockTimeoutHandler);
         sut.begin();
 
-        new Verifications() {{
-            mockTimeoutHandler.begin();
-            times = 1;
-            mockConnection.setJdbcTransactionTimeoutHandler(mockTimeoutHandler);
-            times = 1;
-        }};
+        verify(mockTimeoutHandler).begin();
+        verify(mockConnection).setJdbcTransactionTimeoutHandler(mockTimeoutHandler);
     }
 }
 

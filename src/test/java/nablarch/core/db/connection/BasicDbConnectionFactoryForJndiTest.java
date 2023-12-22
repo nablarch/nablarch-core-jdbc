@@ -1,29 +1,32 @@
 package nablarch.core.db.connection;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import nablarch.core.db.DbExecutionContext;
+import nablarch.core.db.connection.exception.DbConnectionException;
+import nablarch.core.db.statement.BasicStatementFactory;
+import nablarch.core.db.statement.SqlPStatement;
+import nablarch.core.transaction.TransactionContext;
+import org.junit.Test;
+import org.mockito.MockedConstruction;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
-
-import nablarch.core.db.DbExecutionContext;
-import nablarch.core.db.connection.exception.DbConnectionException;
-import nablarch.core.db.statement.BasicStatementFactory;
-import nablarch.core.db.statement.SqlPStatement;
-import nablarch.core.transaction.TransactionContext;
-
-import org.junit.Test;
-
-import mockit.Expectations;
-import mockit.Mocked;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.when;
 
 
 /**
@@ -33,20 +36,13 @@ import mockit.Mocked;
  */
 public class BasicDbConnectionFactoryForJndiTest {
 
-    @Mocked
-    private InitialContext jndiContext;
+    private final DataSource dataSource = mock(DataSource.class);
 
-    @Mocked
-    private DataSource dataSource;
+    private final Connection con = mock(Connection.class, RETURNS_DEEP_STUBS);
 
-    @Mocked
-    private Connection con;
+    private final DbExecutionContext context = mock(DbExecutionContext.class);
 
-    @Mocked
-    private DbExecutionContext context;
-
-    @Mocked
-    private DbAccessExceptionFactory exceptionFactory;
+    private final DbAccessExceptionFactory exceptionFactory = mock(DbAccessExceptionFactory.class);
 
     private static final String CONNECTION_NAME = TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY;
 
@@ -62,21 +58,18 @@ public class BasicDbConnectionFactoryForJndiTest {
     public void testGetConnectionDefaultInitialContext() throws Exception {
         // jndiから取得されるdataSource、connectionの設定を行う。
         final String lookupName = "nablarch_test";
-        new Expectations() {{
-            jndiContext.lookup(lookupName);
-            result = dataSource;
-        }};
-        new Expectations() {{
-            dataSource.getConnection();
-            result = con;
-        }};
+        try (final MockedConstruction<InitialContext> mocked = mockConstruction(InitialContext.class, (mock, context) -> {
+            when(mock.lookup(lookupName)).thenReturn(dataSource);
+        })) {
+            when(dataSource.getConnection()).thenReturn(con);
 
-        BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
-        forJndi.setJndiResourceName(lookupName);
+            BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
+            forJndi.setJndiResourceName(lookupName);
 
-        TransactionManagerConnection connection = forJndi.getConnection(CONNECTION_NAME);
-        assertThat(connection, instanceOf(BasicDbConnection.class));
-        assertThat(((BasicDbConnection) connection).getConnection(), is(con));
+            TransactionManagerConnection connection = forJndi.getConnection(CONNECTION_NAME);
+            assertThat(connection, instanceOf(BasicDbConnection.class));
+            assertThat(((BasicDbConnection) connection).getConnection(), is(con));
+        }
     }
 
     /**
@@ -95,20 +88,20 @@ public class BasicDbConnectionFactoryForJndiTest {
         final String lookupName = "test";
         final Properties jndiProp = new Properties();
         jndiProp.putAll(property);
-        new Expectations() {{
-            jndiContext.lookup(lookupName);
-            result = dataSource;
-            dataSource.getConnection();
-            result = con;
-        }};
 
-        BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
-        forJndi.setJndiResourceName(lookupName);
-        forJndi.setJndiProperties(property);
+        try (final MockedConstruction<InitialContext> mocked = mockConstruction(InitialContext.class, (mock, context) -> {
+            when(mock.lookup(lookupName)).thenReturn(dataSource);
+        })) {
+            when(dataSource.getConnection()).thenReturn(con);
 
-        TransactionManagerConnection connection = forJndi.getConnection(CONNECTION_NAME);
-        assertThat(connection, instanceOf(BasicDbConnection.class));
-        assertThat(((BasicDbConnection) connection).getConnection(), is(con));
+            BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
+            forJndi.setJndiResourceName(lookupName);
+            forJndi.setJndiProperties(property);
+
+            TransactionManagerConnection connection = forJndi.getConnection(CONNECTION_NAME);
+            assertThat(connection, instanceOf(BasicDbConnection.class));
+            assertThat(((BasicDbConnection) connection).getConnection(), is(con));
+        }
     }
 
     /**
@@ -119,26 +112,22 @@ public class BasicDbConnectionFactoryForJndiTest {
     @Test
     public void testStatementReuseDefault() throws Exception {
         final String lookupName = "nablarch_test";
-        new Expectations() {{
-            jndiContext.lookup(lookupName);
-            result = dataSource;
-        }};
-        new Expectations() {{
-            dataSource.getConnection();
-            result = con;
-        }};
+        try (final MockedConstruction<InitialContext> mocked = mockConstruction(InitialContext.class, (mock, context) -> {
+            when(mock.lookup(lookupName)).thenReturn(dataSource);
+        })) {
+            when(dataSource.getConnection()).thenReturn(con);
 
-        BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
-        forJndi.setJndiResourceName(lookupName);
-        forJndi.setStatementFactory(new BasicStatementFactory());
-        TransactionManagerConnection connection = forJndi.getConnection(CONNECTION_NAME);
+            BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
+            forJndi.setJndiResourceName(lookupName);
+            forJndi.setStatementFactory(new BasicStatementFactory());
+            TransactionManagerConnection connection = forJndi.getConnection(CONNECTION_NAME);
 
-        String sql = "SELECT * FROM TEST_TABLE";
-        SqlPStatement statement1 = connection.prepareStatement(sql);
-        SqlPStatement statement2 = connection.prepareStatement(sql);
-        assertThat("デフォルト設定でSqlPStatementが同一のものが返ってくる。",
-                statement1, is(statement2));
-
+            String sql = "SELECT * FROM TEST_TABLE";
+            SqlPStatement statement1 = connection.prepareStatement(sql);
+            SqlPStatement statement2 = connection.prepareStatement(sql);
+            assertThat("デフォルト設定でSqlPStatementが同一のものが返ってくる。",
+                    statement1, is(statement2));
+        }
     }
 
     /**
@@ -149,27 +138,23 @@ public class BasicDbConnectionFactoryForJndiTest {
     @Test
     public void testStatementReuseFalse() throws Exception {
         final String lookupName = "nablarch_test";
-        new Expectations() {{
-            jndiContext.lookup(lookupName);
-            result = dataSource;
-        }};
-        new Expectations() {{
-            dataSource.getConnection();
-            result = con;
-        }};
+        try (final MockedConstruction<InitialContext> mocked = mockConstruction(InitialContext.class, (mock, context) -> {
+            when(mock.lookup(lookupName)).thenReturn(dataSource);
+        })) {
+            when(dataSource.getConnection()).thenReturn(con);
 
-        BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
-        forJndi.setJndiResourceName(lookupName);
-        forJndi.setStatementFactory(new BasicStatementFactory());
-        forJndi.setStatementReuse(false);
-        TransactionManagerConnection connection = forJndi.getConnection(CONNECTION_NAME);
+            BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
+            forJndi.setJndiResourceName(lookupName);
+            forJndi.setStatementFactory(new BasicStatementFactory());
+            forJndi.setStatementReuse(false);
+            TransactionManagerConnection connection = forJndi.getConnection(CONNECTION_NAME);
 
-        String sql = "SELECT * FROM TEST_TABLE";
-        SqlPStatement statement1 = connection.prepareStatement(sql);
-        SqlPStatement statement2 = connection.prepareStatement(sql);
-        assertThat("statementReuseの値をfalseに設定することでSqlPStatementが異なるものが返ってくる。",
-                statement1, not(is(statement2)));
-
+            String sql = "SELECT * FROM TEST_TABLE";
+            SqlPStatement statement1 = connection.prepareStatement(sql);
+            SqlPStatement statement2 = connection.prepareStatement(sql);
+            assertThat("statementReuseの値をfalseに設定することでSqlPStatementが異なるものが返ってくる。",
+                    statement1, not(is(statement2)));
+        }
     }
 
     /**
@@ -183,26 +168,25 @@ public class BasicDbConnectionFactoryForJndiTest {
     public void testGetConnectionError() throws Exception {
         // 想定する振る舞いを設定。
         final String lookupName = "test";
-        new Expectations() {{
-            jndiContext.lookup(lookupName);
-            result = new NamingException("リソースがない");
-        }};
+        try (final MockedConstruction<InitialContext> mocked = mockConstruction(InitialContext.class, (mock, context) -> {
+            when(mock.lookup(lookupName)).thenThrow(new NamingException("リソースがない"));
+        })) {
+            BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
+            forJndi.setJndiResourceName(lookupName);
 
-        BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
-        forJndi.setJndiResourceName(lookupName);
-        
-        Map<String, String> property = new HashMap<String, String>();
-        property.put(InitialContext.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.fscontext.RefFSContextFactory");
-        property.put(InitialContext.PROVIDER_URL, "file:./hoge/hoge");
-        forJndi.setJndiProperties(property);
+            Map<String, String> property = new HashMap<String, String>();
+            property.put(InitialContext.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.fscontext.RefFSContextFactory");
+            property.put(InitialContext.PROVIDER_URL, "file:./hoge/hoge");
+            forJndi.setJndiProperties(property);
 
-        try {
-            forJndi.getConnection(CONNECTION_NAME);
-            fail("例外が発生しないといけない.");
-        } catch (Exception e) {
-            assertThat(e.getMessage(), is("failed to DataSource lookup. jndiResourceName = [test]"));
-            assertThat(e.getCause(), not(nullValue()));
-            assertThat(e.getCause().getMessage(), is("リソースがない"));
+            try {
+                forJndi.getConnection(CONNECTION_NAME);
+                fail("例外が発生しないといけない.");
+            } catch (Exception e) {
+                assertThat(e.getMessage(), is("failed to DataSource lookup. jndiResourceName = [test]"));
+                assertThat(e.getCause(), not(nullValue()));
+                assertThat(e.getCause().getMessage(), is("リソースがない"));
+            }
         }
     }
 
@@ -225,26 +209,25 @@ public class BasicDbConnectionFactoryForJndiTest {
         final SQLException nativeException = new SQLException("connection取得時にエラー");
         final String message = "failed to get database connection. jndiResourceName = [test_error]";
         final DbConnectionException expected = new DbConnectionException(message, nativeException);
-        new Expectations() {{
-            jndiContext.lookup(lookupName);
-            result = dataSource;
-            dataSource.getConnection();
-            result = nativeException;
+
+        try (final MockedConstruction<InitialContext> mocked = mockConstruction(InitialContext.class, (mock, context) -> {
+            when(mock.lookup(lookupName)).thenReturn(dataSource);
+        })) {
+            when(dataSource.getConnection()).thenThrow(nativeException);
             // DataSourceが送出した例外を渡すことをverifyする。
-            exceptionFactory.createDbAccessException(message, nativeException, null);
-            result = expected;
-        }};
+            when(exceptionFactory.createDbAccessException(message, nativeException, null)).thenReturn(expected);
 
-        BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
-        forJndi.setJndiResourceName(lookupName);
-        forJndi.setJndiProperties(property);
-        forJndi.setDbAccessExceptionFactory(exceptionFactory);
+            BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
+            forJndi.setJndiResourceName(lookupName);
+            forJndi.setJndiProperties(property);
+            forJndi.setDbAccessExceptionFactory(exceptionFactory);
 
-        try {
-            forJndi.getConnection(CONNECTION_NAME);
-            fail("例外が発生しないといけない.");
-        } catch (DbConnectionException e) {
-            assertThat(e, is(expected));
+            try {
+                forJndi.getConnection(CONNECTION_NAME);
+                fail("例外が発生しないといけない.");
+            } catch (DbConnectionException e) {
+                assertThat(e, is(expected));
+            }
         }
     }
 
@@ -266,21 +249,21 @@ public class BasicDbConnectionFactoryForJndiTest {
         final String lookupName = "empty";
         final Properties jndiProp = new Properties();
         jndiProp.putAll(property);
-        new Expectations() {{
-            jndiContext.lookup(lookupName);
-            result = dataSource;
-            dataSource.getConnection();
-            result = null;
-        }};
-        BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
-        forJndi.setJndiResourceName(lookupName);
-        forJndi.setJndiProperties(property);
+        
+        try (final MockedConstruction<InitialContext> mocked = mockConstruction(InitialContext.class, (mock, context) -> {
+            when(mock.lookup(lookupName)).thenReturn(dataSource);
+        })) {
+            when(dataSource.getConnection()).thenReturn(null);
+            BasicDbConnectionFactoryForJndi forJndi = new BasicDbConnectionFactoryForJndi();
+            forJndi.setJndiResourceName(lookupName);
+            forJndi.setJndiProperties(property);
 
-        try {
-            forJndi.getConnection(CONNECTION_NAME);
-            fail("例外が発生しないといけない.");
-        } catch (IllegalStateException e) {
-            assertThat(e.getMessage(), is("database connection lookup result was null. JNDI resource name = [empty]"));
+            try {
+                forJndi.getConnection(CONNECTION_NAME);
+                fail("例外が発生しないといけない.");
+            } catch (IllegalStateException e) {
+                assertThat(e.getMessage(), is("database connection lookup result was null. JNDI resource name = [empty]"));
+            }
         }
     }
 }

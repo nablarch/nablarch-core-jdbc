@@ -1,27 +1,13 @@
 package nablarch.core.db.support;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
-import nablarch.core.db.connection.AppDbConnection;
-import nablarch.core.db.connection.DbConnectionContext;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import nablarch.core.db.dialect.Dialect;
 import nablarch.core.db.dialect.OracleDialect;
 import nablarch.core.db.statement.BasicSqlLoader;
+import nablarch.core.db.statement.BasicSqlPStatement;
 import nablarch.core.db.statement.ParameterizedSqlPStatement;
 import nablarch.core.db.statement.ResultSetIterator;
 import nablarch.core.db.statement.SqlCStatement;
@@ -32,15 +18,29 @@ import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedConstruction;
 
-import mockit.Expectations;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link DbAccessSupport}のテストクラス。
@@ -224,17 +224,15 @@ public class DbAccessSupportTest extends DbAccessSupport {
      */
     @Test(expected = IllegalStateException.class)
     public void testCountByParameterizedSql_recordNotFound() throws Exception {
-        final AppDbConnection connection = DbConnectionContext.getConnection();
-        new Expectations(connection) {{
-            final ParameterizedSqlPStatement st = connection.prepareParameterizedCountSqlStatementBySqlId(
-                    anyString, any);
+        try (final MockedConstruction<BasicSqlPStatement> mocked = mockConstruction(BasicSqlPStatement.class, (mock, context) -> {
+            ResultSetIterator rs = mock(ResultSetIterator.class);
+            when(mock.executeQueryByObject(any())).thenReturn(rs);
+            when(rs.next()).thenReturn(false);
+        })) {
 
-            final ResultSetIterator rows = st.executeQueryByObject(any);
-            rows.next(); result = false;
-        }};
-
-        DbAccessSupport support = new DbAccessSupport(getClass());
-        support.countByParameterizedSql("SQL001", new Object());
+            DbAccessSupport support = new DbAccessSupport(getClass());
+            support.countByParameterizedSql("SQL001", new Object());
+        }
     }
 
     public class ListSearchInfoImpl extends ListSearchInfo {

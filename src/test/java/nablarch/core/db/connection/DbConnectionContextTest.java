@@ -1,18 +1,17 @@
 package nablarch.core.db.connection;
 
-import static org.hamcrest.CoreMatchers.*;
+import nablarch.core.transaction.TransactionContext;
+import org.junit.After;
+import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import nablarch.core.transaction.TransactionContext;
-
-import org.junit.After;
-import org.junit.Test;
-
-import mockit.Mocked;
+import static org.mockito.Mockito.mock;
 
 
 /**
@@ -22,11 +21,9 @@ import mockit.Mocked;
  */
 public class DbConnectionContextTest {
 
-    @Mocked
-    private AppDbConnection mockCon1;
+    private final AppDbConnection mockCon1 = mock(AppDbConnection.class);
 
-    @Mocked
-    private AppDbConnection mockCon2;
+    private final AppDbConnection mockCon2 = mock(AppDbConnection.class);
 
     @After
     public void cleanUpContext() {
@@ -136,7 +133,9 @@ public class DbConnectionContextTest {
                 .containConnection(TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY));
     }
     @Test
-    public void testGetTransactionConnection(@Mocked TransactionManagerConnection tranConnection) {
+    public void testGetTransactionConnection() {
+        TransactionManagerConnection tranConnection = mock(TransactionManagerConnection.class);
+        
         /* デフォルトのConnectionName */
         DbConnectionContext.setConnection(tranConnection);
         assertThat("設定したTransactionManagerConnectionが取得できる。", DbConnectionContext.getTransactionManagerConnection(), sameInstance(tranConnection));

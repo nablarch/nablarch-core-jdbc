@@ -1,13 +1,11 @@
 package nablarch.core.db.util;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import nablarch.core.repository.SystemRepository;
+import org.hamcrest.collection.IsMapContaining;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -15,16 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import org.hamcrest.collection.IsMapContaining;
-
-import nablarch.core.repository.SystemRepository;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import mockit.Mock;
-import mockit.MockUp;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * {@link DbUtil}のテストクラス。
@@ -223,38 +217,6 @@ public class DbUtilTest {
         } catch (IllegalArgumentException e) {
             assertThat("存在しないフィールドへのアクセスでは例外を送出", e.getMessage(),
                     is("specified filed [notExistingField] is not declared in the class [nablarch.core.db.util.DbUtilTest$DbUtilTestEntity]."));
-        }
-    }
-
-    /**
-     * {@link DbUtil#getField(Object, String)} の異常系テスト
-     * IllegalAccessExceptionは通常発生しないため、Mockを使って送出している。
-     * @throws Exception
-     */
-    @Test
-    public void testGetFiledErrorIllegalAccessException(/*@Mocked final Field mockedField*/) throws Exception {
-        Object grandObjectValue = new Object();
-        Object parentObjectValue = new Object();
-        Object objectValue = new Object();
-        final DbUtilTestEntity bean = new DbUtilTestEntity(
-                "grandPrivateStringValue", -3, -2L, grandObjectValue,
-                "parentPrivateStringValue", -1, 0L, parentObjectValue,
-                "privateStringValue", 1, 2L, objectValue);
-        final String fieldName = "privateString";
-        new MockUp<DbUtil>() {
-            @Mock
-            private Field findDeclaredField(final Class<?> clazz, final String fieldName) throws IllegalAccessException
-            {
-                throw new IllegalAccessException();
-            }
-        };
-        try {
-            Object value = DbUtil.getField(bean, fieldName);
-        }
-        catch(RuntimeException e)
-        {
-            assertThat("メッセージが一致するか", e.getMessage(),
-                    is("failed to access the filed [privateString]  of the class [nablarch.core.db.util.DbUtilTest$DbUtilTestEntity].") );
         }
     }
 

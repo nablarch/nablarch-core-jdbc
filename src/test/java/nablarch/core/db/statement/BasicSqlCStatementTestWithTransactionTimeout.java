@@ -1,13 +1,5 @@
 package nablarch.core.db.statement;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Types;
-
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.DbConnectionContext;
 import nablarch.core.db.connection.TransactionManagerConnection;
@@ -20,7 +12,7 @@ import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.log.app.OnMemoryLogWriter;
-
+import nablarch.test.support.reflection.ReflectionUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -28,10 +20,16 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import mockit.Deencapsulation;
-import mockit.Delegate;
-import mockit.Expectations;
-import mockit.Mocked;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Types;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link BasicSqlCStatement}のトランザクションタイムアウトに関連したテスト。
@@ -117,31 +115,27 @@ public class BasicSqlCStatementTestWithTransactionTimeout {
      * @throws Exception
      */
     @Test(expected = TransactionTimeoutException.class)
-    public void timeoutTargetError(@Mocked final Connection mockConnection) throws Exception {
-        new Expectations() {{
-            final CallableStatement statement = mockConnection.prepareCall(anyString);
-            statement.execute();
-            result = new Delegate<CallableStatement>() {
-                boolean execute() throws SQLException {
-                    System.out.println("execute sleep...");
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+    public void timeoutTargetError() throws Exception {
+        final Connection mockConnection = mock(Connection.class, RETURNS_DEEP_STUBS);
+        
+        when(mockConnection.prepareCall(anyString()).execute()).then((context) -> {
+            System.out.println("execute sleep...");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
 
-                    throw new SQLException("timeoutとなる例外", null, 1013);
-                }
-            };
-        }};
+            throw new SQLException("timeoutとなる例外", null, 1013);
+        });
 
-        final Connection originalConnection = Deencapsulation.getField(testConnection, Connection.class);
+        final Connection originalConnection = ReflectionUtil.getFieldValue(testConnection, "con");
         try {
-            Deencapsulation.setField(testConnection, mockConnection);
+            ReflectionUtil.setFieldValue(testConnection, "con", mockConnection);
             sut = testConnection.prepareCall("BEGIN NULL; END;");
             sut.execute();
         } finally {
-            Deencapsulation.setField(testConnection, originalConnection);
+            ReflectionUtil.setFieldValue(testConnection, "con", originalConnection);
         }
     }
 }
