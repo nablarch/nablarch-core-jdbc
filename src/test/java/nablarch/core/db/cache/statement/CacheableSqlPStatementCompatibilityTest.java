@@ -27,7 +27,7 @@ import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,8 +47,8 @@ public class CacheableSqlPStatementCompatibilityTest extends BasicSqlPStatementT
      */
     private static final String PREFIX = "nablarch/core/db/statement/CacheableSqlPStatementCompatibilityTest#";
 
-    @ClassRule
-    public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
+    @Rule
+    public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
             "nablarch/core/db/statement/CacheableSqlPStatementCompatibilityTestConfiguration.xml");
 
     @BeforeClass

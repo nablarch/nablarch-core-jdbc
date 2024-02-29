@@ -47,6 +47,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.MessageFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -77,7 +79,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -146,6 +147,12 @@ public abstract class BasicSqlPStatementTestLogic {
         @Column(name = "boolean_col")
         public Boolean booleanCol;
 
+        @Column(name = "local_date_col", columnDefinition = "date")
+        public LocalDate localDateCol;
+
+        @Column(name = "local_date_time_col", columnDefinition = "timestamp")
+        public LocalDateTime localDateTimeCol;
+
         @Transient
         public String[] varchars;
 
@@ -206,6 +213,14 @@ public abstract class BasicSqlPStatementTestLogic {
             return booleanCol;
         }
 
+        public LocalDate getLocalDateCol() {
+            return localDateCol;
+        }
+
+        public LocalDateTime getLocalDateTimeCol() {
+            return localDateTimeCol;
+        }
+
         public String[] getVarchars() {
             return varchars;
         }
@@ -226,6 +241,8 @@ public abstract class BasicSqlPStatementTestLogic {
         public Integer integerCol;
         public Float floatCol;
         public Boolean booleanCol;
+        public LocalDate localDateCol;
+        public LocalDateTime localDateTimeCol;
         public String[] varchars;
     }
 
@@ -2544,6 +2561,50 @@ public abstract class BasicSqlPStatementTestLogic {
     }
 
     /**
+     * {@link BasicSqlPStatement#retrieve(Map)}で{@link LocalDate}を検索条件とした場合のテスト。
+     */
+    @Test
+    public void retrieve_map_with_localDate_condition() throws Exception {
+        LocalDate localdate = LocalDate.parse("2015-04-01");
+        TestEntity entity =  new TestEntity();
+        entity.id = "12345";
+        entity.localDateCol = localdate;
+        VariousDbTestHelper.insert(entity);
+
+        final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
+                "SELECT * FROM STATEMENT_TEST_TABLE WHERE LOCAL_DATE_COL = :localDate");
+
+        Map<String, Object> condition = new HashMap<>();
+        condition.put("localDate", localdate);
+
+        final SqlResultSet actual = sut.retrieve(condition);
+        assertThat("1レコード取得できること", actual.size(), is(1));
+        assertThat(((java.sql.Date)actual.get(0).get("LOCAL_DATE_COL")).toLocalDate(), is(localdate));
+    }
+
+    /**
+     * {@link BasicSqlPStatement#retrieve(Map)}で{@link LocalDate}を検索条件とした場合のテスト。
+     */
+    @Test
+    public void retrieve_map_with_localDateTime_condition() throws Exception {
+        LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
+        TestEntity entity =  new TestEntity();
+        entity.id = "12345";
+        entity.localDateTimeCol = localDateTime;
+        VariousDbTestHelper.insert(entity);
+
+        final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
+                "SELECT * FROM STATEMENT_TEST_TABLE WHERE LOCAL_DATE_TIME_COL = :localDateTime");
+
+        Map<String, Object> condition = new HashMap<>();
+        condition.put("localDateTime", localDateTime);
+
+        final SqlResultSet actual = sut.retrieve(condition);
+        assertThat("1レコード取得できること", actual.size(), is(1));
+        assertThat(((java.sql.Timestamp)actual.get(0).get("LOCAL_DATE_TIME_COL")).toLocalDateTime(), is(localDateTime));
+    }
+    
+    /**
      * {@link BasicSqlPStatement#retrieve(int, int, Map)}のテスト。
      */
     @Test
@@ -2883,6 +2944,50 @@ public abstract class BasicSqlPStatementTestLogic {
         final SqlResultSet actual = sut.retrieve(withEnum);
         assertThat(actual, hasSize(1));
         assertThat(actual.get(0).getString("entityId"), is("10002"));
+    }
+
+    /**
+     * フィールドに{@link LocalDate}を持つオブジェクトを条件に検索
+     */
+    @Test
+    public void retrieve_objectWithLocalDate() throws Exception {
+
+        LocalDate localdate = LocalDate.parse("2015-04-01");
+        TestEntity entity =  new TestEntity();
+        entity.id = "12345";
+        entity.localDateCol = localdate;
+        VariousDbTestHelper.insert(entity);
+
+        final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
+                "SELECT * FROM STATEMENT_TEST_TABLE WHERE LOCAL_DATE_COL = :localDateCol");
+        final TestEntity condition =  new TestEntity();
+        condition.localDateCol = localdate;
+
+        final SqlResultSet actual = sut.retrieve(condition);
+        assertThat("1レコード取得できること", actual.size(), is(1));
+        assertThat(((java.sql.Date)actual.get(0).get("LOCAL_DATE_COL")).toLocalDate(), is(localdate));
+    }
+
+    /**
+     * フィールドに{@link LocalDateTime}を持つオブジェクトを条件に検索
+     */
+    @Test
+    public void retrieve_objectWithLocalDateTime() {
+
+        LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
+        TestEntity entity =  new TestEntity();
+        entity.id = "12345";
+        entity.localDateTimeCol = localDateTime;
+        VariousDbTestHelper.insert(entity);
+
+        final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
+                "SELECT * FROM STATEMENT_TEST_TABLE WHERE LOCAL_DATE_TIME_COL = :localDateTimeCol");
+        final TestEntity condition =  new TestEntity();
+        condition.localDateTimeCol = localDateTime;
+
+        final SqlResultSet actual = sut.retrieve(condition);
+        assertThat("1レコード取得できること", actual.size(), is(1));
+        assertThat(((java.sql.Timestamp)actual.get(0).get("LOCAL_DATE_TIME_COL")).toLocalDateTime(), is(localDateTime));
     }
 
     /**
@@ -3416,11 +3521,15 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void executeUpdateByMap() throws Exception {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
-                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL) VALUES (:id, :long, :binary)");
+                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL, LOCAL_DATE_COL, LOCAL_DATE_TIME_COL) VALUES (:id, :long, :binary, :localDate, :localDateTime)");
+        LocalDate localdate = LocalDate.parse("2015-04-01");
+        LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
         Map<String, Object> insertData = new HashMap<String, Object>();
         insertData.put("id", "44444");
         insertData.put("long", 100L);
         insertData.put("binary", new byte[]{0x00, 0x01});
+        insertData.put("localDate", localdate);
+        insertData.put("localDateTime", localDateTime);
         final int result = sut.executeUpdateByMap(insertData);
 
         assertThat("1レコード登録される", result, is(1));
@@ -3430,6 +3539,8 @@ public abstract class BasicSqlPStatementTestLogic {
         assertThat(actual.id, is("44444"));
         assertThat(actual.longCol, is(100L));
         assertThat(actual.binaryCol, is(new byte[] {0x00, 0x01}));
+        assertThat(actual.localDateCol, is(localdate));
+        assertThat(actual.localDateTimeCol, is(localDateTime));
     }
 
     /**
@@ -3469,12 +3580,14 @@ public abstract class BasicSqlPStatementTestLogic {
 
     protected void doExecuteUpdateByObject(final boolean isFieldAccess) {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
-                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL) VALUES (:id, :longCol, :binaryCol)");
+                "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL, LOCAL_DATE_COL, LOCAL_DATE_TIME_COL) VALUES (:id, :longCol, :binaryCol, :localDateCol, :localDateTimeCol)");
         final Object data;
         final TestEntity entity = new TestEntity();
         entity.id = "44444";
         entity.longCol = 100L;
         entity.binaryCol = new byte[] {0x00, 0x01};
+        entity.localDateCol = LocalDate.parse("2015-04-01");
+        entity.localDateTimeCol =  LocalDateTime.parse("2015-04-01T12:34:56");
         if(!isFieldAccess) {
             data = entity;
         } else {
@@ -3483,6 +3596,8 @@ public abstract class BasicSqlPStatementTestLogic {
             fieldEntity.id = "44444";
             fieldEntity.longCol = 100L;
             fieldEntity.binaryCol = new byte[] {0x00, 0x01};
+            fieldEntity.localDateCol = LocalDate.parse("2015-04-01");
+            fieldEntity.localDateTimeCol =  LocalDateTime.parse("2015-04-01T12:34:56");
             data = fieldEntity;
         }
         final int result = sut.executeUpdateByObject(data);
@@ -3492,6 +3607,8 @@ public abstract class BasicSqlPStatementTestLogic {
         assertThat(actual.id, is(entity.id));
         assertThat(actual.longCol, is(entity.longCol));
         assertThat(actual.binaryCol, is(entity.binaryCol));
+        assertThat(actual.localDateCol, is(entity.localDateCol));
+        assertThat(actual.localDateTimeCol, is(entity.localDateTimeCol));
     }
 
     /**

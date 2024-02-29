@@ -10,7 +10,7 @@ import nablarch.core.db.statement.ParameterHolder.NopParameterHolder;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 
-import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -22,8 +22,8 @@ import org.junit.runner.RunWith;
 @RunWith(DatabaseTestRunner.class)
 public class BasicSqlPStatementTest extends BasicSqlPStatementTestLogic {
 
-    @ClassRule
-    public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
+    @Rule
+    public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
             "nablarch/core/db/statement/BasicSqlPStatementTestConfiguration.xml");
 
     @Override

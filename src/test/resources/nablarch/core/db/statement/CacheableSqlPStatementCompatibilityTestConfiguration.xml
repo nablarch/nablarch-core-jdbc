@@ -4,6 +4,7 @@
     xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ../../../../../../main/resources/component-configuration.xsd">
 
   <import file="db-default.xml" />
+  <import file="JSR310.xml" />
 
   <!-- ステートメントの設定 -->
   <component name="statementFactory"
