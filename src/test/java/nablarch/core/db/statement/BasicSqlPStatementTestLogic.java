@@ -20,7 +20,6 @@ import nablarch.core.db.statement.exception.SqlStatementException;
 import nablarch.core.db.util.DbUtil;
 import nablarch.core.exception.IllegalOperationException;
 import nablarch.core.log.Logger;
-import nablarch.core.repository.ObjectLoader;
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.transaction.TransactionContext;
 import nablarch.test.support.db.helper.TargetDb;
@@ -37,6 +36,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -64,8 +64,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -97,6 +97,7 @@ import static org.mockito.Mockito.when;
  */
 public abstract class BasicSqlPStatementTestLogic {
 
+    @SuppressWarnings({"JpaObjectClassSignatureInspection", "JpaDataSourceORMInspection"})
     @Entity
     @Table(name="statement_test_sqlserver")
     private static class SqlServerTestEntity {
@@ -108,6 +109,7 @@ public abstract class BasicSqlPStatementTestLogic {
         public String name;
     }
 
+    @SuppressWarnings({"JpaObjectClassSignatureInspection", "JpaDataSourceORMInspection"})
     @Entity
     @Table(name = "statement_test_table")
     public static class TestEntity {
@@ -273,7 +275,7 @@ public abstract class BasicSqlPStatementTestLogic {
     public void setUpTestData() throws Exception {
         dbCon = createConnectionFactory().getConnection(TransactionContext.DEFAULT_TRANSACTION_CONTEXT_KEY);
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2010, 6, 10);
+        calendar.set(2010, Calendar.JULY, 10);
         VariousDbTestHelper.setUpTable(
                 new TestEntity("10001", "a", 10000L, calendar.getTime(), 1, 1.1f),
                 new TestEntity("10002", "b", 20000L, calendar.getTime(), 2, 2.2f),
@@ -450,7 +452,7 @@ public abstract class BasicSqlPStatementTestLogic {
     public void testSetStatement() throws Exception {
         final SqlPStatement statement = dbCon.prepareStatement("SELECT * FROM STATEMENT_TEST_TABLE");
         ResultSetIterator iterator = statement.executeQuery();
-        assertThat(iterator.getStatement(), sameInstance((SqlStatement) statement));
+        assertThat(iterator.getStatement(), sameInstance(statement));
     }
 
     /**
@@ -500,7 +502,7 @@ public abstract class BasicSqlPStatementTestLogic {
     public void executeUpdate_withCondition() throws Exception {
 
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, 1, 16, 0, 0, 0);
+        calendar.set(2015, Calendar.FEBRUARY, 16, 0, 0, 0);
         Date testDate = calendar.getTime();
 
         final SqlPStatement statement = dbCon.prepareStatement(
@@ -611,11 +613,8 @@ public abstract class BasicSqlPStatementTestLogic {
         final boolean result = sut.execute();
         assertThat("検索処理なのでtrue", result, is(true));
 
-        final ResultSet rs = sut.getResultSet();
-        try {
+        try (ResultSet rs = sut.getResultSet()) {
             assertThat(rs, is(notNullValue()));
-        } finally {
-            rs.close();
         }
     }
 
@@ -637,8 +636,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#retrieve()}のSQLログのテスト。
-     *
-     * @throws Exception
      */
     @Test
     public void retrieve_writeSqlLog() throws Exception {
@@ -662,8 +659,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * ステートメント生成時に設定された検索処理のオプションを指定し、Dialectが変換する場合の
      * {@link BasicSqlPStatement#retrieve()}のSQLログのテスト。
-     *
-     * @throws Exception
      */
     @Test
     public void retrieve_writeSqlLogWithOptionOffsetSupport() throws Exception {
@@ -686,7 +681,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * ステートメント生成時に設定された検索処理のオプションを指定した場合のDialectが変換しない場合の
      * {@link BasicSqlPStatement#retrieve()}のSQLログのテスト。
-     * @throws Exception
      */
     @Test
     public void retrieve_writeSqlLogWithOptionOffsetUnSupport() throws Exception {
@@ -708,8 +702,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#retrieve()}で条件ありでデータの取得ができること
-     *
-     * @throws Exception
      */
     @Test
     public void retrieve_withCondition() throws Exception {
@@ -730,8 +722,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * ステートメント生成時に設定された検索処理のオプションが有効になることのテスト。<br />
      * {@link BasicSqlPStatement#retrieve()}で条件ありでデータの取得ができること
-     *
-     * @throws Exception
      */
     @Test
     public void retrieve_withStatementConditionWithSelectOption() throws Exception {
@@ -748,7 +738,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#retrieve()}で条件なしでデータが取得できること
-     * @throws Exception
      */
     @Test
     public void retrieve_withoutCondition() throws Exception {
@@ -760,7 +749,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#retrieve()}でリミット指定した検索処理ができること
-     * @throws Exception
      */
     @Test
     public void retrieve_withLimit() throws Exception {
@@ -781,7 +769,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#retrieve()}でオフセットとリミットを指定した検索処理ができること
-     * @throws Exception
      */
     @Test
     public void retrieve_withOffsetAndLimit() throws Exception {
@@ -799,8 +786,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * {@link BasicSqlPStatement#retrieve()}でオフセットが取得可能最大件数より大きい場合
      * レコードは取得されないこと。
-     *
-     * @throws Exception
      */
     @Test
     public void retrieve_offsetOverRecordCount() throws Exception {
@@ -864,8 +849,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * ステートメント生成時に設定された検索処理オプションで、startポジション, limitの値が無効な場合でも、例外が発生すること。
-     *
-     * @throws Exception
      */
     @Test(expected = IllegalOperationException.class)
     public void retrieve_withIgnoredOption() throws Exception {
@@ -875,8 +858,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * ステートメント生成時に設定された検索処理オプションを指定して、実行時に範囲指定した場合に例外が発生することを確認する。
-     *
-     * @throws Exception
      */
     @Test(expected = IllegalOperationException.class)
     public void retrieve_withDuplicatePagenate() throws Exception {
@@ -887,8 +868,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * {@link BasicSqlPStatement#retrieve()}でSQLExceptionが発生するケース
      * は、SqlStatementExceptionが送出されること。
-     *
-     * @throws Exception
      */
     @Test(expected = SqlStatementException.class)
     public void retrieve_SQLException() throws Exception {
@@ -905,8 +884,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * {@link BasicSqlPStatement#retrieve()}で非キャッチ例外が発生するケースは、
      * その例外がそのまま送出されること。
-     *
-     * @throws Exception
      */
     @Test(expected = IllegalStateException.class)
     public void retrieve_RuntimeException() throws Exception {
@@ -923,8 +900,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * {@link BasicSqlPStatement#retrieve()}でError系が発生するケースは、
      * その例外がそのまま送出されること。
-     *
-     * @throws Exception
      */
     @Test(expected = StackOverflowError.class)
     public void retrieve_Error() throws Exception {
@@ -941,8 +916,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * {@link BasicSqlPStatement#retrieve()}でfinallyのリソース開放で例外が発生する場合
      * その例外がそのまま送出されること。
-     *
-     * @throws Exception
      */
     @Test
     public void retrieve_finallyError() throws Exception {
@@ -969,8 +942,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * {@link BasicSqlPStatement#retrieve()}でtryとfinallyの共に例外が発生する場合、
      * tryブロックの例外が送出されfinallyブロックの例外はログ出力されること。
-     *
-     * @throws Exception
      */
     @Test
     public void retrieve_tryAndFinallyError() throws Exception {
@@ -996,8 +967,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#addBatch()}のテスト。
-     *
-     * @throws Exception
      */
     @Test
     public void addBatch() throws Exception {
@@ -1018,8 +987,6 @@ public abstract class BasicSqlPStatementTestLogic {
     /**
      * {@link BasicSqlPStatement#addBatch()}でSQLExceptionが発生する場合、
      * DbAccessExceptionが発生する。
-     *
-     * @throws Exception
      */
     @Test(expected = DbAccessException.class)
     public void addBatch_SQLException() throws Exception {
@@ -1133,7 +1100,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#clearBatch()} のテスト。
-     *
      * パラメータ化されたステートメントオブジェクトでも使用できることを確認する。
      */
     @Test
@@ -1169,8 +1135,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#setNull(int, int)}のテスト。
-     *
-     * @throws Exception
      */
     @Test
     public void setNull() throws Exception {
@@ -1239,8 +1203,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#setBoolean(int, boolean)}のテスト。
-     *
-     * @throws Exception
      */
     @Test
     public void setBoolean() throws Exception {
@@ -1720,7 +1682,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setDate() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, 1, 20, 0, 0, 0);
+        calendar.set(2015, Calendar.FEBRUARY, 20, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
         final java.sql.Date insertDate = new java.sql.Date(calendar.getTimeInMillis());
@@ -1736,7 +1698,7 @@ public abstract class BasicSqlPStatementTestLogic {
         dbCon.commit();
 
         final TestEntity actual = VariousDbTestHelper.findById(TestEntity.class, "99999");
-        assertThat("日付が登録出来ている", actual.dateCol, is((Date) insertDate));
+        assertThat("日付が登録出来ている", actual.dateCol, is(insertDate));
     }
 
     /**
@@ -1745,7 +1707,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setDate_writeSqlLog() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, 1, 20, 0, 0, 0);
+        calendar.set(2015, Calendar.FEBRUARY, 20, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
         final java.sql.Date insertDate = new java.sql.Date(calendar.getTimeInMillis());
@@ -1785,7 +1747,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setTime() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(1970, 1, 1, 1, 2, 3);
+        calendar.set(1970, Calendar.FEBRUARY, 1, 1, 2, 3);
         calendar.set(Calendar.MILLISECOND, 0);
         final Time insertTime = new Time(calendar.getTimeInMillis());
 
@@ -1809,7 +1771,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setTime_writeSqlLog() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(1970, 1, 1, 1, 2, 3);
+        calendar.set(1970, Calendar.FEBRUARY, 1, 1, 2, 3);
         calendar.set(Calendar.MILLISECOND, 0);
         final Time insertTime = new Time(calendar.getTimeInMillis());
 
@@ -1869,7 +1831,7 @@ public abstract class BasicSqlPStatementTestLogic {
     @Test
     public void setTimestamp_writeSqlLog() throws Exception {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, 1, 19, 1, 2, 3);
+        calendar.set(2015, Calendar.FEBRUARY, 19, 1, 2, 3);
         calendar.set(Calendar.MILLISECOND, 321);
         final Timestamp insertTimestamp = new Timestamp(calendar.getTimeInMillis());
 
@@ -1911,7 +1873,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, VARCHAR_COL) VALUES (?, ?)");
         sut.setString(1, "55555");
-        InputStream stream = new ByteArrayInputStream("12345".getBytes("utf-8"));
+        InputStream stream = new ByteArrayInputStream("12345".getBytes(StandardCharsets.UTF_8));
         sut.setAsciiStream(2, stream, 2);
         final int inserted = sut.executeUpdate();
         stream.close();
@@ -1926,7 +1888,7 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#setAsciiStream(int, InputStream, int)}のテスト。
-     *
+     * <p>
      * ※SQLServerは、Streamの長さとlengthを一致させる必要があるため別でテストを実施
      */
     @Test
@@ -1935,7 +1897,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, VARCHAR_COL) VALUES (?, ?)");
         sut.setString(1, "55555");
-        InputStream stream = new ByteArrayInputStream("12345".getBytes("utf-8"));
+        InputStream stream = new ByteArrayInputStream("12345".getBytes(StandardCharsets.UTF_8));
         sut.setAsciiStream(2, stream, 5);
         final int inserted = sut.executeUpdate();
         stream.close();
@@ -1956,7 +1918,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final SqlPStatement sut = dbCon.prepareStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, VARCHAR_COL) VALUES (?, ?)");
         sut.setString(1, "55555");
-        InputStream stream = new ByteArrayInputStream("12345".getBytes("utf-8"));
+        InputStream stream = new ByteArrayInputStream("12345".getBytes(StandardCharsets.UTF_8));
         sut.setAsciiStream(2, stream, 5);
         sut.executeUpdate();
         stream.close();
@@ -2113,13 +2075,10 @@ public abstract class BasicSqlPStatementTestLogic {
         sut.setString(1, "10002");
         final boolean result = sut.execute();
         assertThat(result, is(true));
-        final ResultSet rs = sut.getResultSet();
-        try {
+        try (ResultSet rs = sut.getResultSet()) {
             assertThat(rs.next(), is(true));
             assertThat(rs.getString(1), is("10002"));
             assertThat(rs.next(), is(false));
-        } finally {
-            rs.close();
         }
     }
 
@@ -2231,7 +2190,7 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#setMaxRows(int)}と{@link BasicSqlPStatement#getMaxRows()}のテスト。
-     *
+     * <p>
      * パラメータ化されたステートメントオブジェクトでも使用できることを確認する。
      */
     @Test
@@ -2288,7 +2247,7 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#setFetchSize(int)}と{@link BasicSqlPStatement#getFetchSize()}のテスト。
-     *
+     * <p>
      * パラメータ化されたステートメントオブジェクトでも使用できることを確認する。
      */
     @Test
@@ -2401,7 +2360,7 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#setBinaryStream(int, InputStream, int)}のテスト。
-     *
+     * <p>
      * ※SQLServerはStreamの長さとlengthを一致させる必要がある。
      */
     @Test
@@ -2514,7 +2473,7 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#getMoreResults()}のテスト
-     *
+     * <p>
      * Mockを使ってテストを行う。
      */
     @Test
@@ -2551,7 +2510,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = :id");
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "10002");
 
         final SqlResultSet actual = sut.retrieve(condition);
@@ -2612,7 +2571,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID <= :id ORDER BY ENTITY_ID");
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "10002");
 
         final SqlResultSet firstRow = sut.retrieve(1, 1, condition);
@@ -2642,7 +2601,7 @@ public abstract class BasicSqlPStatementTestLogic {
     public void retrieve_map_withSelectOption() throws Exception {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID >= :id ORDER BY ENTITY_ID", new SelectOption(2, 2));
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "10001");
 
         final SqlResultSet actual = sut.retrieve(condition);
@@ -2660,7 +2619,7 @@ public abstract class BasicSqlPStatementTestLogic {
     public void retrieve_map_withDuplicatePagenate() throws Exception {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID <= :id ORDER BY ENTITY_ID", new SelectOption(2, 2));
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "10002");
         sut.retrieve(1, 1, condition);
     }
@@ -2673,7 +2632,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID <= :id ORDER BY ENTITY_ID");
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "10002");
         sut.retrieve(1, 2, condition);
 
@@ -2699,7 +2658,7 @@ public abstract class BasicSqlPStatementTestLogic {
         setDialect(dbCon, new OffsetSupportDialcet(convertedSql));
         ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID <= :id",
                 new SelectOption(2, 3));
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "1");
         sut.retrieve(condition);
         assertLog("開始ログ",
@@ -2720,7 +2679,7 @@ public abstract class BasicSqlPStatementTestLogic {
     public void retrieve_writeLogWithMapOffsetUnSupport() throws Exception {
         setDialect(dbCon, new DefaultDialect());
         ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement("SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID <= :id", new SelectOption(2, 3));
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "1");
         sut.retrieve(condition);
         assertLog("開始ログ",
@@ -2746,7 +2705,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID LIKE :id% ORDER BY ENTITY_ID");
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "1");
         final SqlResultSet actual = sut.retrieve(1, 2, condition);
         assertThat(actual.size(), is(2));
@@ -2765,7 +2724,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID LIKE :%id% ORDER BY ENTITY_ID");
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "000");
         final SqlResultSet actual = sut.retrieve(condition);
         assertThat(actual.size(), is(4));
@@ -2789,7 +2748,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID LIKE :%id ORDER BY ENTITY_ID");
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "0002");
         final SqlResultSet actual = sut.retrieve(condition);
         assertThat(actual.size(), is(1));
@@ -2807,7 +2766,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE VARCHAR_COL LIKE :condition% ORDER BY ENTITY_ID");
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("condition", "c_\\");
         final SqlResultSet actual = sut.retrieve(condition);
         assertThat(actual.size(), is(1));
@@ -2825,7 +2784,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = :id AND VARCHAR_COL = :varcharCol ORDER BY ENTITY_ID");
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "0002");
         try {
             sut.retrieve(condition);
@@ -2848,7 +2807,7 @@ public abstract class BasicSqlPStatementTestLogic {
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = :id AND VARCHAR_COL = :varcharCol ORDER BY ENTITY_ID");
         ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "10002");
         condition.put("varcharCol", "b");
 
@@ -2899,13 +2858,10 @@ public abstract class BasicSqlPStatementTestLogic {
      */
     private void setFieldAccessMode() {
         //fieldアクセス
-        SystemRepository.load(new ObjectLoader() {
-            @Override
-            public Map<String, Object> load() {
-                final Map<String, Object> map = new HashMap<String,Object>();
-                map.put("nablarch.dbAccess.isFieldAccess", "true");
-                return map;
-            }
+        SystemRepository.load(() -> {
+            final Map<String, Object> map = new HashMap<>();
+            map.put("nablarch.dbAccess.isFieldAccess", "true");
+            return map;
         });
         assertThat("Fieldアクセスか", DbUtil.isFieldAccess(), is(true));
 
@@ -2930,7 +2886,7 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * フィールドにenumオブジェクトを持つオブジェクトを条件に検索。
-     *
+     * <p>
      * アクセッサ(getter)で文字列表現に変換して、その条件で検索できていることを検証する。
      */
     @Test
@@ -3408,7 +3364,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = :id");
 
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "10002");
 
         final ResultSetIterator actual = sut.executeQueryByMap(condition);
@@ -3430,7 +3386,7 @@ public abstract class BasicSqlPStatementTestLogic {
                 "SELECT * FROM STATEMENT_TEST_TABLE WHERE ENTITY_ID = :id");
 
         ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
-        Map<String, String> condition = new HashMap<String, String>();
+        Map<String, String> condition = new HashMap<>();
         condition.put("id", "10002");
         sut.executeQueryByMap(condition);
     }
@@ -3445,7 +3401,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#executeQueryByObject(Object)}  (Fieldアクセステスト用)
-     * @throws Exception
      */
     @Test
     public void executeQueryByObjectViaFieldAccess() throws Exception {
@@ -3524,7 +3479,7 @@ public abstract class BasicSqlPStatementTestLogic {
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL, LOCAL_DATE_COL, LOCAL_DATE_TIME_COL) VALUES (:id, :long, :binary, :localDate, :localDateTime)");
         LocalDate localdate = LocalDate.parse("2015-04-01");
         LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
-        Map<String, Object> insertData = new HashMap<String, Object>();
+        Map<String, Object> insertData = new HashMap<>();
         insertData.put("id", "44444");
         insertData.put("long", 100L);
         insertData.put("binary", new byte[]{0x00, 0x01});
@@ -3555,7 +3510,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL) VALUES (:id, :long, :binary)");
         ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
-        Map<String, Object> insertData = new HashMap<String, Object>();
+        Map<String, Object> insertData = new HashMap<>();
         insertData.put("id", "44444");
         insertData.put("long", 100L);
         insertData.put("binary", new byte[] {0x00, 0x01});
@@ -3587,7 +3542,7 @@ public abstract class BasicSqlPStatementTestLogic {
         entity.longCol = 100L;
         entity.binaryCol = new byte[] {0x00, 0x01};
         entity.localDateCol = LocalDate.parse("2015-04-01");
-        entity.localDateTimeCol =  LocalDateTime.parse("2015-04-01T12:34:56");
+        entity.localDateTimeCol = LocalDateTime.parse("2015-04-01T12:34:56");
         if(!isFieldAccess) {
             data = entity;
         } else {
@@ -3597,10 +3552,10 @@ public abstract class BasicSqlPStatementTestLogic {
             fieldEntity.longCol = 100L;
             fieldEntity.binaryCol = new byte[] {0x00, 0x01};
             fieldEntity.localDateCol = LocalDate.parse("2015-04-01");
-            fieldEntity.localDateTimeCol =  LocalDateTime.parse("2015-04-01T12:34:56");
+            fieldEntity.localDateTimeCol = LocalDateTime.parse("2015-04-01T12:34:56");
             data = fieldEntity;
         }
-        final int result = sut.executeUpdateByObject(data);
+        sut.executeUpdateByObject(data);
         dbCon.commit();
 
         final TestEntity actual = VariousDbTestHelper.findById(TestEntity.class, "44444");
@@ -3662,7 +3617,7 @@ public abstract class BasicSqlPStatementTestLogic {
     public void addBatchMap() throws Exception {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL) VALUES (:id, :long, :binary)");
-        Map<String, Object> insertData = new HashMap<String, Object>();
+        Map<String, Object> insertData = new HashMap<>();
         insertData.put("id", "44444");
         insertData.put("long", 100L);
         insertData.put("binary", new byte[]{0x00, 0x01});
@@ -3699,7 +3654,7 @@ public abstract class BasicSqlPStatementTestLogic {
         final ParameterizedSqlPStatement sut = dbCon.prepareParameterizedSqlStatement(
                 "INSERT INTO STATEMENT_TEST_TABLE (ENTITY_ID, LONG_COL, BINARY_COL) VALUES (:id, :long, :binary)");
         ReflectionUtil.setFieldValue(sut, "statement", mockStatement);
-        Map<String, Object> insertData = new HashMap<String, Object>();
+        Map<String, Object> insertData = new HashMap<>();
         insertData.put("id", "44444");
         insertData.put("long", 100L);
         insertData.put("binary", new byte[]{0x00, 0x01});
@@ -3717,7 +3672,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * {@link BasicSqlPStatement#addBatchObject(Object)}のテスト。(Fieldアクセステスト用)
-     * @throws Exception
      */
     @Test
     public void addBatchObjectViaFieldAccess() throws Exception {
@@ -4120,18 +4074,15 @@ public abstract class BasicSqlPStatementTestLogic {
         final int inserted = sut.executeUpdate();
         assertThat(inserted, is(1));
 
-        final ResultSet actual = sut.getGeneratedKeys();
-        try {
+        try (ResultSet actual = sut.getGeneratedKeys()) {
             assertThat(actual.next(), is(true));
             assertThat(actual.getString(1), is("12345"));
-        } finally {
-            actual.close();
         }
     }
 
     /**
      * {@link BasicSqlPStatement#getGeneratedKeys()}のテスト。
-     *
+     * <p>
      * ※SQLServerは、自動生成キーは自動生成カラムのみ対応
      */
     @Test
@@ -4144,12 +4095,9 @@ public abstract class BasicSqlPStatementTestLogic {
         final int inserted = sut.executeUpdate();
         assertThat(inserted, is(1));
 
-        final ResultSet actual = sut.getGeneratedKeys();
-        try {
+        try (ResultSet actual = sut.getGeneratedKeys()) {
             assertThat(actual.next(), is(true));
             assertThat(actual.getLong(1), is(1L));
-        } finally {
-            actual.close();
         }
     }
 
@@ -4207,9 +4155,12 @@ public abstract class BasicSqlPStatementTestLogic {
                 return;
             }
         }
-        throw new AssertionError(MessageFormat.format("expected log pattern not found. message = {0}\n"
-                        + " expected pattern = [{1}]\n"
-                        + " actual log messages = [\n{2}\n]",
+        throw new AssertionError(MessageFormat.format("""
+                        expected log pattern not found. message = {0}
+                         expected pattern = [{1}]
+                         actual log messages = [
+                        {2}
+                        ]""",
                 msg,
                 pattern.pattern(),
                 logMessages.toString()));
@@ -4256,7 +4207,6 @@ public abstract class BasicSqlPStatementTestLogic {
 
     /**
      * CLOBカラムが登録できることをテストする。
-     * @throws Exception
      */
     @Test
     @TargetDb(include = {TargetDb.Db.ORACLE, TargetDb.Db.DB2, TargetDb.Db.H2})
@@ -4274,7 +4224,6 @@ public abstract class BasicSqlPStatementTestLogic {
     
     /**
      * TEXTカラムが登録できることをテストする。
-     * @throws Exception
      */
     @Test
     @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
