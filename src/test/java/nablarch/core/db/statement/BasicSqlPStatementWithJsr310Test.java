@@ -5,7 +5,6 @@ import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.statement.entity.Jsr310Column;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
-import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,7 +40,6 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      * （{@link LocalDate}, {@link LocalDateTime}）のオブジェクトの登録確認テスト。
      */
     @Test
-    @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
     public void executeUpdateByMap_with_jsr310() throws Exception {
         VariousDbTestHelper.createTable(Jsr310Column.class);
 
@@ -56,13 +54,13 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
         insertData.put("localDateTime", localDateTime);
         final int result = sut.executeUpdateByMap(insertData);
 
-        assertThat("1レコード登録される", result, is(1));
+        assertThat("1レコード登録されること", result, is(1));
         dbCon.commit();
 
         final Jsr310Column actual = VariousDbTestHelper.findById(Jsr310Column.class, 1);
-        assertThat(actual.id, is(1L));
-        assertThat(actual.localDate, is(localDate));
-        assertThat(actual.localDateTime, is(localDateTime));
+        assertThat("idが登録用Mapに設定した値であること", actual.id, is(1L));
+        assertThat("localDateが登録用Mapに設定した値であること",actual.localDate, is(localDate));
+        assertThat("localDateTimeが登録用Mapに設定した値であること",actual.localDateTime, is(localDateTime));
     }
 
     /**
@@ -70,7 +68,6 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      * （{@link LocalDate}, {@link LocalDateTime}）のフィールドを持つEntityのデータの登録確認テスト。
      */
     @Test
-    @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
     public void executeUpdateByObject_with_jsr310() throws Exception {
         VariousDbTestHelper.createTable(Jsr310Column.class);
 
@@ -86,22 +83,21 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
         entity.localDateTime = localDateTime;
         
         int result = sut.executeUpdateByObject(entity);
-        assertThat("1レコード登録される", result, is(1));
+        assertThat("1レコード登録されること", result, is(1));
         dbCon.commit();
 
         dbCon.commit();
 
         final Jsr310Column actual = VariousDbTestHelper.findById(Jsr310Column.class, 1);
-        assertThat(actual.id, is(1L));
-        assertThat(actual.localDate, is(localDate));
-        assertThat(actual.localDateTime, is(localDateTime));
+        assertThat("idが登録用オブジェクトに設定した値であること", actual.id, is(1L));
+        assertThat("localDateが登録用オブジェクトに設定した値であること",actual.localDate, is(localDate));
+        assertThat("localDateTimeが登録用オブジェクトに設定した値であること",actual.localDateTime, is(localDateTime));
     }
 
     /**
      * {@link BasicSqlPStatement#retrieve(Map)}で{@link LocalDate}を検索条件とした場合のテスト。
      */
     @Test
-    @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
     public void retrieve_map_with_localDate_condition() throws Exception {
         VariousDbTestHelper.createTable(Jsr310Column.class);
         LocalDate localDate = LocalDate.parse("2015-04-01");
@@ -118,14 +114,14 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
 
         final SqlResultSet actual = sut.retrieve(condition);
         assertThat("1レコード取得できること", actual.size(), is(1));
-        assertThat(((java.sql.Date)actual.get(0).get("LOCAL_DATE")).toLocalDate(), is(localDate));
+        assertThat("localDateが検索条件Mapに設定した値であること",
+                ((java.sql.Date)actual.get(0).get("LOCAL_DATE")).toLocalDate(), is(localDate));
     }
 
     /**
      * {@link BasicSqlPStatement#retrieve(Map)}で{@link LocalDateTime}を検索条件とした場合のテスト。
      */
     @Test
-    @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
     public void retrieve_map_with_localDateTime_condition() throws Exception {
         VariousDbTestHelper.createTable(Jsr310Column.class);
         LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
@@ -142,14 +138,14 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
 
         final SqlResultSet actual = sut.retrieve(condition);
         assertThat("1レコード取得できること", actual.size(), is(1));
-        assertThat(((java.sql.Timestamp)actual.get(0).get("LOCAL_DATE_TIME")).toLocalDateTime(), is(localDateTime));
+        assertThat("localDateTimeが検索条件Mapに設定した値であること",
+                ((java.sql.Timestamp)actual.get(0).get("LOCAL_DATE_TIME")).toLocalDateTime(), is(localDateTime));
     }
     
     /**
      * {@link BasicSqlPStatement#retrieve(Object)}で{@link LocalDate}を検索条件とした場合のテスト。
      */
     @Test
-    @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
     public void retrieve_object_with_localDate_condition() throws Exception {
         VariousDbTestHelper.createTable(Jsr310Column.class);
         LocalDate localDate = LocalDate.parse("2015-04-01");
@@ -165,7 +161,8 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
 
         final SqlResultSet actual = sut.retrieve(condition);
         assertThat("1レコード取得できること", actual.size(), is(1));
-        assertThat(((java.sql.Date)actual.get(0).get("LOCAL_DATE")).toLocalDate(), is(localDate));
+        assertThat("localDateが検索条件オブジェクトに設定した値であること",
+                ((java.sql.Date)actual.get(0).get("LOCAL_DATE")).toLocalDate(), is(localDate));
 
     }
 
@@ -173,7 +170,6 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      * {@link BasicSqlPStatement#retrieve(Object)}で{@link LocalDateTime}を検索条件とした場合のテスト。
      */
     @Test
-    @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.DB2})
     public void retrieve_object_with_localDateTime_condition() throws Exception {
         VariousDbTestHelper.createTable(Jsr310Column.class);
         LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
@@ -189,7 +185,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
 
         final SqlResultSet actual = sut.retrieve(condition);
         assertThat("1レコード取得できること", actual.size(), is(1));
-        assertThat(((java.sql.Timestamp)actual.get(0).get("LOCAL_DATE_TIME")).toLocalDateTime(), is(localDateTime));
+        assertThat("localDateTimeが検索条件オブジェクトに設定した値であること",
+                ((java.sql.Timestamp)actual.get(0).get("LOCAL_DATE_TIME")).toLocalDateTime(), is(localDateTime));
     }
-
 }
