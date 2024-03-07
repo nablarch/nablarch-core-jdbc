@@ -21,3 +21,4 @@ nablarch.core.db.transaction.SimpleDbTransactionExecutorTest$TestEntity
 nablarch.core.db.statement.entity.ClobColumn
 nablarch.core.db.statement.entity.TextColumn
 nablarch.core.db.statement.entity.Jsr310Column
+nablarch.core.db.statement.entity.Jsr310ColumnForSqlServer
