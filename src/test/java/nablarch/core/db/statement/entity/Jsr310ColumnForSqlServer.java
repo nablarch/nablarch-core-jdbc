@@ -5,17 +5,16 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Date and Time API（JSR-310）の型（{@link LocalDate}, {@link LocalDateTime}）の動作検証用エンティティ（SQLServer以外）
+ * Date and Time API（JSR-310）の型（{@link LocalDate}, {@link LocalDateTime}）の動作検証用エンティティ（SQLServer用）
  */
 @SuppressWarnings("JpaDataSourceORMInspection")
 @Entity
-@Table(name = "jsr310_column")
-public class Jsr310Column {
+@Table(name = "jsr310_column_sqlserver")
+public class Jsr310ColumnForSqlServer {
 
     @Id
     @Column(name = "id", length = 18)
@@ -23,8 +22,9 @@ public class Jsr310Column {
 
     @Column(name = "local_date", columnDefinition = "date")
     public LocalDate localDate;
-
-    @Column(name = "local_date_time", columnDefinition = "timestamp")
+    
+    // "timestamp"で生成されるTIMESTAMP型はSQLSererだと日時型ではないため、DATEIME2型にする
+    @Column(name = "local_date_time", columnDefinition = "datetime2")
     public LocalDateTime localDateTime;
 
     @Id
