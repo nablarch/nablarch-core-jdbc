@@ -55,13 +55,13 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
         insertData.put("localDateTime", localDateTime);
         final int result = sut.executeUpdateByMap(insertData);
 
-        assertThat("1レコード登録されること", result, is(1));
+        assertThat(result, is(1));
         dbCon.commit();
 
         final Jsr310Column actual = VariousDbTestHelper.findById(Jsr310Column.class, 1);
-        assertThat("idが登録用Mapに設定した値であること", actual.id, is(1L));
-        assertThat("localDateが登録用Mapに設定した値であること",actual.localDate, is(localDate));
-        assertThat("localDateTimeが登録用Mapに設定した値であること",actual.localDateTime, is(localDateTime));
+        assertThat(actual.id, is(1L));
+        assertThat(actual.localDate, is(localDate));
+        assertThat(actual.localDateTime, is(localDateTime));
     }
 
     /**
@@ -84,15 +84,15 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
         entity.localDateTime = localDateTime;
 
         int result = sut.executeUpdateByObject(entity);
-        assertThat("1レコード登録されること", result, is(1));
+        assertThat(result, is(1));
         dbCon.commit();
 
         dbCon.commit();
 
         final Jsr310Column actual = VariousDbTestHelper.findById(Jsr310Column.class, 1);
-        assertThat("idが登録用オブジェクトに設定した値であること", actual.id, is(1L));
-        assertThat("localDateが登録用オブジェクトに設定した値であること",actual.localDate, is(localDate));
-        assertThat("localDateTimeが登録用オブジェクトに設定した値であること",actual.localDateTime, is(localDateTime));
+        assertThat(actual.id, is(1L));
+        assertThat(actual.localDate, is(localDate));
+        assertThat(actual.localDateTime, is(localDateTime));
     }
 
     /**
@@ -115,9 +115,8 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
         condition.put("localDate", localDate.minusDays(1));
 
         final SqlResultSet actual = sut.retrieve(condition);
-        assertThat("1レコード取得できること", actual.size(), is(1));
-        assertThat("localDateが検索条件Mapに設定した値であること",
-                new Timestamp(actual.get(0).getDate("LOCAL_DATE").getTime()).toLocalDateTime().toLocalDate(), is(localDate));
+        assertThat(actual.size(), is(1));
+        assertThat(new Timestamp(actual.get(0).getDate("LOCAL_DATE").getTime()).toLocalDateTime().toLocalDate(), is(localDate));
     }
 
     /**
@@ -140,9 +139,8 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
         condition.put("localDateTime", localDateTime.minusSeconds(1));
 
         final SqlResultSet actual = sut.retrieve(condition);
-        assertThat("1レコード取得できること", actual.size(), is(1));
-        assertThat("localDateTimeが検索条件Mapに設定した値であること",
-                new Timestamp(actual.get(0).getDate("LOCAL_DATE_TIME").getTime()).toLocalDateTime(), is(localDateTime));
+        assertThat(actual.size(), is(1));
+        assertThat(new Timestamp(actual.get(0).getDate("LOCAL_DATE_TIME").getTime()).toLocalDateTime(), is(localDateTime));
     }
 
     /**
@@ -164,9 +162,8 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
         condition.localDate = localDate.minusDays(1);
 
         final SqlResultSet actual = sut.retrieve(condition);
-        assertThat("1レコード取得できること", actual.size(), is(1));
-        assertThat("localDateが検索条件オブジェクトに設定した値であること",
-                new Timestamp(actual.get(0).getDate("LOCAL_DATE").getTime()).toLocalDateTime().toLocalDate(), is(localDate));
+        assertThat(actual.size(), is(1));
+        assertThat(new Timestamp(actual.get(0).getDate("LOCAL_DATE").getTime()).toLocalDateTime().toLocalDate(), is(localDate));
 
     }
 
@@ -189,8 +186,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
         condition.localDateTime = localDateTime.minusSeconds(1);
 
         final SqlResultSet actual = sut.retrieve(condition);
-        assertThat("1レコード取得できること", actual.size(), is(1));
-        assertThat("localDateTimeが検索条件オブジェクトに設定した値であること",
-                new Timestamp(actual.get(0).getDate("LOCAL_DATE_TIME").getTime()).toLocalDateTime(), is(localDateTime));
+        assertThat(actual.size(), is(1));
+        assertThat( new Timestamp(actual.get(0).getDate("LOCAL_DATE_TIME").getTime()).toLocalDateTime(), is(localDateTime));
     }
 }
