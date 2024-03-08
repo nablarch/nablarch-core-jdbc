@@ -23,7 +23,7 @@ public class Jsr310ColumnForSqlServer {
     @Column(name = "local_date", columnDefinition = "date")
     public LocalDate localDate;
     
-    // "timestamp"で生成されるTIMESTAMP型はSQLSererだと日時型ではないため、DATEIME2型にする
+    // "timestamp"で生成されるTIMESTAMP型はSQLSererだと日時型ではないため、DATETIME2型にする
     @Column(name = "local_date_time", columnDefinition = "datetime2")
     public LocalDateTime localDateTime;
 

@@ -46,7 +46,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(exclude = Db.SQL_SERVER)
-    public void executeUpdateByMap_with_jsr310() throws Exception {
+    public void executeUpdateByMap_with_jsr310() {
         VariousDbTestHelper.createTable(Jsr310Column.class);
 
         LocalDate localDate = LocalDate.parse("2015-04-01");
@@ -75,7 +75,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(include = Db.SQL_SERVER)
-    public void executeUpdateByMap_with_jsr310_SQLServer() throws Exception {
+    public void executeUpdateByMap_with_jsr310_SQLServer() {
         VariousDbTestHelper.createTable(Jsr310ColumnForSqlServer.class);
 
         LocalDate localDate = LocalDate.parse("2015-04-01");
@@ -105,7 +105,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(exclude = Db.SQL_SERVER)
-    public void executeUpdateByObject_with_jsr310() throws Exception {
+    public void executeUpdateByObject_with_jsr310() {
         VariousDbTestHelper.createTable(Jsr310Column.class);
 
         LocalDate localDate = LocalDate.parse("2015-04-01");
@@ -137,7 +137,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(include = Db.SQL_SERVER)
-    public void executeUpdateByObject_with_jsr310_SQLServer() throws Exception {
+    public void executeUpdateByObject_with_jsr310_SQLServer() {
         VariousDbTestHelper.createTable(Jsr310ColumnForSqlServer.class);
 
         LocalDate localDate = LocalDate.parse("2015-04-01");
@@ -168,7 +168,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(exclude = Db.SQL_SERVER)
-    public void retrieve_map_with_localDate_condition() throws Exception {
+    public void retrieve_map_with_localDate_condition() {
         VariousDbTestHelper.createTable(Jsr310Column.class);
         LocalDate localDate = LocalDate.parse("2015-04-01");
         Jsr310Column entity =  new Jsr310Column();
@@ -193,7 +193,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(include = Db.SQL_SERVER)
-    public void retrieve_map_with_localDate_condition_SQLServer() throws Exception {
+    public void retrieve_map_with_localDate_condition_SQLServer() {
         VariousDbTestHelper.createTable(Jsr310ColumnForSqlServer.class);
         LocalDate localDate = LocalDate.parse("2015-04-01");
         Jsr310ColumnForSqlServer entity =  new Jsr310ColumnForSqlServer();
@@ -218,7 +218,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(exclude = Db.SQL_SERVER)
-    public void retrieve_map_with_localDateTime_condition() throws Exception {
+    public void retrieve_map_with_localDateTime_condition() {
         VariousDbTestHelper.createTable(Jsr310Column.class);
         LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
         Jsr310Column entity =  new Jsr310Column();
@@ -243,7 +243,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(include = Db.SQL_SERVER)
-    public void retrieve_map_with_localDateTime_condition_SQLServer() throws Exception {
+    public void retrieve_map_with_localDateTime_condition_SQLServer() {
         VariousDbTestHelper.createTable(Jsr310ColumnForSqlServer.class);
         LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
         Jsr310ColumnForSqlServer entity =  new Jsr310ColumnForSqlServer();
@@ -268,7 +268,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(exclude = Db.SQL_SERVER)
-    public void retrieve_object_with_localDate_condition() throws Exception {
+    public void retrieve_object_with_localDate_condition() {
         VariousDbTestHelper.createTable(Jsr310Column.class);
         LocalDate localDate = LocalDate.parse("2015-04-01");
         Jsr310Column entity =  new Jsr310Column();
@@ -293,7 +293,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(include = Db.SQL_SERVER)
-    public void retrieve_object_with_localDate_condition_SQLServer() throws Exception {
+    public void retrieve_object_with_localDate_condition_SQLServer() {
         VariousDbTestHelper.createTable(Jsr310ColumnForSqlServer.class);
         LocalDate localDate = LocalDate.parse("2015-04-01");
         Jsr310ColumnForSqlServer entity =  new Jsr310ColumnForSqlServer();
@@ -318,7 +318,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(exclude = Db.SQL_SERVER)
-    public void retrieve_object_with_localDateTime_condition() throws Exception {
+    public void retrieve_object_with_localDateTime_condition() {
         VariousDbTestHelper.createTable(Jsr310Column.class);
         LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
         Jsr310Column entity =  new Jsr310Column();
@@ -342,7 +342,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
      */
     @Test
     @TargetDb(include = Db.SQL_SERVER)
-    public void retrieve_object_with_localDateTime_condition_SQLServer() throws Exception {
+    public void retrieve_object_with_localDateTime_condition_SQLServer() {
         VariousDbTestHelper.createTable(Jsr310ColumnForSqlServer.class);
         LocalDateTime localDateTime =  LocalDateTime.parse("2015-04-01T12:34:56");
         Jsr310ColumnForSqlServer entity =  new Jsr310ColumnForSqlServer();
