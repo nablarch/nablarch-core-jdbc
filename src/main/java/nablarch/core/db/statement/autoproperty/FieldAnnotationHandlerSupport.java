@@ -23,6 +23,8 @@ public abstract class FieldAnnotationHandlerSupport implements AutoPropertyHandl
     /**
      * フィールドアノテーション保持クラスを設定する。
      *
+     * <p><b>フィールドではなくプロパティアクセスするよう仕様変更を行ったため本プロパティは廃止しました。(値を設定しても意味がありません)</b>
+     *
      * @param fieldAnnotationCache フィールドアノテーション保持クラス
      */
     @IgnoreProperty("フィールドではなくプロパティアクセスするよう仕様変更を行ったため本プロパティは廃止しました。(値を設定しても意味がありません)")
