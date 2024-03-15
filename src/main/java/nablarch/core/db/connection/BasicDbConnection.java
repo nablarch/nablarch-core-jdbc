@@ -436,14 +436,13 @@ public class BasicDbConnection implements TransactionManagerConnection {
     /**
      * {@inheritDoc}
      *
-     * 件数取得用のSQLへの変換は、{@link Dialect#convertCountSql(String)}で行う。
+     * 件数取得用のSQLへの変換は、{@link Dialect#convertCountSql(String, Object, StatementFactory)}で行う。
      */
     @Override
     public ParameterizedSqlPStatement prepareParameterizedCountSqlStatementBySqlId(
             final String sqlId, Object condition) {
 
-        String variableConditionSql = context.getDialect()
-                .convertCountSql(factory.getVariableConditionSqlBySqlId(sqlId, condition));
+        String variableConditionSql = context.getDialect().convertCountSql(sqlId, condition, factory);
         return (ParameterizedSqlPStatement) new BasicDbConnection.StatementCreator() {
             @Override
             SqlStatement createSqlStatement(String sql) throws SQLException {
@@ -461,12 +460,11 @@ public class BasicDbConnection implements TransactionManagerConnection {
     /**
      * {@inheritDoc}
      *
-     * 件数取得用のSQLへの変換は、{@link Dialect#convertCountSql(String)}で行う。
+     * 件数取得用のSQLへの変換は、{@link Dialect#convertCountSql(String, Object, StatementFactory)}で行う。
      */
     @Override
     public SqlPStatement prepareCountStatementBySqlId(final String sqlId) {
-        String variableConditionSql = context.getDialect()
-                .convertCountSql(factory.getVariableConditionSqlBySqlId(sqlId, null));
+        String variableConditionSql = context.getDialect().convertCountSql(sqlId, null, factory);
         return (SqlPStatement) new BasicDbConnection.StatementCreator() {
             @Override
             SqlStatement createSqlStatement(String sql) throws SQLException {
