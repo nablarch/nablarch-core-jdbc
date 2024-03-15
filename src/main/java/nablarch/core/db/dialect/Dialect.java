@@ -4,6 +4,7 @@ import java.sql.SQLException;
 
 import nablarch.core.db.statement.ResultSetConvertor;
 import nablarch.core.db.statement.SelectOption;
+import nablarch.core.db.statement.StatementFactory;
 import nablarch.core.util.annotation.Published;
 
 /**
@@ -93,6 +94,16 @@ public interface Dialect {
      * @return 変換したSQL文
      */
     String convertCountSql(String sql);
+
+    /**
+     * SQLIDからレコード数取得用のSQL文を取得する。
+     *
+     * @param sqlId SQLID
+     * @param condition 可変条件に設定される条件をもつオブジェクト
+     * @param statementFactory ステートメントファクトリ
+     * @return レコード数取得用のSQL文
+     */
+    String convertCountSql(String sqlId, Object condition, StatementFactory statementFactory);
 
     /**
      * ping用のSQL文を返す。

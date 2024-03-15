@@ -447,6 +447,8 @@ public class BasicStatementFactory implements StatementFactory {
     /**
      * フィールド情報保持インスタンスを設定する。
      *
+     * <p><b>フィールドではなくプロパティアクセスするよう仕様変更を行ったため本プロパティは廃止しました。(値を設定しても意味がありません)</b>
+     *
      * @param objectFieldCache オブジェクトのフィールド情報保持インスタンス
      */
     @IgnoreProperty("フィールドではなくプロパティアクセスするよう仕様変更を行ったため本プロパティは廃止しました。(値を設定しても意味がありません)")
