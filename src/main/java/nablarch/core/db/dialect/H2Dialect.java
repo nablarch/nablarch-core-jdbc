@@ -3,6 +3,7 @@ package nablarch.core.db.dialect;
 import java.sql.SQLException;
 
 import nablarch.core.db.statement.SelectOption;
+import nablarch.core.util.annotation.Published;
 
 /**
  * H2用のSQL方言クラス。
@@ -12,6 +13,7 @@ import nablarch.core.db.statement.SelectOption;
  * @author Masaya Seko
  *
  */
+@Published(tag = "architect")
 public class H2Dialect extends DefaultDialect {
 
     /** 一意制約違反を表すSQLState */
