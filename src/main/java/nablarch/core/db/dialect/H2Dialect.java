@@ -7,7 +7,7 @@ import nablarch.core.util.annotation.Published;
 
 /**
  * H2用のSQL方言クラス。
- * 
+ * <p>
  * このクラスは、1.4.191 および 2.1.214 により動作確認を行っている。
  * 
  * @author Masaya Seko
