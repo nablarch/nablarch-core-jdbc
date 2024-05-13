@@ -1,5 +1,7 @@
 package nablarch.core.db.statement;
 
+import nablarch.core.util.annotation.Published;
+
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -13,6 +15,7 @@ import java.util.Date;
  * @author hisaaki sioiri
  * @see java.sql.CallableStatement
  */
+@Published
 public interface SqlCStatement extends SqlPStatement {
 
     /**
