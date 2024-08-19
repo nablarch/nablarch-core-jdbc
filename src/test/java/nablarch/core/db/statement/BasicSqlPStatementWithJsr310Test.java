@@ -33,7 +33,7 @@ public class BasicSqlPStatementWithJsr310Test extends BasicSqlPStatementTestLogi
 
     @Rule
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
-            "nablarch/core/db/statement/BasicSqlPStatementWithJsr310TestConfiguration.xml");
+            "nablarch/core/db/statement/BasicSqlPStatementTestConfiguration.xml");
 
     @Override
     protected ConnectionFactory createConnectionFactory() {
